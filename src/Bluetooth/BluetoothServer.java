@@ -1,5 +1,4 @@
 package Bluetooth;
- 
 
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.LocalDevice;
@@ -94,7 +93,7 @@ public class BluetoothServer extends Thread {
         byte[] msg = null;
         while(client.isConnected()){
             while(client.getInputStream().available() > 0){
-                msg = new byte[available];
+                msg = new byte[client.getInputStream().available()];
                 client.getInputStream().read(msg);
                 String receivedMsg = new String(msg);
                 System.out.println(TAG + " : " + receivedMsg);
