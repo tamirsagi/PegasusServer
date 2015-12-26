@@ -17,8 +17,8 @@ import gnu.io.SerialPort;
  */
 public class SerialPortHandler {
 	private static final String TAG = "SerialPortHandler";
+	private static final String PortName = "/dev/ttyACM0"; //the mounted ttyPort for Arduino
 	private static SerialPortHandler mSerialPortHandler;
-	private String mPortName;
 	private boolean mIsBoundedToUsbPort;
 	private int mTimeout;
 	private SerialPort mSerialPort;
@@ -26,13 +26,24 @@ public class SerialPortHandler {
 	private SerialOutputHandler mSerialOutputHandler;
 	
 	
+	public static SerialPortHandler getInstance(){
+		if(mSerialPortHandler == null){
+			mSerialPortHandler = new SerialPortHandler();
+		}
+		return mSerialPortHandler;
+	}
+	
+	private SerialPortHandler(){
+		connect();
+	}
+	
 	
 	/**
 	 * Connect to Serial Port, Define streams
 	 */
-	public void connect(){
+	private void connect(){
 		try{
-			CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(mPortName);
+			CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(PortName);
 			if(portIdentifier.isCurrentlyOwned()){
 				System.out.println("Error : Port is currently in use");
 			}
@@ -93,6 +104,7 @@ public class SerialPortHandler {
 		
 		public SerialInputHandler(InputStream in){
 			mInputStream = in;
+			mIsOnline = true;
 		}
 
 		@Override
@@ -123,6 +135,7 @@ public class SerialPortHandler {
 			}
 		}
 		
+		
 		/**
 		 * stop current thread
 		 */
@@ -148,6 +161,7 @@ public class SerialPortHandler {
 		public SerialOutputHandler(OutputStream out){
 			mOutputStream = out;
 			mMesseagesQueue = new LinkedList<String>();
+			mIsOnline = true;
 		}
 		
 		@Override
