@@ -1,10 +1,13 @@
 package serialPorts;
 
+import java.awt.RenderingHints.Key;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Random;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
@@ -43,6 +46,8 @@ public class SerialPortHandler {
 	 */
 	private void connect(){
 		try{
+			//add the port manually, because version of RXTX gaps
+			System.setProperty("gnu.io.rxtx.SerialPorts", PortName);
 			CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(PortName);
 			if(portIdentifier.isCurrentlyOwned()){
 				System.out.println("Error : Port is currently in use");
@@ -52,14 +57,14 @@ public class SerialPortHandler {
 				if(commPort instanceof SerialPort){
 					mIsBoundedToUsbPort = true;
 					mSerialPort = (SerialPort)commPort;
-					mSerialPort.setSerialPortParams(57600, SerialPort.DATABITS_8,
+					mSerialPort.setSerialPortParams(9600, SerialPort.DATABITS_8,
 							SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
 					mSerialInputHandler = new SerialInputHandler(mSerialPort.getInputStream());
 					mSerialOutputHandler = new SerialOutputHandler(mSerialPort.getOutputStream());
 					
 					//start threads
-					mSerialInputHandler.start();
-					mSerialOutputHandler.start();
+					mSerialInputHandler.startThread();
+					mSerialOutputHandler.startThread();
 				}
 			}
 		}catch(Exception eSerialPort){
@@ -99,12 +104,11 @@ public class SerialPortHandler {
 	 */
 	class SerialInputHandler extends Thread{
 		private static final String TAG = "SerialInputHandler";
-		private InputStream mInputStream;
+		private  InputStream mReader;
 		private boolean mIsOnline; 
 		
 		public SerialInputHandler(InputStream in){
-			mInputStream = in;
-			mIsOnline = true;
+			mReader = in;
 		}
 
 		@Override
@@ -123,10 +127,11 @@ public class SerialPortHandler {
 		private void readFromInputStream(){
 			byte[] buffer;
 			try{
-				while(this.mInputStream.available() > 0){
-					buffer = new byte[this.mInputStream.available()];
-					this.mInputStream.read(buffer);
+				while(mReader.available() > 0){
+					buffer = new byte[mReader.available()];
+					mReader.read(buffer);
 					String s = new String(buffer);
+					System.out.println(s);
 					// TODO - Launch event with the msg, add string builder t
 					//append the message from inputStream
 				}
@@ -135,6 +140,13 @@ public class SerialPortHandler {
 			}
 		}
 		
+		/**
+		 * start current Thread
+		 */
+		public void startThread(){
+			mIsOnline = true;
+			start();
+		}
 		
 		/**
 		 * stop current thread
@@ -167,6 +179,14 @@ public class SerialPortHandler {
 		@Override
 		public void run() {
 			while(mIsOnline){
+				try {
+					sleep(2000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				System.out.println("sent to arduino");
+				mMesseagesQueue.add("Coonected to Arduino :D \n");
 				if(mMesseagesQueue.size() > 0){
 					writeMessage(mMesseagesQueue.poll());
 				}
@@ -178,6 +198,7 @@ public class SerialPortHandler {
 			byte[] msgToSent = msg.getBytes();
 			try{
 			mOutputStream.write(msgToSent);
+			mOutputStream.flush();
 			}catch(IOException e){
 				System.out.println(TAG + " " + e.getMessage());
 			}
@@ -189,13 +210,55 @@ public class SerialPortHandler {
 		}
 		
 		/**
+		 * start current Thread
+		 */
+		public void startThread(){
+			mIsOnline = true;
+			start();
+		}
+		
+		/**
 		 * stop current thread
 		 */
 		public void stopThread(){
 			mIsOnline = false;
 		}
 	}
+
 	
+	/**
+	 * @param PortType
+	 * @return port type
+	 */
+	public String getPortName(int PortType){
+		switch(PortType){
+		case CommPortIdentifier.PORT_I2C:
+			return "IC2";
+		case CommPortIdentifier.PORT_PARALLEL:
+			return "PARALLEL";
+		case CommPortIdentifier.PORT_RAW:
+			return "RAW";
+		case CommPortIdentifier.PORT_RS485:
+			return "RS485";
+		case CommPortIdentifier.PORT_SERIAL:
+			return "SERIAL";
+		default:
+				return "unknown";
+		}
+	}
+	
+	/**
+	 * prints out all available ports
+	 */
+	public static void findAllAvailablePorts(){
+		Enumeration<CommPortIdentifier> ports = CommPortIdentifier.getPortIdentifiers();
+		CommPortIdentifier port;
+		while(ports.hasMoreElements()){
+			port = (CommPortIdentifier)ports.nextElement();
+			System.out.println("port name : " + port.getName());
+			System.out.println("port type " + port.getPortType());
+		}
+	}
 	
 	
 }
