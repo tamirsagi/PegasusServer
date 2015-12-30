@@ -1,32 +1,35 @@
 package serialPorts;
 
-import java.awt.RenderingHints.Key;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.Enumeration;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Random;
-
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.SerialPort;
+import gnu.io.SerialPortEvent;
+import gnu.io.SerialPortEventListener;
 
 /**
  * This Class Supports 2 way communication via USB port  
  * @author Tamir Sagi
  *
  */
-public class SerialPortHandler {
+public class SerialPortHandler extends Thread implements SerialPortEventListener {
 	private static final String TAG = "SerialPortHandler";
 	private static final String PortName = "/dev/ttyACM0"; //the mounted ttyPort for Arduino
+	private static final int PORT_BAUD = 115200;
 	private static SerialPortHandler mSerialPortHandler;
 	private boolean mIsBoundedToUsbPort;
 	private int mTimeout;
 	private SerialPort mSerialPort;
-	private SerialInputHandler mSerialInputHandler;
-	private SerialOutputHandler mSerialOutputHandler;
+	private int testCount;
+//	private SerialInputHandler mSerialInputHandler;
+//	private SerialOutputHandler mSerialOutputHandler;
+	
+	private BufferedReader mReader;
+	private OutputStream mOutputStream;
 	
 	
 	public static SerialPortHandler getInstance(){
@@ -37,7 +40,7 @@ public class SerialPortHandler {
 	}
 	
 	private SerialPortHandler(){
-		connect();
+		
 	}
 	
 	
@@ -48,182 +51,188 @@ public class SerialPortHandler {
 		try{
 			//add the port manually, because version of RXTX gaps
 			System.setProperty("gnu.io.rxtx.SerialPorts", PortName);
-			CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(PortName);
-			if(portIdentifier.isCurrentlyOwned()){
-				System.out.println("Error : Port is currently in use");
+//			CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(PortName);
+			CommPortIdentifier portIdentifier = getPort(PortName);
+			if(portIdentifier == null){
+				System.out.println("Could not find port " + PortName);
+				return;
 			}
+			else if(portIdentifier.isCurrentlyOwned()){
+				System.out.println("Error : Port: " + PortName +  " is currently in use");
+				return;
+			}
+			
 			else{
 				CommPort commPort = portIdentifier.open(TAG,mTimeout);
 				if(commPort instanceof SerialPort){
 					mIsBoundedToUsbPort = true;
 					mSerialPort = (SerialPort)commPort;
-					mSerialPort.setSerialPortParams(9600, SerialPort.DATABITS_8,
+					mSerialPort.setSerialPortParams(PORT_BAUD, SerialPort.DATABITS_8,
 							SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
-					mSerialInputHandler = new SerialInputHandler(mSerialPort.getInputStream());
-					mSerialOutputHandler = new SerialOutputHandler(mSerialPort.getOutputStream());
+					
+					mReader = new BufferedReader(new  InputStreamReader(mSerialPort.getInputStream()));
+					mOutputStream = mSerialPort.getOutputStream();
+
+					mSerialPort.addEventListener(this);
+					mSerialPort.notifyOnDataAvailable(true);
+					mSerialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE); //disable flow control
+					
+					
+					//mSerialInputHandler = new SerialInputHandler(mSerialPort.getInputStream());
+//					mSerialOutputHandler = new SerialOutputHandler(mSerialPort.getOutputStream());
 					
 					//start threads
-					mSerialInputHandler.startThread();
-					mSerialOutputHandler.startThread();
+//					mSerialInputHandler.startThread();
+//					mSerialOutputHandler.startThread();
 				}
 			}
 		}catch(Exception eSerialPort){
-			System.out.println(eSerialPort.getMessage());
+			System.out.println(TAG + " " + eSerialPort.getMessage());
 		}
 	}
 	
 	
+	@Override
+	public void run() {
+		System.out.println("Service started");
+		while(mIsBoundedToUsbPort){
+			
+		}
+		disconnect();
+	}
 	
+	public synchronized void serialEvent(SerialPortEvent event) {
+		switch(event.getEventType()){
+			case SerialPortEvent.DATA_AVAILABLE:
+				try{
+					while(mReader.ready()){
+						String input = mReader.readLine();
+						System.out.println("Received from Arduino size: " + input.length() + "[" + input +"]");
+						testCount++;
+						sleep(40);
+						writeMessage("to arduino #" + testCount +"\n");
+					}
+				}catch (Exception e) {
+					System.out.println(TAG + " SerialEventListener " + e.getMessage());
+				}
+				break;
+		}
+	}
+	
+
 	/**
 	 * add message to queue in order to write it
 	 * @param msg - msg to send
 	 */
 	public void writeMessage(String msg){
-		mSerialOutputHandler.addMessageToQueue(msg);
+		if(mOutputStream != null)
+			try {
+				mOutputStream.write(msg.getBytes());
+				mOutputStream.flush();
+			} catch (IOException e) {
+				System.out.println(TAG + " " + e.getMessage());
+			}
 	}
-	
-	
+
 	
 	/**
 	 * close connection to serial port
 	 */
 	public void disconnect(){
-		mSerialInputHandler.stopThread(); 		//stop input thread
-		mSerialOutputHandler.stopThread();		//stop output thread
-		mSerialPort.close();					//close serial port
+//		mSerialOutputHandler.stopThread();		//stop output thread
+		try {
+			if(mReader != null)
+				mReader.close();
+			if(mOutputStream != null)
+				mOutputStream.close();
+			if(mSerialPort != null){
+				mIsBoundedToUsbPort = false;
+				mSerialPort.removeEventListener();
+				mSerialPort.close();	//close serial port
+			}
+		} catch (IOException e) {
+			System.out.println(TAG + " " + e.getMessage());
+		}
+	}
+	
+	public void startThread(){
+		start();
+		connect();
+	}
+	
+	/**
+	 * method stop Serial Thread
+	 */
+	public void stopThread(){
+		mIsBoundedToUsbPort = false;
 	}
 	
 	
-	
-	
-	/**
-	 * This class holds the input streams and get data from it.
-	 * it fire the data to Logic Control;
-	 * @author Tamir Sagi
-	 *
-	 */
-	class SerialInputHandler extends Thread{
-		private static final String TAG = "SerialInputHandler";
-		private  InputStream mReader;
-		private boolean mIsOnline; 
-		
-		public SerialInputHandler(InputStream in){
-			mReader = in;
-		}
-
-		@Override
-		public void run() {
-			while(mIsOnline){
-				readFromInputStream();
-			}
-		}
-		
-		
-		
-		/**
-		 * Read Data from Input Stream
-		 * It Fires the data 
-		 */
-		private void readFromInputStream(){
-			byte[] buffer;
-			try{
-				while(mReader.available() > 0){
-					buffer = new byte[mReader.available()];
-					mReader.read(buffer);
-					String s = new String(buffer);
-					System.out.println(s);
-					// TODO - Launch event with the msg, add string builder t
-					//append the message from inputStream
-				}
-			}catch(IOException e){
-				System.out.println(TAG + " " + e.getMessage());
-			}
-		}
-		
-		/**
-		 * start current Thread
-		 */
-		public void startThread(){
-			mIsOnline = true;
-			start();
-		}
-		
-		/**
-		 * stop current thread
-		 */
-		public void stopThread(){
-			mIsOnline = false;
-		}
-	}//end of SerialInputHandler
-	
-	
-
-	
-	/**
-	 * this class handles the output stream via usb
-	 * @author Tamir Sagi
-	 *
-	 */
-	class SerialOutputHandler extends Thread{
-		private static final String TAG = "SerialOutputHandler";
-		private OutputStream mOutputStream;
-		private boolean mIsOnline;
-		private Queue<String> mMesseagesQueue;
-		
-		public SerialOutputHandler(OutputStream out){
-			mOutputStream = out;
-			mMesseagesQueue = new LinkedList<String>();
-			mIsOnline = true;
-		}
-		
-		@Override
-		public void run() {
-			while(mIsOnline){
-				try {
-					sleep(2000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				System.out.println("sent to arduino");
-				mMesseagesQueue.add("Coonected to Arduino :D \n");
-				if(mMesseagesQueue.size() > 0){
-					writeMessage(mMesseagesQueue.poll());
-				}
-			}
-		}
-		
-		//write message to serial port
-		private void writeMessage(String msg){
-			byte[] msgToSent = msg.getBytes();
-			try{
-			mOutputStream.write(msgToSent);
-			mOutputStream.flush();
-			}catch(IOException e){
-				System.out.println(TAG + " " + e.getMessage());
-			}
-		}
-		
-		//add message to Queue
-		public void addMessageToQueue(String msg){
-			mMesseagesQueue.add(msg);
-		}
-		
-		/**
-		 * start current Thread
-		 */
-		public void startThread(){
-			mIsOnline = true;
-			start();
-		}
-		
-		/**
-		 * stop current thread
-		 */
-		public void stopThread(){
-			mIsOnline = false;
-		}
-	}
+//	
+//	/**
+//	 * this class handles the output stream via usb
+//	 * @author Tamir Sagi
+//	 *
+//	 */
+//	class SerialOutputHandler extends Thread{
+//		private static final String TAG = "SerialOutputHandler";
+//		private OutputStream mOutputStream;
+//		private boolean mIsOnline;
+//		private Queue<String> mMesseagesQueue;
+//		
+//		public SerialOutputHandler(OutputStream out){
+//			mOutputStream = out;
+//			mMesseagesQueue = new LinkedList<String>();
+//			mIsOnline = true;
+//		}
+//		
+//		@Override
+//		public void run() {
+//			while(mIsOnline){
+//				try {
+//					sleep(3000);
+//				} catch (InterruptedException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//				System.out.println("sent to arduino");
+//				mMesseagesQueue.add("abcdefghi\n");
+//				if(mMesseagesQueue.size() > 0){
+//					writeMessage(mMesseagesQueue.poll());
+//				}
+//			}
+//		}
+//		
+//		//write message to serial port
+//		private void writeMessage(String msg){
+//			byte[] msgToSent = msg.getBytes();
+//			try{
+//			mOutputStream.write(msgToSent);
+//			}catch(IOException e){
+//				System.out.println(TAG + " " + e.getMessage());
+//			}
+//		}
+//		
+//		//add message to Queue
+//		public void addMessageToQueue(String msg){
+//			mMesseagesQueue.add(msg);
+//		}
+//		
+//		/**
+//		 * start current Thread
+//		 */
+//		public void startThread(){
+//			mIsOnline = true;
+//			start();
+//		}
+//		
+//		/**
+//		 * stop current thread
+//		 */
+//		public void stopThread(){
+//			mIsOnline = false;
+//		}
+//	}
 
 	
 	/**
@@ -250,8 +259,8 @@ public class SerialPortHandler {
 	/**
 	 * prints out all available ports
 	 */
-	public static void findAllAvailablePorts(){
-		Enumeration<CommPortIdentifier> ports = CommPortIdentifier.getPortIdentifiers();
+	public static void printAllAvailablePorts(){
+		Enumeration<?> ports = CommPortIdentifier.getPortIdentifiers();
 		CommPortIdentifier port;
 		while(ports.hasMoreElements()){
 			port = (CommPortIdentifier)ports.nextElement();
@@ -259,6 +268,24 @@ public class SerialPortHandler {
 			System.out.println("port type " + port.getPortType());
 		}
 	}
+	
+	/**
+	 * 
+	 * @param portName
+	 * @return wanted port otherwise null
+	 */
+	private CommPortIdentifier getPort(String portName){
+		Enumeration<?> ports = CommPortIdentifier.getPortIdentifiers();
+		CommPortIdentifier port;
+		while(ports.hasMoreElements()){
+			port = (CommPortIdentifier)ports.nextElement();
+			if(port.getName().equals(portName))
+				return port;
+		}
+		return null;
+	}
+
+	
 	
 	
 }

@@ -9,6 +9,6 @@ public class Main {
 //        btServer.start();
     	
     	
-    	SerialPortHandler.getInstance().writeMessage("5");
+    	SerialPortHandler.getInstance().startThread();
     }
 }
