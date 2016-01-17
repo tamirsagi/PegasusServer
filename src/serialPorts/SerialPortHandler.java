@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.Enumeration;
+
+import Control.GeneralParams;
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.SerialPort;
@@ -286,6 +288,39 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	}
 
 	
+	/**
+	 * Change Back Motor speed
+	 * @param digitalSpeed
+	 */
+	public void changeBackMotor(int digitalSpeed){
+		String msgToArduino = GeneralParams.
+				getFixedMessageToArduino(GeneralParams.ACTION_BACK_MOTOR,digitalSpeed);
+		writeMessage(msgToArduino);
+	}
+	
+	/**
+	 * method change the steering angle
+	 * @param direction 'R' - Right or 'L' - Left
+	 * @param angle - the roation angle
+	 */
+	public void changeSteerMotor(char direction, double angle){
+		String msgToArduino = GeneralParams.
+				getFixedMessageToArduino(GeneralParams.ACTION_STEER_MOTOR, 
+						direction,angle);
+		writeMessage(msgToArduino);
+	}
+	
+	
+	/**
+	 * Change driving direction
+	 * @param direction 'F' - Forward, 'b' - Backward
+	 */
+	public void changeDrivingDirection(char direction){
+		String msgToArduino = GeneralParams.
+				getFixedMessageToArduino(GeneralParams.ACTION_DRIVING_DIRECTION, direction);
+		
+		writeMessage(msgToArduino);
+	}
 	
 	
 }

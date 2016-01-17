@@ -5,5 +5,6 @@
 	<classpathentry kind="lib" path="/home/pi/Documents/Projects/PegasusServer/Jars/bluecove-2.1.0.jar"/>
 	<classpathentry kind="lib" path="/home/pi/Documents/Projects/PegasusServer/Jars/bluecove-gpl-2.1.0.jar"/>
 	<classpathentry kind="lib" path="/home/pi/Documents/Projects/PegasusServer/Jars/RXTXcomm.jar"/>
+	<classpathentry kind="lib" path="/home/pi/Documents/Projects/PegasusServer/Jars/java-json.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

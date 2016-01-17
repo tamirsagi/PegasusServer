@@ -63,4 +63,8 @@ public class SocketData {
         inputStream.close();
         outputStream.close();
     }
+    
+    public String getDeviceName(){
+    	return remoteName;
+    }
 }
