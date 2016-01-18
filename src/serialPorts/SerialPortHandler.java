@@ -4,7 +4,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.Queue;
+
+import javax.management.Query;
 
 import Control.GeneralParams;
 import gnu.io.CommPort;
@@ -33,6 +38,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	private BufferedReader mReader;
 	private OutputStream mOutputStream;
 	
+	private Queue<String> messagesToArduino;
 	
 	public static SerialPortHandler getInstance(){
 		if(mSerialPortHandler == null){
@@ -42,7 +48,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	}
 	
 	private SerialPortHandler(){
-		
+		messagesToArduino = new LinkedList<>();
 	}
 	
 	
@@ -98,7 +104,14 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	public void run() {
 		System.out.println("Service started");
 		while(mIsBoundedToUsbPort){
-			
+			if(messagesToArduino.size() > 0){
+				writeMessage(messagesToArduino.poll());
+				try {
+					sleep(10);
+				} catch (InterruptedException e) {
+					System.out.println(TAG + " " + e.getMessage());
+				}
+			}
 		}
 		disconnect();
 	}
@@ -109,10 +122,10 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				try{
 					while(mReader.ready()){
 						String input = mReader.readLine();
-						System.out.println("Received from Arduino size: " + input.length() + "[" + input +"]");
-						testCount++;
-						sleep(40);
-						writeMessage("to arduino #" + testCount +"\n");
+//						System.out.println("Received from Arduino size: " + input.length() + "[" + input +"]");
+//						testCount++;
+//						sleep(40);
+//						writeMessage("to arduino #" + testCount +"\n");
 					}
 				}catch (Exception e) {
 					System.out.println(TAG + " SerialEventListener " + e.getMessage());
@@ -123,10 +136,10 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 
 	/**
-	 * add message to queue in order to write it
+	 * send message to Arduino
 	 * @param msg - msg to send
 	 */
-	public void writeMessage(String msg){
+	public synchronized void writeMessage(String msg){
 		if(mOutputStream != null)
 			try {
 				mOutputStream.write(msg.getBytes());
@@ -293,21 +306,21 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param digitalSpeed
 	 */
 	public void changeBackMotor(int digitalSpeed){
-		String msgToArduino = GeneralParams.
-				getFixedMessageToArduino(GeneralParams.ACTION_BACK_MOTOR,digitalSpeed);
-		writeMessage(msgToArduino);
+		String msgToArduino = GeneralParams.KEY_ACTION_TYPE + ":" + GeneralParams.ACTION_BACK_MOTOR +",DS:" + digitalSpeed + GeneralParams.END_MESSAGE;
+		messagesToArduino.add(msgToArduino);
 	}
 	
 	/**
 	 * method change the steering angle
 	 * @param direction 'R' - Right or 'L' - Left
-	 * @param angle - the roation angle
+	 * @param angle - the rotation angle
 	 */
 	public void changeSteerMotor(char direction, double angle){
-		String msgToArduino = GeneralParams.
-				getFixedMessageToArduino(GeneralParams.ACTION_STEER_MOTOR, 
-						direction,angle);
-		writeMessage(msgToArduino);
+		String msgToArduino = GeneralParams.KEY_ACTION_TYPE + ":" + GeneralParams.ACTION_BACK_MOTOR 
+				+ "," + GeneralParams.KEY_STEERING_DIRECTION + ":" + direction 
+				+ "," + GeneralParams.KEY_ROTATION_ANGLE + ":" + angle
+				+ GeneralParams.END_MESSAGE;
+		messagesToArduino.add(msgToArduino);
 	}
 	
 	
@@ -316,10 +329,9 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param direction 'F' - Forward, 'b' - Backward
 	 */
 	public void changeDrivingDirection(char direction){
-		String msgToArduino = GeneralParams.
-				getFixedMessageToArduino(GeneralParams.ACTION_DRIVING_DIRECTION, direction);
-		
-		writeMessage(msgToArduino);
+		String msgToArduino = GeneralParams.KEY_ACTION_TYPE + ":" + GeneralParams.ACTION_BACK_MOTOR +
+				"," + GeneralParams.KEY_DRIVING_DIRECTION + ":" + direction + GeneralParams.END_MESSAGE;
+		messagesToArduino.add(msgToArduino);
 	}
 	
 	
