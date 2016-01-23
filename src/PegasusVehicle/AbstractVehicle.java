@@ -65,28 +65,20 @@ public abstract class AbstractVehicle {
 	}
 	
 	/**
-	 * Method sends an event to move the car in
-	 * @param digitalSpeed - set a speed (0-255 digital value)
-	 * @param direction		- steering direction (Right or left)
-	 * @param rotationAngle - steering angle
-	 */
-	public abstract void drive(int digitalSpeed,char direction, double rotationAngle);
-	
-	/**
-	 * Handle the vehcile speed
+	 * Handle the vehicle speed
 	 * @param digitalSpeed
 	 */
-	public abstract void drive(int digitalSpeed);
+	public abstract void changeSpeed(int digitalSpeed);
 	
 	
 	/**
-	 * turn the vehcile right with a steering angle
+	 * turn the vehicle right with a steering angle
 	 * @param rotatioAngle
 	 */
 	public abstract void turnRight(double rotationAngle);
 	
 	/**
-	 * turn the vehcile left with a steering angle
+	 * turn the vehicle left with a steering angle
 	 * @param rotatioAngle
 	 */
 	public abstract void turnLeft(double rotationAngle);

@@ -1,15 +1,12 @@
 package serialPorts;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
-
-import javax.management.Query;
 
 import Control.GeneralParams;
 import gnu.io.CommPort;
@@ -17,6 +14,8 @@ import gnu.io.CommPortIdentifier;
 import gnu.io.SerialPort;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
+
+import Control.OnMessagesListener;
 
 /**
  * This Class Supports 2 way communication via USB port  
@@ -32,13 +31,12 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	private int mTimeout;
 	private SerialPort mSerialPort;
 	private int testCount;
-//	private SerialInputHandler mSerialInputHandler;
-//	private SerialOutputHandler mSerialOutputHandler;
 	
-	private BufferedReader mReader;
+	private InputStream mInputStream;
 	private OutputStream mOutputStream;
 	
 	private Queue<String> messagesToArduino;
+	private HashMap<String,OnMessagesListener> listeners;
 	
 	public static SerialPortHandler getInstance(){
 		if(mSerialPortHandler == null){
@@ -49,8 +47,26 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 	private SerialPortHandler(){
 		messagesToArduino = new LinkedList<>();
+		listeners = new HashMap<String,OnMessagesListener>();
 	}
 	
+	/**
+	 * Register Listener
+	 * @param name
+	 * @param listener
+	 */
+	public void registerMessagesListener(String name,OnMessagesListener listener){
+		listeners.put(name,listener);
+	}
+	
+	/**
+	 * Unregister Listener
+	 * @param name
+	 */
+	public void unRegisterMessagesListener(String name){
+		if(listeners.containsKey(name))
+			listeners.remove(name);
+	}
 	
 	/**
 	 * Connect to Serial Port, Define streams
@@ -78,20 +94,12 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 					mSerialPort.setSerialPortParams(PORT_BAUD, SerialPort.DATABITS_8,
 							SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
 					
-					mReader = new BufferedReader(new  InputStreamReader(mSerialPort.getInputStream()));
+					mInputStream = mSerialPort.getInputStream();
 					mOutputStream = mSerialPort.getOutputStream();
 
 					mSerialPort.addEventListener(this);
 					mSerialPort.notifyOnDataAvailable(true);
 					mSerialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE); //disable flow control
-					
-					
-					//mSerialInputHandler = new SerialInputHandler(mSerialPort.getInputStream());
-//					mSerialOutputHandler = new SerialOutputHandler(mSerialPort.getOutputStream());
-					
-					//start threads
-//					mSerialInputHandler.startThread();
-//					mSerialOutputHandler.startThread();
 				}
 			}
 		}catch(Exception eSerialPort){
@@ -119,16 +127,22 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	public synchronized void serialEvent(SerialPortEvent event) {
 		switch(event.getEventType()){
 			case SerialPortEvent.DATA_AVAILABLE:
+				StringBuilder message = new StringBuilder();
+				int available = 0;
+				byte[] received = null;
 				try{
-					while(mReader.ready()){
-						String input = mReader.readLine();
-//						System.out.println("Received from Arduino size: " + input.length() + "[" + input +"]");
-//						testCount++;
-//						sleep(40);
-//						writeMessage("to arduino #" + testCount +"\n");
+					while((available = mInputStream.available()) > 0){
+						received = new byte[available];
+						mInputStream.read(received);
+						if(received[available - 1] == GeneralParams.END_MESSAGE){
+							System.out.println(TAG + " : " + message.toString());
+							fireMessageFromSerialPort(message.toString());
+						}
+						else
+							message.append(new String(received));
 					}
 				}catch (Exception e) {
-					System.out.println(TAG + " SerialEventListener " + e.getMessage());
+					System.out.println(TAG + " Serial Event Listener " + e.getMessage());
 				}
 				break;
 		}
@@ -156,8 +170,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	public void disconnect(){
 //		mSerialOutputHandler.stopThread();		//stop output thread
 		try {
-			if(mReader != null)
-				mReader.close();
+			if(mInputStream != null)
+				mInputStream.close();
 			if(mOutputStream != null)
 				mOutputStream.close();
 			if(mSerialPort != null){
@@ -183,71 +197,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	}
 	
 	
-//	
-//	/**
-//	 * this class handles the output stream via usb
-//	 * @author Tamir Sagi
-//	 *
-//	 */
-//	class SerialOutputHandler extends Thread{
-//		private static final String TAG = "SerialOutputHandler";
-//		private OutputStream mOutputStream;
-//		private boolean mIsOnline;
-//		private Queue<String> mMesseagesQueue;
-//		
-//		public SerialOutputHandler(OutputStream out){
-//			mOutputStream = out;
-//			mMesseagesQueue = new LinkedList<String>();
-//			mIsOnline = true;
-//		}
-//		
-//		@Override
-//		public void run() {
-//			while(mIsOnline){
-//				try {
-//					sleep(3000);
-//				} catch (InterruptedException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-//				System.out.println("sent to arduino");
-//				mMesseagesQueue.add("abcdefghi\n");
-//				if(mMesseagesQueue.size() > 0){
-//					writeMessage(mMesseagesQueue.poll());
-//				}
-//			}
-//		}
-//		
-//		//write message to serial port
-//		private void writeMessage(String msg){
-//			byte[] msgToSent = msg.getBytes();
-//			try{
-//			mOutputStream.write(msgToSent);
-//			}catch(IOException e){
-//				System.out.println(TAG + " " + e.getMessage());
-//			}
-//		}
-//		
-//		//add message to Queue
-//		public void addMessageToQueue(String msg){
-//			mMesseagesQueue.add(msg);
-//		}
-//		
-//		/**
-//		 * start current Thread
-//		 */
-//		public void startThread(){
-//			mIsOnline = true;
-//			start();
-//		}
-//		
-//		/**
-//		 * stop current thread
-//		 */
-//		public void stopThread(){
-//			mIsOnline = false;
-//		}
-//	}
 
 	
 	/**
@@ -300,6 +249,16 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		return null;
 	}
 
+	/**
+	 * fire incoming message from Serial Port
+	 * @param msg
+	 */
+	private void fireMessageFromSerialPort(String msg){
+		
+		for(String key : listeners.keySet())
+			listeners.get(key).onMessageReceivedFromSerialPort(msg);
+	}
+	
 	
 	/**
 	 * Change Back Motor speed
@@ -316,7 +275,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param angle - the rotation angle
 	 */
 	public void changeSteerMotor(char direction, double angle){
-		String msgToArduino = GeneralParams.KEY_ACTION_TYPE + ":" + GeneralParams.ACTION_BACK_MOTOR 
+		String msgToArduino = GeneralParams.KEY_ACTION_TYPE + ":" + GeneralParams.ACTION_STEER_MOTOR 
 				+ "," + GeneralParams.KEY_STEERING_DIRECTION + ":" + direction 
 				+ "," + GeneralParams.KEY_ROTATION_ANGLE + ":" + angle
 				+ GeneralParams.END_MESSAGE;
@@ -326,10 +285,10 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 	/**
 	 * Change driving direction
-	 * @param direction 'F' - Forward, 'b' - Backward
+	 * @param direction 'F' - Forward, 'B' - Backward
 	 */
 	public void changeDrivingDirection(char direction){
-		String msgToArduino = GeneralParams.KEY_ACTION_TYPE + ":" + GeneralParams.ACTION_BACK_MOTOR +
+		String msgToArduino = GeneralParams.KEY_ACTION_TYPE + ":" + GeneralParams.ACTION_DRIVING_DIRECTION +
 				"," + GeneralParams.KEY_DRIVING_DIRECTION + ":" + direction + GeneralParams.END_MESSAGE;
 		messagesToArduino.add(msgToArduino);
 	}

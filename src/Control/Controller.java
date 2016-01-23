@@ -17,6 +17,9 @@ public class Controller implements OnMessagesListener, OnVehicleActions{
 	private SerialPortHandler mSerialPortHandler;
 	private PegasusVehicle mPegasusVehicle;
 	
+	private boolean mIsServerReady;
+	private boolean mIsSerialPortReady;
+	private boolean mIsHardwareReady;
 	
 	public enum SteeringDirection{
 		FORDWARD, BACKWARD
@@ -26,18 +29,19 @@ public class Controller implements OnMessagesListener, OnVehicleActions{
 	public Controller(){
 		
 		mBluetoothServer = BluetoothServer.getInstance();
+		mBluetoothServer.registerMessagesListener(TAG,this);
+		mBluetoothServer.start();
 		
 		mSerialPortHandler = SerialPortHandler.getInstance();
+		mSerialPortHandler.registerMessagesListener(TAG,this);
+		mSerialPortHandler.startThread();
 		
-		mBluetoothServer.registerMessagesListener(this);
-		mBluetoothServer.start();
 		
 		mPegasusVehicle = PegasusVehicle.getInstance();
 		mPegasusVehicle.registerVehicleActionsListener(this);
 		mPegasusVehicle.setName(mBluetoothServer.getLocalDevice().getFriendlyName());
 	}
 
-		
 	@Override
 	public void onMessageReceivedFromClient(String msg) {
 		System.out.println("TAG: " + msg);
@@ -72,15 +76,30 @@ public class Controller implements OnMessagesListener, OnVehicleActions{
 		try {
 			String actionType = (String)msg.get(MessageType.ACTION.toString());
 			switch(ActionType.valueOf(actionType)){
-			case DRIVE:
+			case CAHNGE_SPEED:
 				int digitalSpeed = (int)msg.get(GeneralParams.KEY_DIGITAL_SPEED);
-				char steeringDirection = GeneralParams.KEY_STERRING_NONE;
+				mPegasusVehicle.changeSpeed(digitalSpeed);
+				break;
+			case STEERING:
+				char steeringDirection;
 				double rotationAngle = 0;
-				if(msg.has(GeneralParams.KEY_STEERING_DIRECTION)){
-					steeringDirection = (char)msg.get(GeneralParams.KEY_STEERING_DIRECTION);
-					rotationAngle = (int)msg.get(GeneralParams.KEY_ROTATION_ANGLE);		//we send the angle as an int but might be double
+				steeringDirection = (char)msg.get(GeneralParams.KEY_STEERING_DIRECTION);
+				rotationAngle = (int)msg.get(GeneralParams.KEY_ROTATION_ANGLE);			//we send the angle as an int but might be double
+				if(steeringDirection == GeneralParams.VALUE_STEERING_RIGHT)
+					mPegasusVehicle.turnRight(rotationAngle);
+				else
+					mPegasusVehicle.turnLeft(rotationAngle);
+				break;
+			case CHANGE_DIRECTION:
+				char drivingDirection = (char)msg.get(GeneralParams.KEY_DRIVING_DIRECTION);
+				switch(drivingDirection){
+				case GeneralParams.VALUE_DRIVING_FORWARD:
+					mPegasusVehicle.driveForward();
+					break;
+				case GeneralParams.VALUE_DRIVING_BACKWARD:
+					mPegasusVehicle.driveBackward();
+					break;
 				}
-				mPegasusVehicle.drive(digitalSpeed,steeringDirection,rotationAngle);
 				break;
 			case SETTINGS:
 				break;
@@ -103,7 +122,7 @@ public class Controller implements OnMessagesListener, OnVehicleActions{
 
 	
 	@Override
-	public void drive(int digitalSpeed) {
+	public void changeSpeed(int digitalSpeed) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -111,29 +130,25 @@ public class Controller implements OnMessagesListener, OnVehicleActions{
 
 	@Override
 	public void turnRight(double rotationAngle) {
-		// TODO Auto-generated method stub
-		
+		mSerialPortHandler.changeSteerMotor(GeneralParams.VALUE_STEERING_RIGHT, rotationAngle);
 	}
 
 
 	@Override
 	public void turnLeft(double rotationAngle) {
-		// TODO Auto-generated method stub
-		
+		mSerialPortHandler.changeSteerMotor(GeneralParams.VALUE_STEERING_LEFT, rotationAngle);
 	}
 
 
 	@Override
 	public void driveForward() {
-		// TODO Auto-generated method stub
-		
+		mSerialPortHandler.changeDrivingDirection(GeneralParams.VALUE_DRIVING_FORWARD);
 	}
 
 
 	@Override
 	public void driveBackward() {
-		// TODO Auto-generated method stub
-		
+		mSerialPortHandler.changeDrivingDirection(GeneralParams.VALUE_DRIVING_BACKWARD);
 	}
 
 
@@ -142,5 +157,16 @@ public class Controller implements OnMessagesListener, OnVehicleActions{
 		// TODO Auto-generated method stub
 		
 	}
+
+
+	
+	@Override
+	public void onMessageReceivedFromSerialPort(String msg) {
+		
+		
+	}
+
+
+	
 
 }

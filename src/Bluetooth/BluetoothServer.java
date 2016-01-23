@@ -17,25 +17,14 @@ public class BluetoothServer extends Thread {
 
     private static final String TAG = "Bluetooth Server";
     public static  BluetoothServer mBluetoothServer;
-    private LocalDevice mLocalDevice;
     private final String uuid = "1101";
     private final String connectionString = "btspp://localhost:" + uuid + ";name=Pegasus";
-
+    private LocalDevice mLocalDevice;
     
     private boolean isOnline;
-    
-    private Vector<OnMessagesListener> listeners;
-    
+    private HashMap<String,OnMessagesListener> listeners;
     private HashMap<String,SocketData> clients;
-    /** Constructor */
-
-    private BluetoothServer() {
-        setName(TAG);
-        clients = new HashMap<>();
-        listeners = new Vector<>();
-    }
-    
-    
+   
     /**
      * Get bluetooth server instance. (Singleton pattern)
      * @return server instance
@@ -47,14 +36,30 @@ public class BluetoothServer extends Thread {
     	return mBluetoothServer;
     }
     
-    /**
-     * register new listener to incoming messages from client
-     * @param listner
-     */
-    public void registerMessagesListener(OnMessagesListener listner){
-    	listeners.add(listner);
+    /** Constructor */
+    private BluetoothServer() {
+        setName(TAG);
+        clients = new HashMap<>();
+        listeners = new HashMap<String, OnMessagesListener>();
     }
     
+	/**
+	 * Register Listener
+	 * @param name
+	 * @param listener
+	 */
+	public void registerMessagesListener(String name,OnMessagesListener listener){
+		listeners.put(name,listener);
+	}
+	
+	/**
+	 * Unregister Listener
+	 * @param name
+	 */
+	public void unRegisterMessagesListener(String name){
+		if(listeners.containsKey(name))
+			listeners.remove(name);
+	}
     
     /**
      * 
@@ -106,8 +111,7 @@ public class BluetoothServer extends Thread {
                     }
                 }).start();
             } catch (Exception e) {
-                System.out.println("Server exception: " + e.getMessage());
-                e.printStackTrace();
+                System.err.println(TAG + " " + e.getMessage());
                  return;
             }
         }
@@ -126,9 +130,6 @@ public class BluetoothServer extends Thread {
         System.out.println("client:" + client.getRemoteDevice() + "Address:" + client.getClientAddress());
         client.setConnected(true);
      try { 
-//        String helloMsg = "hello from Pegasus Server";
-//        client.getOutputStream().write(helloMsg.getBytes());
-      //  client.getOutputStream().flush();
         int available = 0;
         byte[] msg = null;
         StringBuilder receivedMsg = new StringBuilder();
@@ -154,12 +155,19 @@ public class BluetoothServer extends Thread {
     
     
     /**
+     * Shut Server Down
+     */
+    public void shutDownServer(){
+    	isOnline = false;
+    }
+    
+    /**
      * Fire the incoming message to Controller
      * @param msg
      */
     private void FireMessagesFromClient(String msg){
-    	for(OnMessagesListener listener : listeners)
-    		listener.onMessageReceivedFromClient(msg);
+    	for(String key : listeners.keySet())
+    		listeners.get(key).onMessageReceivedFromClient(msg);
     }
 
 }

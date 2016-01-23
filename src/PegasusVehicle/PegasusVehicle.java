@@ -35,23 +35,9 @@ public class PegasusVehicle extends AbstractVehicle{
 	}
 
 
-
 	@Override
-	public void drive(int digitalSpeed, char direction, double rotationAngle) {
-		drive(digitalSpeed);
-		if(direction != ' '){
-			if(direction == GeneralParams.KEY_STERRING_RIGHT)
-				turnRight(rotationAngle);
-			else
-				turnLeft(rotationAngle);
-		}
-		
-	}
-
-
-	@Override
-	public void drive(int digitalSpeed) {
-		mVehicleActionsListener.drive(digitalSpeed);
+	public void changeSpeed(int digitalSpeed) {
+		mVehicleActionsListener.changeSpeed(digitalSpeed);
 	}
 
 
