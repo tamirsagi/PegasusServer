@@ -5,11 +5,15 @@ import org.json.JSONObject;
 
 import serialPorts.SerialPortHandler;
 import Bluetooth.BluetoothServer;
-import Control.GeneralParams.ActionType;
-import Control.GeneralParams.MessageType;
+import Control.Interfaces.IServerListener;
+import Control.Interfaces.ISerialPortListener;
+import Control.Interfaces.IVehicleActionsListener;
+import Helper.GeneralParams;
+import Helper.GeneralParams.ActionType;
+import Helper.GeneralParams.MessageType;
 import PegasusVehicle.PegasusVehicle;
 
-public class Controller implements OnMessagesListener, OnVehicleActions{
+public class Controller implements IServerListener,ISerialPortListener, IVehicleActionsListener{
 	
 	public static final String TAG = " Pegasus Controller";
 	
@@ -62,11 +66,7 @@ public class Controller implements OnMessagesListener, OnVehicleActions{
 		
 	}
 
-	@Override
-	public void sendMessageToClient(String msg) {
-		// TODO Auto-generated method stub
-		
-	}
+	
 	
 	/**
 	 * function handles message type of Action
@@ -123,8 +123,7 @@ public class Controller implements OnMessagesListener, OnVehicleActions{
 	
 	@Override
 	public void changeSpeed(int digitalSpeed) {
-		// TODO Auto-generated method stub
-		
+		mSerialPortHandler.changeSpeed(digitalSpeed);
 	}
 
 
@@ -154,7 +153,7 @@ public class Controller implements OnMessagesListener, OnVehicleActions{
 
 	@Override
 	public void stop() {
-		// TODO Auto-generated method stub
+		
 		
 	}
 

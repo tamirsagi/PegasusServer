@@ -1,4 +1,4 @@
-package Control;
+package Control.Interfaces;
 
 public interface onStatusChanged {
 
@@ -13,11 +13,5 @@ public interface onStatusChanged {
 	 * @param status
 	 */
 	void onSerialStatusChanged(boolean Status);
-	
-	/**
-	 * Get Server Status when changed
-	 * @param status
-	 */
-	void onHardwareStatusChanged(boolean status);
 	
 }

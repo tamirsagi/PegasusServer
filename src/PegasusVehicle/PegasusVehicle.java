@@ -1,8 +1,8 @@
 package PegasusVehicle;
 
-import Control.GeneralParams;
-import Control.OnVehicleActions;
 import Control.Controller.SteeringDirection;
+import Control.Interfaces.IVehicleActionsListener;
+import Helper.GeneralParams.*;
 
 public class PegasusVehicle extends AbstractVehicle{
 	
@@ -10,7 +10,7 @@ public class PegasusVehicle extends AbstractVehicle{
 	private static PegasusVehicle mPegasusVehicle;
 	private static final String TAG = "Pegasus Vehicle";
 	
-	private OnVehicleActions mVehicleActionsListener;
+	private IVehicleActionsListener mVehicleActionsListener;
 	
 	private SteeringDirection mSteeringDirection;
 	
@@ -30,7 +30,7 @@ public class PegasusVehicle extends AbstractVehicle{
 		
 	}
 	
-	public void registerVehicleActionsListener(OnVehicleActions listener){
+	public void registerVehicleActionsListener(IVehicleActionsListener listener){
 		mVehicleActionsListener = listener;
 	}
 

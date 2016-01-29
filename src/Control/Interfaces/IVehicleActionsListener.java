@@ -1,6 +1,6 @@
-package Control;
+package Control.Interfaces;
 
-public interface OnVehicleActions {
+public interface IVehicleActionsListener {
 
 	/**
 	 * change vehicle's speed

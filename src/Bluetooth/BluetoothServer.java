@@ -10,8 +10,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Vector;
 
-import Control.GeneralParams;
-import Control.OnMessagesListener;
+import Control.Interfaces.IServerListener;
+import Helper.GeneralParams;
 
 public class BluetoothServer extends Thread {
 
@@ -22,7 +22,7 @@ public class BluetoothServer extends Thread {
     private LocalDevice mLocalDevice;
     
     private boolean isOnline;
-    private HashMap<String,OnMessagesListener> listeners;
+    private HashMap<String,IServerListener> listeners;
     private HashMap<String,SocketData> clients;
    
     /**
@@ -40,7 +40,7 @@ public class BluetoothServer extends Thread {
     private BluetoothServer() {
         setName(TAG);
         clients = new HashMap<>();
-        listeners = new HashMap<String, OnMessagesListener>();
+        listeners = new HashMap<String, IServerListener>();
     }
     
 	/**
@@ -48,7 +48,7 @@ public class BluetoothServer extends Thread {
 	 * @param name
 	 * @param listener
 	 */
-	public void registerMessagesListener(String name,OnMessagesListener listener){
+	public void registerMessagesListener(String name,IServerListener listener){
 		listeners.put(name,listener);
 	}
 	

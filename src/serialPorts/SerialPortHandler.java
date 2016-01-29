@@ -8,14 +8,15 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import Control.GeneralParams;
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.SerialPort;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 
-import Control.OnMessagesListener;
+import Control.Interfaces.ISerialPortListener;
+import Helper.GeneralParams;
+import Helper.GeneralParams.MessageType;
 
 /**
  * This Class Supports 2 way communication via USB port  
@@ -24,19 +25,18 @@ import Control.OnMessagesListener;
  */
 public class SerialPortHandler extends Thread implements SerialPortEventListener {
 	private static final String TAG = "SerialPortHandler";
-	private static final String PortName = "/dev/ttyACM0"; //the mounted ttyPort for Arduino
+	private static final String PortName = "/dev/ttyACM0"; 		//the mounted ttyPort for Arduino
 	private static final int PORT_BAUD = 115200;
 	private static SerialPortHandler mSerialPortHandler;
 	private boolean mIsBoundedToUsbPort;
 	private int mTimeout;
 	private SerialPort mSerialPort;
-	private int testCount;
 	
 	private InputStream mInputStream;
 	private OutputStream mOutputStream;
 	
-	private Queue<String> messagesToArduino;
-	private HashMap<String,OnMessagesListener> listeners;
+	private Queue<String> messagesToArduino;					//keeps messages in order to Hardware unit
+	private HashMap<String,ISerialPortListener> listeners;		//keeps listeners
 	
 	public static SerialPortHandler getInstance(){
 		if(mSerialPortHandler == null){
@@ -47,7 +47,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 	private SerialPortHandler(){
 		messagesToArduino = new LinkedList<>();
-		listeners = new HashMap<String,OnMessagesListener>();
+		listeners = new HashMap<String,ISerialPortListener>();
 	}
 	
 	/**
@@ -55,7 +55,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param name
 	 * @param listener
 	 */
-	public void registerMessagesListener(String name,OnMessagesListener listener){
+	public void registerMessagesListener(String name,ISerialPortListener listener){
 		listeners.put(name,listener);
 	}
 	
@@ -76,7 +76,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 			//add the port manually, because version of RXTX gaps
 			System.setProperty("gnu.io.rxtx.SerialPorts", PortName);
 //			CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(PortName);
-			CommPortIdentifier portIdentifier = getPort(PortName);
+			CommPortIdentifier portIdentifier = getPortIdentifier(PortName);
 			if(portIdentifier == null){
 				System.out.println("Could not find port " + PortName);
 				return;
@@ -184,6 +184,9 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		}
 	}
 	
+	/**
+	 * Method starts the thread
+	 */
 	public void startThread(){
 		start();
 		connect();
@@ -238,7 +241,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param portName
 	 * @return wanted port otherwise null
 	 */
-	private CommPortIdentifier getPort(String portName){
+	private CommPortIdentifier getPortIdentifier(String portName){
 		Enumeration<?> ports = CommPortIdentifier.getPortIdentifiers();
 		CommPortIdentifier port;
 		while(ports.hasMoreElements()){
@@ -264,8 +267,11 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * Change Back Motor speed
 	 * @param digitalSpeed
 	 */
-	public void changeBackMotor(int digitalSpeed){
-		String msgToArduino = GeneralParams.KEY_ACTION_TYPE + ":" + GeneralParams.ACTION_BACK_MOTOR +",DS:" + digitalSpeed + GeneralParams.END_MESSAGE;
+	public void changeSpeed(int digitalSpeed){
+		String msgToArduino = GeneralParams.KEY_MESSAGE_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.MessageType.ACTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
+							+ GeneralParams.KEY_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.ACTION_BACK_MOTOR + GeneralParams.MESSAGE_SAPERATOR
+							+ GeneralParams.KEY_DIGITAL_SPEED + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + digitalSpeed 
+							+ GeneralParams.END_MESSAGE;
 		messagesToArduino.add(msgToArduino);
 	}
 	
@@ -275,10 +281,11 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param angle - the rotation angle
 	 */
 	public void changeSteerMotor(char direction, double angle){
-		String msgToArduino = GeneralParams.KEY_ACTION_TYPE + ":" + GeneralParams.ACTION_STEER_MOTOR 
-				+ "," + GeneralParams.KEY_STEERING_DIRECTION + ":" + direction 
-				+ "," + GeneralParams.KEY_ROTATION_ANGLE + ":" + angle
-				+ GeneralParams.END_MESSAGE;
+		String msgToArduino = GeneralParams.KEY_MESSAGE_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.MessageType.ACTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
+							+ GeneralParams.KEY_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.ACTION_STEER_MOTOR + GeneralParams.MESSAGE_SAPERATOR 
+							+ GeneralParams.KEY_STEERING_DIRECTION + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + direction + GeneralParams.MESSAGE_SAPERATOR
+							+ GeneralParams.KEY_ROTATION_ANGLE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + angle
+							+ GeneralParams.END_MESSAGE;
 		messagesToArduino.add(msgToArduino);
 	}
 	
@@ -288,8 +295,10 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param direction 'F' - Forward, 'B' - Backward
 	 */
 	public void changeDrivingDirection(char direction){
-		String msgToArduino = GeneralParams.KEY_ACTION_TYPE + ":" + GeneralParams.ACTION_DRIVING_DIRECTION +
-				"," + GeneralParams.KEY_DRIVING_DIRECTION + ":" + direction + GeneralParams.END_MESSAGE;
+		String msgToArduino = GeneralParams.KEY_MESSAGE_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.MessageType.ACTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
+						+ GeneralParams.KEY_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.ACTION_DRIVING_DIRECTION + GeneralParams.MESSAGE_SAPERATOR
+						+ GeneralParams.KEY_DRIVING_DIRECTION + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + direction 
+						+ GeneralParams.END_MESSAGE;
 		messagesToArduino.add(msgToArduino);
 	}
 	
