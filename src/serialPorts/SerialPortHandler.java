@@ -259,9 +259,21 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	private void fireMessageFromSerialPort(String msg){
 		
 		for(String key : listeners.keySet())
-			listeners.get(key).onMessageReceivedFromSerialPort(msg);
+			listeners.get(key).onMessageReceivedFromHardwareUnit(msg);
 	}
 	
+	
+	/**
+	 * Change driving direction
+	 * @param direction 'F' - Forward, 'B' - Backward
+	 */
+	public void changeDrivingDirection(char direction){
+		String msgToArduino = GeneralParams.KEY_MESSAGE_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.MessageType.ACTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
+						+ GeneralParams.KEY_VEHICLE_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.Vehicle_Actions.CHANGE_DIRECTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
+						+ GeneralParams.KEY_DRIVING_DIRECTION + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + direction 
+						+ GeneralParams.END_MESSAGE;
+		messagesToArduino.add(msgToArduino);
+	}
 	
 	/**
 	 * Change Back Motor speed
@@ -269,7 +281,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 */
 	public void changeSpeed(int digitalSpeed){
 		String msgToArduino = GeneralParams.KEY_MESSAGE_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.MessageType.ACTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
-							+ GeneralParams.KEY_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.ACTION_BACK_MOTOR + GeneralParams.MESSAGE_SAPERATOR
+							+ GeneralParams.KEY_VEHICLE_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.Vehicle_Actions.CAHNGE_SPEED.getValue() + GeneralParams.MESSAGE_SAPERATOR
 							+ GeneralParams.KEY_DIGITAL_SPEED + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + digitalSpeed 
 							+ GeneralParams.END_MESSAGE;
 		messagesToArduino.add(msgToArduino);
@@ -282,7 +294,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 */
 	public void changeSteerMotor(char direction, double angle){
 		String msgToArduino = GeneralParams.KEY_MESSAGE_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.MessageType.ACTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
-							+ GeneralParams.KEY_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.ACTION_STEER_MOTOR + GeneralParams.MESSAGE_SAPERATOR 
+							+ GeneralParams.KEY_VEHICLE_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.Vehicle_Actions.STEERING.getValue() + GeneralParams.MESSAGE_SAPERATOR 
 							+ GeneralParams.KEY_STEERING_DIRECTION + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + direction + GeneralParams.MESSAGE_SAPERATOR
 							+ GeneralParams.KEY_ROTATION_ANGLE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + angle
 							+ GeneralParams.END_MESSAGE;
@@ -290,17 +302,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	}
 	
 	
-	/**
-	 * Change driving direction
-	 * @param direction 'F' - Forward, 'B' - Backward
-	 */
-	public void changeDrivingDirection(char direction){
-		String msgToArduino = GeneralParams.KEY_MESSAGE_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.MessageType.ACTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
-						+ GeneralParams.KEY_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.ACTION_DRIVING_DIRECTION + GeneralParams.MESSAGE_SAPERATOR
-						+ GeneralParams.KEY_DRIVING_DIRECTION + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + direction 
-						+ GeneralParams.END_MESSAGE;
-		messagesToArduino.add(msgToArduino);
-	}
+	
 	
 	
 }

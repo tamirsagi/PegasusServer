@@ -7,7 +7,7 @@ public interface ISerialPortListener {
 	 * Handle incoming messages from Serial Port
 	 * @param msg
 	 */
-	void onMessageReceivedFromSerialPort(String msg);
+	void onMessageReceivedFromHardwareUnit(String msg);
 		
 		
 }

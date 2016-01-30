@@ -8,8 +8,11 @@ import Bluetooth.BluetoothServer;
 import Control.Interfaces.IServerListener;
 import Control.Interfaces.ISerialPortListener;
 import Control.Interfaces.IVehicleActionsListener;
+import Helper.GeneralMethods;
 import Helper.GeneralParams;
-import Helper.GeneralParams.ActionType;
+import Helper.GeneralParams.Action_Type;
+import Helper.GeneralParams.Info_Type;
+import Helper.GeneralParams.Vehicle_Actions;
 import Helper.GeneralParams.MessageType;
 import PegasusVehicle.PegasusVehicle;
 
@@ -46,6 +49,8 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 		mPegasusVehicle.setName(mBluetoothServer.getLocalDevice().getFriendlyName());
 	}
 
+	
+///////////////////////////////////////SERVER EVENTS & Relevant Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	@Override
 	public void onMessageReceivedFromClient(String msg) {
 		System.out.println("TAG: " + msg);
@@ -54,11 +59,10 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 			String messageType = (String)receivedMsg.get(GeneralParams.KEY_MESSAGE_TYPE);
 			switch(MessageType.valueOf(messageType)){
 			case ACTION:
-				handleAction(receivedMsg);
+				handleActionFromClient(receivedMsg);
 				break;
 			default:
 				break;
-			
 			}
 		} catch (JSONException e) {
 			System.err.println("OnMessageReceived Error: " + e.getMessage());
@@ -66,16 +70,36 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 		
 	}
 
+	/**
+	 * Method handle action type message from client
+	 * @param receivedMsg - JSON object
+	 */
+	private void handleActionFromClient(JSONObject receivedMsg){
+		try{
+			String actionType = (String)receivedMsg.get(MessageType.ACTION.toString());
+			switch(Action_Type.valueOf(actionType)){
+			case SETTINGS:
+				break;
+			case VEHICLE_ACTION:
+				handleVehicleAction(receivedMsg);
+				break;
+			default:
+				break;
+			}
+		} catch (JSONException e) {
+			System.err.println(TAG + " handleActionFromClient " + e.getMessage());
+		}
+	}
 	
 	
 	/**
 	 * function handles message type of Action
 	 * @param msg
 	 */
-	private void handleAction(JSONObject msg){
+	private void handleVehicleAction(JSONObject msg){
 		try {
-			String actionType = (String)msg.get(MessageType.ACTION.toString());
-			switch(ActionType.valueOf(actionType)){
+			String vehicleActionType = (String)msg.get(Action_Type.VEHICLE_ACTION.toString());
+			switch(Vehicle_Actions.valueOf(vehicleActionType)){
 			case CAHNGE_SPEED:
 				int digitalSpeed = (int)msg.get(GeneralParams.KEY_DIGITAL_SPEED);
 				mPegasusVehicle.changeSpeed(digitalSpeed);
@@ -101,8 +125,6 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 					break;
 				}
 				break;
-			case SETTINGS:
-				break;
 			default:
 				break;
 			
@@ -116,9 +138,7 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 		
 	}
 
-	/*
-	 *      Vehicle Events
-	 *  */
+////////////////////////////////////////VEHICLE EVENTS & Relevant Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 	
 	@Override
@@ -157,12 +177,69 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 		
 	}
 
-
+//////////////////////////////////////// SERIAL PORT EVENTS & Relevant Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	
 	@Override
-	public void onMessageReceivedFromSerialPort(String msg) {
+	public void onMessageReceivedFromHardwareUnit(String msg) {
+		try{
+		JSONObject received = GeneralMethods.convertSerialPortMessageToMap(msg);
+		int messageType = received.getInt(GeneralParams.KEY_MESSAGE_TYPE);
+		switch(MessageType.getMessageType(messageType)){
+		case ACTION:
+			break;
+		case ERROR:
+			break;
+		case INFO:
+			handleInfoMessageFromHardwareUnit(received);
+			break;
+		case WARNING:
+			break;
+		default:
+			break;
+		
+		}
 		
 		
+		}catch(Exception e){
+			System.out.println( TAG + " onMessageReceivedFromHardwareUnit " + e.getMessage());
+		}
+		
+	}
+	
+	/**
+	 * Method handles info message from Serial Port
+	 * @param receivedMsg
+	 */
+	private void handleInfoMessageFromHardwareUnit(JSONObject receivedMsg){
+		
+		try {
+			String info_type = (String)receivedMsg.get(GeneralParams.KEY_INFO_TYPE);
+			switch(Info_Type.valueOf(info_type)){
+			case STATUS:
+				int status_code = receivedMsg.getInt(GeneralParams.KEY_STATUS);
+				updateHardwareStatus(status_code);
+				break;
+			default:
+				break;
+			
+			}
+			
+		} catch (JSONException e) {
+			System.out.println(TAG + " handleInfoMessageFromSerialPort " + e.getMessage());
+		}
+		
+	}
+	
+	/**
+	 * Update hardware status by status code
+	 * @param statusCode
+	 */
+	private void updateHardwareStatus(int statusCode){
+		switch(statusCode){
+		case GeneralParams.INFO_HARDWARE_STATUS_READY:
+			mIsHardwareReady = true;
+			break;
+		}
 	}
 
 
