@@ -3,6 +3,7 @@ package serialPorts;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -24,16 +25,17 @@ import Helper.GeneralParams.MessageType;
  *
  */
 public class SerialPortHandler extends Thread implements SerialPortEventListener {
-	private static final String TAG = "SerialPortHandler";
+	private static final String TAG = "Serial Port Handler";
 	private static final String PortName = "/dev/ttyACM0"; 		//the mounted ttyPort for Arduino
 	private static final int PORT_BAUD = 115200;
+	
 	private static SerialPortHandler mSerialPortHandler;
 	private boolean mIsBoundedToUsbPort;
 	private int mTimeout;
 	private SerialPort mSerialPort;
 	
 	private InputStream mInputStream;
-	private OutputStream mOutputStream;
+	private PrintWriter mOutput;
 	
 	private Queue<String> messagesToArduino;					//keeps messages in order to Hardware unit
 	private HashMap<String,ISerialPortListener> listeners;		//keeps listeners
@@ -46,6 +48,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	}
 	
 	private SerialPortHandler(){
+		setName(TAG);
 		messagesToArduino = new LinkedList<>();
 		listeners = new HashMap<String,ISerialPortListener>();
 	}
@@ -78,11 +81,11 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 //			CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(PortName);
 			CommPortIdentifier portIdentifier = getPortIdentifier(PortName);
 			if(portIdentifier == null){
-				System.out.println("Could not find port " + PortName);
+				fireSerialPortErrors("connect() : Could not find port " + PortName);
 				return;
 			}
 			else if(portIdentifier.isCurrentlyOwned()){
-				System.out.println("Error : Port: " + PortName +  " is currently in use");
+				fireSerialPortErrors(" connect() : Error : Port: " + PortName +  " is currently in use");
 				return;
 			}
 			
@@ -95,31 +98,26 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 							SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
 					
 					mInputStream = mSerialPort.getInputStream();
-					mOutputStream = mSerialPort.getOutputStream();
+					mOutput = new PrintWriter(mSerialPort.getOutputStream(),true);
 
 					mSerialPort.addEventListener(this);
 					mSerialPort.notifyOnDataAvailable(true);
 					mSerialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE); //disable flow control
+					fireStatusFromSerialPort(true);
 				}
 			}
 		}catch(Exception eSerialPort){
-			System.out.println(TAG + " " + eSerialPort.getMessage());
+			fireSerialPortErrors("connect() Exception " + eSerialPort.getMessage());
 		}
 	}
 	
 	
 	@Override
 	public void run() {
-		System.out.println("Service started");
+		System.out.println(TAG + " Service started");
 		while(mIsBoundedToUsbPort){
-			if(messagesToArduino.size() > 0){
+			if(messagesToArduino.size() > 0)
 				writeMessage(messagesToArduino.poll());
-				try {
-					sleep(10);
-				} catch (InterruptedException e) {
-					System.out.println(TAG + " " + e.getMessage());
-				}
-			}
 		}
 		disconnect();
 	}
@@ -134,15 +132,17 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 					while((available = mInputStream.available()) > 0){
 						received = new byte[available];
 						mInputStream.read(received);
-						if(received[available - 1] == GeneralParams.END_MESSAGE){
+						message.append(new String(received));
+						int endMessage = message.indexOf(GeneralParams.END_MESSAGE);
+						if(endMessage > 0 ){
+							if(message.length() > endMessage)
+								message.delete(endMessage, message.length());
 							System.out.println(TAG + " : " + message.toString());
-							fireMessageFromSerialPort(message.toString());
+						//	fireMessageFromHardwareUnit(message.toString());
 						}
-						else
-							message.append(new String(received));
 					}
 				}catch (Exception e) {
-					System.out.println(TAG + " Serial Event Listener " + e.getMessage());
+					fireSerialPortErrors("Serial Event Listener Exception:" + e.getMessage());
 				}
 				break;
 		}
@@ -154,12 +154,13 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param msg - msg to send
 	 */
 	public synchronized void writeMessage(String msg){
-		if(mOutputStream != null)
+		System.out.println("before sending to arduino: " + msg);
+		if(mOutput != null)
 			try {
-				mOutputStream.write(msg.getBytes());
-				mOutputStream.flush();
-			} catch (IOException e) {
-				System.out.println(TAG + " " + e.getMessage());
+				mOutput.println(msg);
+				sleep(100);
+			} catch (Exception e) {
+				fireSerialPortErrors("writeMessage(String msg) Exception " + e.getMessage());
 			}
 	}
 
@@ -172,15 +173,15 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		try {
 			if(mInputStream != null)
 				mInputStream.close();
-			if(mOutputStream != null)
-				mOutputStream.close();
+			if(mOutput != null)
+				mOutput.close();
 			if(mSerialPort != null){
 				mIsBoundedToUsbPort = false;
 				mSerialPort.removeEventListener();
 				mSerialPort.close();	//close serial port
 			}
 		} catch (IOException e) {
-			System.out.println(TAG + " " + e.getMessage());
+			fireSerialPortErrors("disconnect() Exception " + e.getMessage());
 		}
 	}
 	
@@ -188,8 +189,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * Method starts the thread
 	 */
 	public void startThread(){
-		start();
 		connect();
+		start();
 	}
 	
 	/**
@@ -256,10 +257,31 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * fire incoming message from Serial Port
 	 * @param msg
 	 */
-	private void fireMessageFromSerialPort(String msg){
+	private void fireMessageFromHardwareUnit(String msg){
 		
 		for(String key : listeners.keySet())
 			listeners.get(key).onMessageReceivedFromHardwareUnit(msg);
+	}
+	
+	
+	/**
+	 * Method fire status to listeners
+	 * @param status
+	 */
+	private void fireStatusFromSerialPort(boolean status){
+		for(String key : listeners.keySet())
+			listeners.get(key).onSerialStatusChanged(status);
+		
+	}
+	
+	/**
+	 * Method fire errors to listeners
+	 * @param status
+	 */
+	private void fireSerialPortErrors(String msg){
+		for(String key : listeners.keySet())
+			listeners.get(key).onSerialPortError(msg);
+		
 	}
 	
 	
@@ -281,7 +303,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 */
 	public void changeSpeed(int digitalSpeed){
 		String msgToArduino = GeneralParams.KEY_MESSAGE_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.MessageType.ACTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
-							+ GeneralParams.KEY_VEHICLE_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.Vehicle_Actions.CAHNGE_SPEED.getValue() + GeneralParams.MESSAGE_SAPERATOR
+							+ GeneralParams.KEY_VEHICLE_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.Vehicle_Actions.CHANGE_SPEED.getValue() + GeneralParams.MESSAGE_SAPERATOR
 							+ GeneralParams.KEY_DIGITAL_SPEED + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + digitalSpeed 
 							+ GeneralParams.END_MESSAGE;
 		messagesToArduino.add(msgToArduino);

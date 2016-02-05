@@ -127,7 +127,7 @@ public class BluetoothServer extends Thread {
     private void handleClient(StreamConnection clientSocket,RemoteDevice remoteDevice) throws InterruptedException{
         SocketData client = new SocketData(clientSocket,remoteDevice);
         clients.put(client.getClientAddress(),client);
-        System.out.println("client:" + client.getRemoteDevice() + "Address:" + client.getClientAddress());
+        System.out.println("client:" + client.getDeviceName() + "Address:" + client.getClientAddress());
         client.setConnected(true);
      try { 
         int available = 0;
@@ -137,8 +137,9 @@ public class BluetoothServer extends Thread {
 	            while((available = client.getInputStream().available() ) > 0){
 	            	msg = new byte[available];
 	            	client.getInputStream().read(msg);
-	            	if(msg[available - 1] == GeneralParams.END_MESSAGE){
-	            		System.out.println(TAG + " : " + receivedMsg.toString());
+	            	String last = "" + (char)msg[available - 1];
+	            	if(last.equals(GeneralParams.END_MESSAGE)){
+	            		//System.out.println(TAG + " : " + receivedMsg.toString());
 	            		FireMessagesFromClient(receivedMsg.toString());
 	            		receivedMsg = new StringBuilder();
 	            		

@@ -43,11 +43,15 @@ public class GeneralParams {
 		VEHICLE_ACTION, SETTINGS;
 	}
 	
+	public enum SteeringDirection{
+		FORDWARD, BACKWARD
+	}
+	
 	/**
 	 * Actions a vehicle is capable to do
 	 */
 	public enum Vehicle_Actions{
-		CHANGE_DIRECTION(0),CAHNGE_SPEED(1),STEERING(2);
+		CHANGE_DIRECTION(0),CHANGE_SPEED(1),STEERING(2);
 		
 		private int value;
 		 
@@ -82,9 +86,10 @@ public class GeneralParams {
 	 */
 	
 	public static final String KEY_MESSAGE_TYPE 			= 		"MT";
-	public static final char END_MESSAGE 					= 		'#';				//End Of Message
-	public static final char MESSAGE_SAPERATOR				=		',';				//message sparator
-	public static final char MESSAGE_KEY_VALUE_SAPERATOR 	= 		':';
+	public static final String START_MESSAGE 				= 		"$";				//End Of Message
+	public static final String END_MESSAGE 					= 		"#";				//End Of Message
+	public static final String MESSAGE_SAPERATOR			=		",";				//message sparator
+	public static final String MESSAGE_KEY_VALUE_SAPERATOR 	= 		":";
 	
 	
 	

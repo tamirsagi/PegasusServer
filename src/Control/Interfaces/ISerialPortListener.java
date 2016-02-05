@@ -9,5 +9,19 @@ public interface ISerialPortListener {
 	 */
 	void onMessageReceivedFromHardwareUnit(String msg);
 		
+	
+	
+	/**
+	 * Get Serial Port Status when changed
+	 * @param status
+	 */
+	void onSerialStatusChanged(boolean status);
+	
+	
+	/**
+	 * Get Serial Port Erros
+	 * @param msg
+	 */
+	void onSerialPortError(String msg);
 		
 }

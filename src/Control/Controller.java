@@ -28,12 +28,11 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 	private boolean mIsSerialPortReady;
 	private boolean mIsHardwareReady;
 	
-	public enum SteeringDirection{
-		FORDWARD, BACKWARD
-	}
+	
 	
 	
 	public Controller(){
+		
 		
 		mBluetoothServer = BluetoothServer.getInstance();
 		mBluetoothServer.registerMessagesListener(TAG,this);
@@ -46,14 +45,23 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 		
 		mPegasusVehicle = PegasusVehicle.getInstance();
 		mPegasusVehicle.registerVehicleActionsListener(this);
-		mPegasusVehicle.setName(mBluetoothServer.getLocalDevice().getFriendlyName());
+		
 	}
+	
+	
 
 	
 ///////////////////////////////////////SERVER EVENTS & Relevant Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	@Override
+	public void onServerStatusChanged(boolean isReady) {
+		mIsServerReady = isReady;	
+		mPegasusVehicle.setName(mBluetoothServer.getLocalDevice().getFriendlyName());
+	}
+	
 	@Override
 	public void onMessageReceivedFromClient(String msg) {
-		System.out.println("TAG: " + msg);
+		//System.out.println(TAG + " " + msg);
 		try {
 			JSONObject receivedMsg = new JSONObject(msg);
 			String messageType = (String)receivedMsg.get(GeneralParams.KEY_MESSAGE_TYPE);
@@ -100,15 +108,15 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 		try {
 			String vehicleActionType = (String)msg.get(Action_Type.VEHICLE_ACTION.toString());
 			switch(Vehicle_Actions.valueOf(vehicleActionType)){
-			case CAHNGE_SPEED:
+			case CHANGE_SPEED:
 				int digitalSpeed = (int)msg.get(GeneralParams.KEY_DIGITAL_SPEED);
 				mPegasusVehicle.changeSpeed(digitalSpeed);
 				break;
 			case STEERING:
 				char steeringDirection;
 				double rotationAngle = 0;
-				steeringDirection = (char)msg.get(GeneralParams.KEY_STEERING_DIRECTION);
-				rotationAngle = (int)msg.get(GeneralParams.KEY_ROTATION_ANGLE);			//we send the angle as an int but might be double
+				steeringDirection = (char)msg.getInt(GeneralParams.KEY_STEERING_DIRECTION);
+				rotationAngle = msg.getInt(GeneralParams.KEY_ROTATION_ANGLE);			//we send the angle as an int but might be double
 				if(steeringDirection == GeneralParams.VALUE_STEERING_RIGHT)
 					mPegasusVehicle.turnRight(rotationAngle);
 				else
@@ -127,14 +135,15 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 				break;
 			default:
 				break;
-			
-			
-			
 			}
 		} catch (JSONException e) {
 			System.err.println("handleAction Error : " + e.getMessage());
 		}
-		
+	}
+	
+	@Override
+	public void onServerError(String msg){
+		System.out.println("ERROR From SERVER:" + msg);
 		
 	}
 
@@ -183,20 +192,21 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 	public void onMessageReceivedFromHardwareUnit(String msg) {
 		try{
 		JSONObject received = GeneralMethods.convertSerialPortMessageToMap(msg);
-		int messageType = received.getInt(GeneralParams.KEY_MESSAGE_TYPE);
-		switch(MessageType.getMessageType(messageType)){
-		case ACTION:
-			break;
-		case ERROR:
-			break;
-		case INFO:
-			handleInfoMessageFromHardwareUnit(received);
-			break;
-		case WARNING:
-			break;
-		default:
-			break;
-		
+		if(received.length() > 0){
+			int messageType = received.getInt(GeneralParams.KEY_MESSAGE_TYPE);
+			switch(MessageType.getMessageType(messageType)){
+			case ACTION:
+				break;
+			case ERROR:
+				break;
+			case INFO:
+				handleInfoMessageFromHardwareUnit(received);
+				break;
+			case WARNING:
+				break;
+			default:
+				break;
+			}
 		}
 		
 		
@@ -241,6 +251,24 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 			break;
 		}
 	}
+
+
+	@Override
+	public void onSerialStatusChanged(boolean status) {
+		mIsSerialPortReady = status;
+	}
+
+
+	@Override
+	public void onSerialPortError(String msg) {
+		System.out.println("msg from Serial Port: " + msg);
+		
+	}
+
+
+
+
+	
 
 
 	

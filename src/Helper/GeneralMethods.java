@@ -17,8 +17,8 @@ public class GeneralMethods {
 		JSONObject parsedMsg = new JSONObject();
 		String[] key_value_pairs = msg.split("" + GeneralParams.MESSAGE_SAPERATOR);
 		for(int i = 0; i < key_value_pairs.length; i ++){
-			String[] key_value = msg.split("" + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR);
-			if(key_value.length > 2){ 		//size of 2 means key and value are present
+			String[] key_value = key_value_pairs[i].split("" + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR);
+			if(key_value.length == 2){ 		//size of 2 means key and value are present
 				parsedMsg.put(key_value[0],key_value[1]);
 			}
 		}
