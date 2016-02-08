@@ -1,4 +1,4 @@
-package Control.Interfaces;
+package control.Interfaces;
 
 public interface ISerialPortListener {
 

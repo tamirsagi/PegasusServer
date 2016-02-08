@@ -1,4 +1,4 @@
-package Bluetooth;
+package communication.bluetooth;
 
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.LocalDevice;
@@ -6,12 +6,14 @@ import javax.bluetooth.RemoteDevice;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.io.StreamConnectionNotifier;
+
+import communication.messages.MessageVaribles;
+
+import control.Interfaces.IServerListener;
+
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Vector;
 
-import Control.Interfaces.IServerListener;
-import Helper.GeneralParams;
 
 public class BluetoothServer extends Thread {
 
@@ -135,14 +137,13 @@ public class BluetoothServer extends Thread {
         StringBuilder receivedMsg = new StringBuilder();
         while(client.isConnected()){
 	            while((available = client.getInputStream().available() ) > 0){
-	            	msg = new byte[available];
+	            	msg = new byte[available + 1];
 	            	client.getInputStream().read(msg);
 	            	String last = "" + (char)msg[available - 1];
-	            	if(last.equals(GeneralParams.END_MESSAGE)){
-	            		//System.out.println(TAG + " : " + receivedMsg.toString());
+	            	if(last.equals(MessageVaribles.END_MESSAGE)){
+	            		System.out.println(TAG + " : " + receivedMsg.toString());
 	            		FireMessagesFromClient(receivedMsg.toString());
 	            		receivedMsg = new StringBuilder();
-	            		
 	            	}
 	            	else
 	            		receivedMsg.append(new String(msg));

@@ -1,7 +1,7 @@
-package PegasusVehicle;
+package pegasusVehicle;
 
-import Control.Interfaces.IVehicleActionsListener;
-import Helper.GeneralParams.*;
+import pegasusVehicle.params.VehicleParams;
+import control.Interfaces.IVehicleActionsListener;
 
 public class PegasusVehicle extends AbstractVehicle{
 	
@@ -16,7 +16,7 @@ public class PegasusVehicle extends AbstractVehicle{
 	
 	private IVehicleActionsListener mVehicleActionsListener;
 	
-	private SteeringDirection mSteeringDirection;
+	private VehicleParams.DrivingDirection mSteeringDirection;
 	private int mDigitalSpeed;
 	private double mSteeringAngle;
 	
@@ -32,7 +32,7 @@ public class PegasusVehicle extends AbstractVehicle{
 	}
 	
 	private PegasusVehicle(){
-		mSteeringDirection = SteeringDirection.FORDWARD;  // by default
+		mSteeringDirection = VehicleParams.DrivingDirection.FORWARD;  // by default
 		
 	}
 	
@@ -65,7 +65,7 @@ public class PegasusVehicle extends AbstractVehicle{
 
 	@Override
 	public void driveForward() {
-		mSteeringDirection = SteeringDirection.FORDWARD;
+		mSteeringDirection = VehicleParams.DrivingDirection.FORWARD;
 		mVehicleActionsListener.driveForward();
 		
 	}
@@ -73,7 +73,7 @@ public class PegasusVehicle extends AbstractVehicle{
 
 	@Override
 	public void driveBackward() {
-		mSteeringDirection = SteeringDirection.BACKWARD;
+		mSteeringDirection = VehicleParams.DrivingDirection.BACKWARD;
 		mVehicleActionsListener.driveBackward();
 		
 	}

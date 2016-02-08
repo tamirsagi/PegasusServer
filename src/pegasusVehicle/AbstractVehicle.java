@@ -1,4 +1,4 @@
-package PegasusVehicle;
+package pegasusVehicle;
 
 public abstract class AbstractVehicle {
 	

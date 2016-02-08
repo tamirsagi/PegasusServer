@@ -1,9 +1,10 @@
-package Helper;
+package communication.messages;
 
 import java.util.HashMap;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
 
 public class GeneralMethods {
 	
@@ -15,9 +16,9 @@ public class GeneralMethods {
 	 */
 	public static JSONObject convertSerialPortMessageToMap(String msg) throws JSONException{
 		JSONObject parsedMsg = new JSONObject();
-		String[] key_value_pairs = msg.split("" + GeneralParams.MESSAGE_SAPERATOR);
+		String[] key_value_pairs = msg.split("" + MessageVaribles.MESSAGE_SAPERATOR);
 		for(int i = 0; i < key_value_pairs.length; i ++){
-			String[] key_value = key_value_pairs[i].split("" + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR);
+			String[] key_value = key_value_pairs[i].split("" + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR);
 			if(key_value.length == 2){ 		//size of 2 means key and value are present
 				parsedMsg.put(key_value[0],key_value[1]);
 			}

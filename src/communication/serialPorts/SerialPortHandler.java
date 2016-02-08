@@ -1,4 +1,4 @@
-package serialPorts;
+package communication.serialPorts;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,15 +9,18 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import communication.messages.MessageVaribles;
+
+import pegasusVehicle.params.VehicleParams;
+
+import control.Interfaces.ISerialPortListener;
+
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.SerialPort;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 
-import Control.Interfaces.ISerialPortListener;
-import Helper.GeneralParams;
-import Helper.GeneralParams.MessageType;
 
 /**
  * This Class Supports 2 way communication via USB port  
@@ -82,10 +85,12 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 			CommPortIdentifier portIdentifier = getPortIdentifier(PortName);
 			if(portIdentifier == null){
 				fireSerialPortErrors("connect() : Could not find port " + PortName);
+				mIsBoundedToUsbPort = false;
 				return;
 			}
 			else if(portIdentifier.isCurrentlyOwned()){
 				fireSerialPortErrors(" connect() : Error : Port: " + PortName +  " is currently in use");
+				mIsBoundedToUsbPort = false;
 				return;
 			}
 			
@@ -123,24 +128,46 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	}
 	
 	public synchronized void serialEvent(SerialPortEvent event) {
-		switch(event.getEventType()){
-			case SerialPortEvent.DATA_AVAILABLE:
-				StringBuilder message = new StringBuilder();
-				int available = 0;
-				byte[] received = null;
-				try{
-					while((available = mInputStream.available()) > 0){
-						received = new byte[available];
-						mInputStream.read(received);
-						message.append(new String(received));
-						int endMessage = message.indexOf(GeneralParams.END_MESSAGE);
-						if(endMessage > 0 ){
-							if(message.length() > endMessage)
+		switch (event.getEventType()) {
+		case SerialPortEvent.DATA_AVAILABLE:
+			StringBuilder message = new StringBuilder();
+			int available = 0;
+			byte[] received = null;
+			boolean messageStarted = false;
+			try {
+				
+				while ((available = mInputStream.available()) > 0) {
+					received = new byte[available + 1];
+					mInputStream.read(received);
+					message.append(new String(received));
+					// find Start Message symbol
+					if (!messageStarted) {
+						int startMessagePos = message
+								.indexOf(MessageVaribles.START_MESSAGE);
+						if (startMessagePos >= 0) {
+							if (startMessagePos == 0)
+								message.deleteCharAt(0);
+							else
+								message.delete(0, startMessagePos);
+							messageStarted = true;
+						} else
+							message = new StringBuilder();
+					}
+					if (message.length() > 0) {
+						int endMessage = message
+								.indexOf(MessageVaribles.END_MESSAGE);
+						if (endMessage > 0) {
+							if (message.length() > endMessage)
 								message.delete(endMessage, message.length());
-							System.out.println(TAG + " : " + message.toString());
-						//	fireMessageFromHardwareUnit(message.toString());
+							System.out
+									.println(TAG + " : " + message.toString());
+							// fireMessageFromHardwareUnit(message.toString());
+							message = new StringBuilder();
+							messageStarted = false;
 						}
 					}
+					sleep(100);
+				}
 				}catch (Exception e) {
 					fireSerialPortErrors("Serial Event Listener Exception:" + e.getMessage());
 				}
@@ -252,6 +279,14 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		}
 		return null;
 	}
+	
+	/**
+	 * Method returns whether Serial port is bonded
+	 * @return
+	 */
+	public boolean isBoundToSerialPort(){
+		return mIsBoundedToUsbPort;
+	}
 
 	/**
 	 * fire incoming message from Serial Port
@@ -289,11 +324,12 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * Change driving direction
 	 * @param direction 'F' - Forward, 'B' - Backward
 	 */
-	public void changeDrivingDirection(char direction){
-		String msgToArduino = GeneralParams.KEY_MESSAGE_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.MessageType.ACTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
-						+ GeneralParams.KEY_VEHICLE_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.Vehicle_Actions.CHANGE_DIRECTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
-						+ GeneralParams.KEY_DRIVING_DIRECTION + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + direction 
-						+ GeneralParams.END_MESSAGE;
+	public void changeDrivingDirection(String direction){
+		String msgToArduino = MessageVaribles.START_MESSAGE 
+						+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MessageType.ACTION.getValue() + MessageVaribles.MESSAGE_SAPERATOR
+						+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VehicleActions.CHANGE_DIRECTION.getValue() + MessageVaribles.MESSAGE_SAPERATOR
+						+ MessageVaribles.KEY_DRIVING_DIRECTION + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + direction 
+						+ MessageVaribles.END_MESSAGE;
 		messagesToArduino.add(msgToArduino);
 	}
 	
@@ -302,10 +338,11 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param digitalSpeed
 	 */
 	public void changeSpeed(int digitalSpeed){
-		String msgToArduino = GeneralParams.KEY_MESSAGE_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.MessageType.ACTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
-							+ GeneralParams.KEY_VEHICLE_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.Vehicle_Actions.CHANGE_SPEED.getValue() + GeneralParams.MESSAGE_SAPERATOR
-							+ GeneralParams.KEY_DIGITAL_SPEED + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + digitalSpeed 
-							+ GeneralParams.END_MESSAGE;
+		String msgToArduino = MessageVaribles.START_MESSAGE  
+							+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MessageType.ACTION.getValue() + MessageVaribles.MESSAGE_SAPERATOR
+							+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VehicleActions.CHANGE_SPEED.getValue() + MessageVaribles.MESSAGE_SAPERATOR
+							+ MessageVaribles.KEY_DIGITAL_SPEED + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + digitalSpeed 
+							+ MessageVaribles.END_MESSAGE;
 		messagesToArduino.add(msgToArduino);
 	}
 	
@@ -314,12 +351,13 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param direction 'R' - Right or 'L' - Left
 	 * @param angle - the rotation angle
 	 */
-	public void changeSteerMotor(char direction, double angle){
-		String msgToArduino = GeneralParams.KEY_MESSAGE_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.MessageType.ACTION.getValue() + GeneralParams.MESSAGE_SAPERATOR
-							+ GeneralParams.KEY_VEHICLE_ACTION_TYPE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + GeneralParams.Vehicle_Actions.STEERING.getValue() + GeneralParams.MESSAGE_SAPERATOR 
-							+ GeneralParams.KEY_STEERING_DIRECTION + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + direction + GeneralParams.MESSAGE_SAPERATOR
-							+ GeneralParams.KEY_ROTATION_ANGLE + GeneralParams.MESSAGE_KEY_VALUE_SAPERATOR + angle
-							+ GeneralParams.END_MESSAGE;
+	public void changeSteerMotor(String direction, double angle){
+		String msgToArduino = MessageVaribles.START_MESSAGE 
+							+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MessageType.ACTION.getValue() + MessageVaribles.MESSAGE_SAPERATOR
+							+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VehicleActions.STEERING.getValue() + MessageVaribles.MESSAGE_SAPERATOR 
+							+ MessageVaribles.KEY_STEERING_DIRECTION + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + direction + MessageVaribles.MESSAGE_SAPERATOR
+							+ MessageVaribles.KEY_ROTATION_ANGLE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + angle
+							+ MessageVaribles.END_MESSAGE;
 		messagesToArduino.add(msgToArduino);
 	}
 	
