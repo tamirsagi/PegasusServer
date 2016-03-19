@@ -181,7 +181,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param msg - msg to send
 	 */
 	public synchronized void writeMessage(String msg){
-		System.out.println("before sending to arduino: " + msg);
+	  System.out.println("before sending to arduino: " + msg);
 		if(mOutput != null)
 			try {
 				mOutput.println(msg);

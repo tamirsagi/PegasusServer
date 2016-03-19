@@ -66,7 +66,7 @@ public class MessageVaribles {
 	public static final String   VALUE_STEERING_LEFT 		= 		"L";
 	public static final String   VALUE_STEERING_NONE 		= 		"N";
 	public static final String   VALUE_DRIVING_FORWARD		= 		"F";				//Forward
-	public static final String   VALUE_DRIVING_BACKWARD		= 		"B";				//Backward
+	public static final String   VALUE_DRIVING_REVERSE		= 		"B";				//Backward
 	
 	
 	/*

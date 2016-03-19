@@ -11,7 +11,6 @@ public class PegasusVehicle extends AbstractVehicle{
 	private static final int MIN_STEER_ANGLE = 50;
 	private static final int MAX_STEER_ANGLE = 130;
 	
-	private static PegasusVehicle mPegasusVehicle;
 	private static final String TAG = "Pegasus Vehicle";
 	
 	private IVehicleActionsListener mVehicleActionsListener;
@@ -24,11 +23,11 @@ public class PegasusVehicle extends AbstractVehicle{
 	 * Get class instance
 	 * @return
 	 */
-	public static PegasusVehicle getInstance(){
-		if(mPegasusVehicle == null)
-			mPegasusVehicle = new PegasusVehicle();
+	public static AbstractVehicle getInstance(){
+		if(mInstance == null)
+			mInstance = new PegasusVehicle();
 		
-		return mPegasusVehicle;
+		return mInstance;
 	}
 	
 	private PegasusVehicle(){
@@ -36,6 +35,7 @@ public class PegasusVehicle extends AbstractVehicle{
 		
 	}
 	
+	@Override
 	public void registerVehicleActionsListener(IVehicleActionsListener listener){
 		mVehicleActionsListener = listener;
 	}
@@ -73,7 +73,7 @@ public class PegasusVehicle extends AbstractVehicle{
 
 	@Override
 	public void driveBackward() {
-		mSteeringDirection = VehicleParams.DrivingDirection.BACKWARD;
+		mSteeringDirection = VehicleParams.DrivingDirection.REVERSE;
 		mVehicleActionsListener.driveBackward();
 		
 	}

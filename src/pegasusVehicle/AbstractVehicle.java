@@ -1,27 +1,27 @@
 package pegasusVehicle;
 
+import control.Interfaces.IVehicleActionsListener;
+
 public abstract class AbstractVehicle {
+	protected static AbstractVehicle mInstance;
 	
-	private String mName;
-	private int mID;
-	private double mVehicleLength;
-	private double mVehicleWidth;
-	private double mRadious;
-	private int mNumberOfSensors;
+	protected String mName;
+	protected int mID;
+	protected double mVehicleLength;
+	protected double mVehicleWidth;
+	protected double mRadious;
+	protected int mNumberOfSensors;
 	
 	
-	public AbstractVehicle(){}
 	
-	public AbstractVehicle(double mVehicleLength,double mVehicleWidth ){
-		setVehicleWidth(mVehicleWidth);
-		setmVehicleLength(mVehicleLength);
+	public static AbstractVehicle getInstance() throws Exception{
+		if(mInstance == null){
+			throw new Exception("Vehcile Instance has not initialized yet");
+		}
+		
+		return mInstance;
 	}
 	
-	public AbstractVehicle(int id, String name, double mVehicleLength,double mVehicleWidth){
-		this(mVehicleLength,mVehicleWidth);
-		setID(id);
-		setName(name);
-	}
 	
 
 	public double getmVehicleLength() {
@@ -63,6 +63,11 @@ public abstract class AbstractVehicle {
 	public void setRadious(double radious){
 		mRadious = radious;
 	}
+	
+	/**
+	 * Register Listener
+	 */
+	public abstract void registerVehicleActionsListener(IVehicleActionsListener listener);
 	
 	/**
 	 * Handle the vehicle speed

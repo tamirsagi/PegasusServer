@@ -8,6 +8,7 @@ import communication.messages.GeneralMethods;
 import communication.messages.MessageVaribles;
 import communication.serialPorts.SerialPortHandler;
 
+import pegasusVehicle.AbstractVehicle;
 import pegasusVehicle.PegasusVehicle;
 import pegasusVehicle.params.VehicleParams;
 
@@ -18,11 +19,11 @@ import control.Interfaces.IVehicleActionsListener;
 
 public class Controller implements IServerListener,ISerialPortListener, IVehicleActionsListener{
 	
-	public static final String TAG = " Pegasus Controller";
+	public static final String TAG = Controller.class.getSimpleName();
 	
 	private BluetoothServer mBluetoothServer;
 	private SerialPortHandler mSerialPortHandler;
-	private PegasusVehicle mPegasusVehicle;
+	private AbstractVehicle mPegasusVehicle;
 	
 	private boolean mIsServerReady;
 	private boolean mIsSerialPortReady;
@@ -33,18 +34,38 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 	
 	public Controller(){
 		
+		startup();
 		
 		mBluetoothServer = BluetoothServer.getInstance();
 		mBluetoothServer.registerMessagesListener(TAG,this);
 		mBluetoothServer.start();
 		
-//		mSerialPortHandler = SerialPortHandler.getInstance();
-//		mSerialPortHandler.registerMessagesListener(TAG,this);
-//		mSerialPortHandler.startThread();
+		mSerialPortHandler = SerialPortHandler.getInstance();
+		mSerialPortHandler.registerMessagesListener(TAG,this);
+		mSerialPortHandler.startThread();
 		
 		
 		mPegasusVehicle = PegasusVehicle.getInstance();
 		mPegasusVehicle.registerVehicleActionsListener(this);
+		
+	}
+	
+	
+	
+	
+	private void startup(){
+		String[] linkArduinoToPort = new String[] {"sh", "-c","sudo ln -s /dev/ttyACM0 /dev/ttyS0"}; 
+		String[] enableBluetooth = new String[] {"sh", "-c","sudo service bluetooth start"};
+		
+		try{
+			Process linkArduinoToPortProccess = Runtime.getRuntime().exec(linkArduinoToPort);
+			linkArduinoToPortProccess.waitFor();
+			Process enableBluetoothProccess = Runtime.getRuntime().exec(enableBluetooth);
+			enableBluetoothProccess.waitFor();
+		}
+		catch(Exception e){
+			System.out.println(TAG +" " + e.getMessage());
+		}
 		
 	}
 	
@@ -128,7 +149,7 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 				case FORWARD:
 					mPegasusVehicle.driveForward();
 					break;
-				case BACKWARD:
+				case REVERSE:
 					mPegasusVehicle.driveBackward();
 					break;
 				}
@@ -181,7 +202,7 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 	@Override
 	public void driveBackward() {
 		if(mSerialPortHandler.isBoundToSerialPort())
-			mSerialPortHandler.changeDrivingDirection(MessageVaribles.VALUE_DRIVING_BACKWARD);
+			mSerialPortHandler.changeDrivingDirection(MessageVaribles.VALUE_DRIVING_REVERSE);
 	}
 
 
