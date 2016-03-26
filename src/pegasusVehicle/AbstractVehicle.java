@@ -3,6 +3,7 @@ package pegasusVehicle;
 import control.Interfaces.IVehicleActionsListener;
 
 public abstract class AbstractVehicle {
+	private static final String TAG = "Abstract Vehicle";
 	protected static AbstractVehicle mInstance;
 	
 	protected String mName;
@@ -10,7 +11,8 @@ public abstract class AbstractVehicle {
 	protected double mVehicleLength;
 	protected double mVehicleWidth;
 	protected double mRadious;
-	protected int mNumberOfSensors;
+	protected int mNumberOfUltraSonicSensors;
+	protected Sensor[] mUltraSonicSensors;
 	
 	
 	
@@ -65,6 +67,12 @@ public abstract class AbstractVehicle {
 	}
 	
 	/**
+	 * Set Ultra Sonic sensors
+	 */
+	public abstract void setUltraSonicSensors();
+	
+	
+	/**
 	 * Register Listener
 	 */
 	public abstract void registerVehicleActionsListener(IVehicleActionsListener listener);
@@ -109,7 +117,7 @@ public abstract class AbstractVehicle {
 		return "Vehicle [mName=" + mName + ", mID=" + mID + ", mVehicleLength="
 				+ mVehicleLength + ", mVehicleWidth=" + mVehicleWidth
 				+ ", mRadious=" + mRadious + ", mNumberOfSensors="
-				+ mNumberOfSensors + "]";
+				+ mNumberOfUltraSonicSensors + "]";
 	}
 	
 	

@@ -21,9 +21,6 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 	
 	public static final String TAG = Controller.class.getSimpleName();
 	
-	private BluetoothServer mBluetoothServer;
-	private SerialPortHandler mSerialPortHandler;
-	private AbstractVehicle mPegasusVehicle;
 	
 	private boolean mIsServerReady;
 	private boolean mIsSerialPortReady;
@@ -36,17 +33,13 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 		
 		startup();
 		
-		mBluetoothServer = BluetoothServer.getInstance();
-		mBluetoothServer.registerMessagesListener(TAG,this);
-		mBluetoothServer.start();
+		BluetoothServer.getInstance().registerMessagesListener(TAG,this);
+		BluetoothServer.getInstance().start();
 		
-		mSerialPortHandler = SerialPortHandler.getInstance();
-		mSerialPortHandler.registerMessagesListener(TAG,this);
-		mSerialPortHandler.startThread();
+		SerialPortHandler.getInstance().registerMessagesListener(TAG,this);
+		SerialPortHandler.getInstance().startThread();
 		
-		
-		mPegasusVehicle = PegasusVehicle.getInstance();
-		mPegasusVehicle.registerVehicleActionsListener(this);
+		PegasusVehicle.getInstance().registerVehicleActionsListener(this);
 		
 	}
 	
@@ -77,7 +70,7 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 	@Override
 	public void onServerStatusChanged(boolean isReady) {
 		mIsServerReady = isReady;	
-		mPegasusVehicle.setName(mBluetoothServer.getLocalDevice().getFriendlyName());
+		PegasusVehicle.getInstance().setName(BluetoothServer.getInstance().getLocalDevice().getFriendlyName());
 	}
 	
 	@Override
@@ -131,7 +124,7 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 			switch(VehicleParams.VehicleActions.valueOf(vehicleActionType)){
 			case CHANGE_SPEED:
 				int digitalSpeed = (int)msg.get(MessageVaribles.KEY_DIGITAL_SPEED);
-				mPegasusVehicle.changeSpeed(digitalSpeed);
+				PegasusVehicle.getInstance().changeSpeed(digitalSpeed);
 				break;
 			case STEERING:
 				String steeringDirection;
@@ -139,18 +132,18 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 				steeringDirection = msg.getString(MessageVaribles.KEY_STEERING_DIRECTION);
 				rotationAngle = msg.getInt(MessageVaribles.KEY_ROTATION_ANGLE);			//we send the angle as an int but might be double
 				if(steeringDirection.equals(MessageVaribles.VALUE_STEERING_RIGHT))
-					mPegasusVehicle.turnRight(rotationAngle);
+					PegasusVehicle.getInstance().turnRight(rotationAngle);
 				else if(steeringDirection.equals(MessageVaribles.VALUE_STEERING_LEFT))
-					mPegasusVehicle.turnLeft(rotationAngle);
+					PegasusVehicle.getInstance().turnLeft(rotationAngle);
 				break;
 			case CHANGE_DIRECTION:
 				String drivingDirection = (String)msg.get(MessageVaribles.KEY_DRIVING_DIRECTION);
 				switch(VehicleParams.DrivingDirection.valueOf(drivingDirection)){
 				case FORWARD:
-					mPegasusVehicle.driveForward();
+					PegasusVehicle.getInstance().driveForward();
 					break;
 				case REVERSE:
-					mPegasusVehicle.driveBackward();
+					PegasusVehicle.getInstance().driveBackward();
 					break;
 				}
 				break;
@@ -173,36 +166,36 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 	
 	@Override
 	public void changeSpeed(int digitalSpeed) {
-		if(mSerialPortHandler.isBoundToSerialPort())
-			mSerialPortHandler.changeSpeed(digitalSpeed);
+		if(SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeSpeed(digitalSpeed);
 	}
 
 
 	@Override
 	public void turnRight(double rotationAngle) {
-		if(mSerialPortHandler.isBoundToSerialPort())
-			mSerialPortHandler.changeSteerMotor(MessageVaribles.VALUE_STEERING_RIGHT, rotationAngle);
+		if(SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeSteerMotor(MessageVaribles.VALUE_STEERING_RIGHT, rotationAngle);
 	}
 
 
 	@Override
 	public void turnLeft(double rotationAngle) {
-		if(mSerialPortHandler.isBoundToSerialPort())
-			mSerialPortHandler.changeSteerMotor(MessageVaribles.VALUE_STEERING_LEFT, rotationAngle);
+		if(SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeSteerMotor(MessageVaribles.VALUE_STEERING_LEFT, rotationAngle);
 	}
 
 
 	@Override
 	public void driveForward() {
-		if(mSerialPortHandler.isBoundToSerialPort())
-			mSerialPortHandler.changeDrivingDirection(MessageVaribles.VALUE_DRIVING_FORWARD);
+		if(SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeDrivingDirection(MessageVaribles.VALUE_DRIVING_FORWARD);
 	}
 
 
 	@Override
 	public void driveBackward() {
-		if(mSerialPortHandler.isBoundToSerialPort())
-			mSerialPortHandler.changeDrivingDirection(MessageVaribles.VALUE_DRIVING_REVERSE);
+		if(SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeDrivingDirection(MessageVaribles.VALUE_DRIVING_REVERSE);
 	}
 
 
