@@ -58,16 +58,14 @@ public class PegasusVehicle extends AbstractVehicle {
 
 	@Override
 	public void turnRight(double rotationAngle) {
-		mSteeringAngle = STRAIGHT_STEER_ANGLE - rotationAngle; // from 0-40 to
-																// 50 - 90
+		mSteeringAngle = STRAIGHT_STEER_ANGLE - rotationAngle; // from 0-40 to 50 - 90
 		mVehicleActionsListener.turnRight(rotationAngle);
 
 	}
 
 	@Override
 	public void turnLeft(double rotationAngle) {
-		mSteeringAngle = STRAIGHT_STEER_ANGLE + rotationAngle; // from 0-40 to
-																// 90 - 130
+		mSteeringAngle = STRAIGHT_STEER_ANGLE + rotationAngle; // from 0-40 to 90 - 130
 		mVehicleActionsListener.turnLeft(rotationAngle);
 	}
 

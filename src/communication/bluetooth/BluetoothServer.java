@@ -22,7 +22,7 @@ public class BluetoothServer extends Thread {
     private final String uuid = "1101";
     private final String connectionString = "btspp://localhost:" + uuid + ";name=Pegasus";
     private LocalDevice mLocalDevice;
-    
+    private StreamConnectionNotifier mNotifier;
     private boolean isOnline;
     private HashMap<String,IServerListener> listeners;
     private HashMap<String,SocketData> clients;
@@ -43,6 +43,7 @@ public class BluetoothServer extends Thread {
         setName(TAG);
         clients = new HashMap<>();
         listeners = new HashMap<String, IServerListener>();
+        prepareBluetooth();
     }
     
 	/**
@@ -71,6 +72,31 @@ public class BluetoothServer extends Thread {
     	return mLocalDevice;
     }
     
+    /**
+     * Prepare bluetooth prior running the server
+     */
+    private void prepareBluetooth(){
+        try {
+        	mLocalDevice = LocalDevice.getLocalDevice();
+            // generally discoverable, discoveryTimeout should be disabled - but isn't.
+        	mLocalDevice.setDiscoverable(DiscoveryAgent.GIAC);
+        	mNotifier = (StreamConnectionNotifier) Connector.open(connectionString);
+        	isOnline = true;
+        } catch (Exception e) {
+            System.out.println("Server exception: " + e.getMessage());
+            e.printStackTrace();
+            return;
+        }
+    	
+    }
+    
+    public boolean isServerOnline(){
+    	return isOnline;
+    }
+    
+    public void startThread(){
+    	start();
+    }
 
     @Override
     public void run() {
@@ -80,27 +106,11 @@ public class BluetoothServer extends Thread {
     /** Waiting for connection from devices */
 
     private void waitForConnection() {
-
-        // retrieve the local Bluetooth device object
-        isOnline = true;
-        StreamConnectionNotifier notifier = null;
-        // setup the server to listen for connection
-        try {
-        	mLocalDevice = LocalDevice.getLocalDevice();
-            // generally discoverable, discoveryTimeout should be disabled - but isn't.
-        	mLocalDevice.setDiscoverable(DiscoveryAgent.GIAC);
-            notifier = (StreamConnectionNotifier) Connector.open(connectionString);
-        } catch (Exception e) {
-            System.out.println("Server exception: " + e.getMessage());
-            e.printStackTrace();
-            return;
-        }
-        // waiting for connection
         while (isOnline) {
             try {
                 System.out.println("waiting for connection...");
                 //wait for connection
-                final StreamConnection connection = notifier.acceptAndOpen();
+                final StreamConnection connection = mNotifier.acceptAndOpen();
                 final RemoteDevice remoteDevice = RemoteDevice.getRemoteDevice(connection);
                 new Thread(new Runnable() {
                     @Override
@@ -114,6 +124,7 @@ public class BluetoothServer extends Thread {
                 }).start();
             } catch (Exception e) {
                 System.err.println(TAG + " " + e.getMessage());
+                isOnline = false;
                  return;
             }
         }
@@ -170,6 +181,15 @@ public class BluetoothServer extends Thread {
     private void FireMessagesFromClient(String msg){
     	for(String key : listeners.keySet())
     		listeners.get(key).onMessageReceivedFromClient(msg);
+    }
+    
+    /**
+     * update listeners when server is running
+     */
+    public void updateServerReady(){
+    	for(String key : listeners.keySet()){
+    		listeners.get(key).onServerReady();
+    	}
     }
 
 }

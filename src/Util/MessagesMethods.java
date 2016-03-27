@@ -1,12 +1,14 @@
-package communication.messages;
+package Util;
 
 import java.util.HashMap;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import communication.messages.MessageVaribles;
 
-public class GeneralMethods {
+
+public class MessagesMethods {
 	
 	/**
 	 * Method receives message from Serial Port and convert it into hashmap

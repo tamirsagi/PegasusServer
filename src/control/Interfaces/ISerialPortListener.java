@@ -2,6 +2,15 @@ package control.Interfaces;
 
 public interface ISerialPortListener {
 
+	/**
+	 * notified when serial port is ready
+	 */
+	void onSerialPortReady();
+	
+	/**
+	 * notified when Hardware unit is ready
+	 */
+	void onHardwareReady();
 	
 	/**
 	 * Handle incoming messages from Serial Port

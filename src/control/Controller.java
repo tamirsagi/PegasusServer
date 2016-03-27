@@ -3,83 +3,94 @@ package control;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import Util.MessagesMethods;
+
 import communication.bluetooth.BluetoothServer;
-import communication.messages.GeneralMethods;
 import communication.messages.MessageVaribles;
 import communication.serialPorts.SerialPortHandler;
 
-import pegasusVehicle.AbstractVehicle;
 import pegasusVehicle.PegasusVehicle;
 import pegasusVehicle.params.VehicleParams;
 
+import control.Constants.ApplicationStates;
 import control.Interfaces.ISerialPortListener;
 import control.Interfaces.IServerListener;
 import control.Interfaces.IVehicleActionsListener;
 
+public class Controller implements IServerListener, ISerialPortListener,
+		IVehicleActionsListener {
 
-public class Controller implements IServerListener,ISerialPortListener, IVehicleActionsListener{
-	
 	public static final String TAG = Controller.class.getSimpleName();
-	
-	
+
 	private boolean mIsServerReady;
 	private boolean mIsSerialPortReady;
 	private boolean mIsHardwareReady;
-	
-	
-	
-	
-	public Controller(){
-		
-		startup();
-		
-		BluetoothServer.getInstance().registerMessagesListener(TAG,this);
-		BluetoothServer.getInstance().start();
-		
-		SerialPortHandler.getInstance().registerMessagesListener(TAG,this);
-		SerialPortHandler.getInstance().startThread();
-		
-		PegasusVehicle.getInstance().registerVehicleActionsListener(this);
-		
-	}
-	
-	
-	
-	
-	private void startup(){
-		String[] linkArduinoToPort = new String[] {"sh", "-c","sudo ln -s /dev/ttyACM0 /dev/ttyS0"}; 
-		String[] enableBluetooth = new String[] {"sh", "-c","sudo service bluetooth start"};
-		
-		try{
-			Process linkArduinoToPortProccess = Runtime.getRuntime().exec(linkArduinoToPort);
-			linkArduinoToPortProccess.waitFor();
-			Process enableBluetoothProccess = Runtime.getRuntime().exec(enableBluetooth);
-			enableBluetoothProccess.waitFor();
-		}
-		catch(Exception e){
-			System.out.println(TAG +" " + e.getMessage());
-		}
-		
-	}
-	
-	
 
-	
-///////////////////////////////////////SERVER EVENTS & Relevant Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-	
+	private int mApplicationState = ApplicationStates.BOOTING;
+
+	public Controller() {PegasusVehicle.getInstance().registerVehicleActionsListener(this);}
+
+	/**
+	 * initialize system when boot is completed
+	 */
+	public void bootCompleted() {
+		System.out.println("System booted up");
+		setState(ApplicationStates.INITIALIZE_SERIAL_PORT);
+	}
+
+	/**
+	 * change application states
+	 * 
+	 * @param state
+	 */
+	public void setState(int state) {
+		System.out.println("State was "
+				+ ApplicationStates.getStateName(mApplicationState)
+				+ " andd changed to:" + ApplicationStates.getStateName(state));
+		mApplicationState = state;
+		switch (state) {
+		case ApplicationStates.INITIALIZE_SERIAL_PORT:
+			SerialPortHandler.getInstance().registerMessagesListener(this);
+			break;
+		case ApplicationStates.WAITING_FOR_HARDWARE:
+			SerialPortHandler.getInstance().startThread();
+			break;
+		case ApplicationStates.HARDWARE_READY:
+				BluetoothServer.getInstance().registerMessagesListener(TAG,this);
+				BluetoothServer.getInstance().startThread();
+				mApplicationState = ApplicationStates.WAITING_FOR_SERVER;
+			break;
+		case ApplicationStates.READY:
+			SerialPortHandler.getInstance().updateSystemReady();
+		}
+
+	}
+
+	// /////////////////////////////////////SERVER EVENTS & Relevant Methods
+	// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+	@Override
+	public void onServerReady() {
+		mIsServerReady = true;
+		setState(ApplicationStates.SERVER_READY);
+	}
+
 	@Override
 	public void onServerStatusChanged(boolean isReady) {
-		mIsServerReady = isReady;	
-		PegasusVehicle.getInstance().setName(BluetoothServer.getInstance().getLocalDevice().getFriendlyName());
+
+		PegasusVehicle.getInstance().setName(
+				BluetoothServer.getInstance().getLocalDevice()
+						.getFriendlyName());
 	}
-	
+
 	@Override
 	public void onMessageReceivedFromClient(String msg) {
-//		System.out.println(TAG + " " + msg);
+		// System.out.println(TAG + " " + msg);
 		try {
 			JSONObject receivedMsg = new JSONObject(msg);
-			String messageType = (String)receivedMsg.get(MessageVaribles.KEY_MESSAGE_TYPE);
-			switch(MessageVaribles.MessageType.valueOf(messageType)){
+			String messageType = (String) receivedMsg
+					.get(MessageVaribles.KEY_MESSAGE_TYPE);
+			switch (MessageVaribles.MessageType.valueOf(messageType)) {
 			case ACTION:
 				handleActionFromClient(receivedMsg);
 				break;
@@ -89,17 +100,20 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 		} catch (JSONException e) {
 			System.err.println("OnMessageReceived Error: " + e.getMessage());
 		}
-		
+
 	}
 
 	/**
 	 * Method handle action type message from client
-	 * @param receivedMsg - JSON object
+	 * 
+	 * @param receivedMsg
+	 *            - JSON object
 	 */
-	private void handleActionFromClient(JSONObject receivedMsg){
-		try{
-			String actionType = (String)receivedMsg.get(MessageVaribles.MessageType.ACTION.toString());
-			switch(MessageVaribles.Action_Type.valueOf(actionType)){
+	private void handleActionFromClient(JSONObject receivedMsg) {
+		try {
+			String actionType = (String) receivedMsg
+					.get(MessageVaribles.MessageType.ACTION.toString());
+			switch (MessageVaribles.Action_Type.valueOf(actionType)) {
 			case SETTINGS:
 				break;
 			case VEHICLE_ACTION:
@@ -109,36 +123,54 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 				break;
 			}
 		} catch (JSONException e) {
-			System.err.println(TAG + " handleActionFromClient " + e.getMessage());
+			System.err.println(TAG + " handleActionFromClient "
+					+ e.getMessage());
 		}
 	}
-	
-	
+
 	/**
 	 * function handles message type of Action
+	 * 
 	 * @param msg
 	 */
-	private void handleVehicleAction(JSONObject msg){
+	private void handleVehicleAction(JSONObject msg) {
 		try {
-			String vehicleActionType = (String)msg.get(MessageVaribles.Action_Type.VEHICLE_ACTION.toString());
-			switch(VehicleParams.VehicleActions.valueOf(vehicleActionType)){
+			String vehicleActionType = (String) msg
+					.get(MessageVaribles.Action_Type.VEHICLE_ACTION.toString());
+			switch (VehicleParams.VehicleActions.valueOf(vehicleActionType)) {
 			case CHANGE_SPEED:
-				int digitalSpeed = (int)msg.get(MessageVaribles.KEY_DIGITAL_SPEED);
+				int digitalSpeed = (int) msg
+						.get(MessageVaribles.KEY_DIGITAL_SPEED);
 				PegasusVehicle.getInstance().changeSpeed(digitalSpeed);
 				break;
 			case STEERING:
 				String steeringDirection;
 				double rotationAngle = 0;
-				steeringDirection = msg.getString(MessageVaribles.KEY_STEERING_DIRECTION);
-				rotationAngle = msg.getInt(MessageVaribles.KEY_ROTATION_ANGLE);			//we send the angle as an int but might be double
-				if(steeringDirection.equals(MessageVaribles.VALUE_STEERING_RIGHT))
+				steeringDirection = msg
+						.getString(MessageVaribles.KEY_STEERING_DIRECTION);
+				rotationAngle = msg.getInt(MessageVaribles.KEY_ROTATION_ANGLE); // we
+																				// send
+																				// the
+																				// angle
+																				// as
+																				// an
+																				// int
+																				// but
+																				// might
+																				// be
+																				// double
+				if (steeringDirection
+						.equals(MessageVaribles.VALUE_STEERING_RIGHT))
 					PegasusVehicle.getInstance().turnRight(rotationAngle);
-				else if(steeringDirection.equals(MessageVaribles.VALUE_STEERING_LEFT))
+				else if (steeringDirection
+						.equals(MessageVaribles.VALUE_STEERING_LEFT))
 					PegasusVehicle.getInstance().turnLeft(rotationAngle);
 				break;
 			case CHANGE_DIRECTION:
-				String drivingDirection = (String)msg.get(MessageVaribles.KEY_DRIVING_DIRECTION);
-				switch(VehicleParams.DrivingDirection.valueOf(drivingDirection)){
+				String drivingDirection = (String) msg
+						.get(MessageVaribles.KEY_DRIVING_DIRECTION);
+				switch (VehicleParams.DrivingDirection
+						.valueOf(drivingDirection)) {
 				case FORWARD:
 					PegasusVehicle.getInstance().driveForward();
 					break;
@@ -154,146 +186,162 @@ public class Controller implements IServerListener,ISerialPortListener, IVehicle
 			System.err.println("handleAction Error : " + e.getMessage());
 		}
 	}
-	
+
 	@Override
-	public void onServerError(String msg){
+	public void onServerError(String msg) {
 		System.out.println("ERROR From SERVER:" + msg);
-		
+
 	}
 
-////////////////////////////////////////VEHICLE EVENTS & Relevant Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	// //////////////////////////////////////VEHICLE EVENTS & Relevant Methods
+	// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
-	
 	@Override
 	public void changeSpeed(int digitalSpeed) {
-		if(SerialPortHandler.getInstance().isBoundToSerialPort())
+		if (SerialPortHandler.getInstance().isBoundToSerialPort())
 			SerialPortHandler.getInstance().changeSpeed(digitalSpeed);
 	}
 
-
 	@Override
 	public void turnRight(double rotationAngle) {
-		if(SerialPortHandler.getInstance().isBoundToSerialPort())
-			SerialPortHandler.getInstance().changeSteerMotor(MessageVaribles.VALUE_STEERING_RIGHT, rotationAngle);
+		if (SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeSteerMotor(
+					MessageVaribles.VALUE_STEERING_RIGHT, rotationAngle);
 	}
-
 
 	@Override
 	public void turnLeft(double rotationAngle) {
-		if(SerialPortHandler.getInstance().isBoundToSerialPort())
-			SerialPortHandler.getInstance().changeSteerMotor(MessageVaribles.VALUE_STEERING_LEFT, rotationAngle);
+		if (SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeSteerMotor(
+					MessageVaribles.VALUE_STEERING_LEFT, rotationAngle);
 	}
-
 
 	@Override
 	public void driveForward() {
-		if(SerialPortHandler.getInstance().isBoundToSerialPort())
-			SerialPortHandler.getInstance().changeDrivingDirection(MessageVaribles.VALUE_DRIVING_FORWARD);
+		if (SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeDrivingDirection(
+					MessageVaribles.VALUE_DRIVING_FORWARD);
 	}
-
 
 	@Override
 	public void driveBackward() {
-		if(SerialPortHandler.getInstance().isBoundToSerialPort())
-			SerialPortHandler.getInstance().changeDrivingDirection(MessageVaribles.VALUE_DRIVING_REVERSE);
+		if (SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeDrivingDirection(
+					MessageVaribles.VALUE_DRIVING_REVERSE);
 	}
-
 
 	@Override
 	public void stop() {
-		
-		
+
 	}
 
-//////////////////////////////////////// SERIAL PORT EVENTS & Relevant Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-	
+	// ////////////////////////////////////// SERIAL PORT EVENTS & Relevant
+	// Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+	@Override
+	public void onSerialPortReady() {
+		System.out.println(TAG + " serial port is ready changed state to :"
+				+ ApplicationStates.WAITING_FOR_HARDWARE);
+		setState(ApplicationStates.WAITING_FOR_HARDWARE);
+
+	}
+
+	@Override
+	public void onHardwareReady() {
+		System.out.println(TAG + " HArdware  is ready current state:" + mApplicationState);
+		if (!mIsServerReady && ! BluetoothServer.getInstance().isServerOnline()) {
+			mIsHardwareReady = true;
+			setState(ApplicationStates.WAITING_FOR_SERVER);
+
+		}else{
+			setState(ApplicationStates.READY);
+		}
+
+	}
+
 	@Override
 	public void onMessageReceivedFromHardwareUnit(String msg) {
-		try{
-		JSONObject received = GeneralMethods.convertSerialPortMessageToMap(msg);
-		if(received.length() > 0){
-			int messageType = received.getInt(MessageVaribles.KEY_MESSAGE_TYPE);
-			switch(MessageVaribles.MessageType.getMessageType(messageType)){
-			case ACTION:
-				break;
-			case ERROR:
-				break;
-			case INFO:
-				handleInfoMessageFromHardwareUnit(received);
-				break;
-			case WARNING:
-				break;
-			default:
-				break;
+		try {
+			JSONObject received = MessagesMethods
+					.convertSerialPortMessageToMap(msg);
+			if (received.length() > 0) {
+				int messageType = received
+						.getInt(MessageVaribles.KEY_MESSAGE_TYPE);
+				switch (MessageVaribles.MessageType.getMessageType(messageType)) {
+				case ACTION:
+					break;
+				case ERROR:
+					break;
+				case INFO:
+					handleInfoMessageFromHardwareUnit(received);
+					break;
+				case WARNING:
+					break;
+				default:
+					break;
+				}
 			}
+
+		} catch (Exception e) {
+			System.out.println(TAG + " onMessageReceivedFromHardwareUnit "
+					+ e.getMessage());
 		}
-		
-		
-		}catch(Exception e){
-			System.out.println( TAG + " onMessageReceivedFromHardwareUnit " + e.getMessage());
-		}
-		
+
 	}
-	
+
 	/**
 	 * Method handles info message from Serial Port
+	 * 
 	 * @param receivedMsg
 	 */
-	private void handleInfoMessageFromHardwareUnit(JSONObject receivedMsg){
-		
+	private void handleInfoMessageFromHardwareUnit(JSONObject receivedMsg) {
+
 		try {
-			String info_type = (String)receivedMsg.get(MessageVaribles.KEY_INFO_TYPE);
-			switch(MessageVaribles.InfoType.valueOf(info_type)){
+			String info_type = (String) receivedMsg
+					.get(MessageVaribles.KEY_INFO_TYPE);
+			switch (MessageVaribles.InfoType.valueOf(info_type)) {
 			case STATUS:
-				int status_code = receivedMsg.getInt(MessageVaribles.KEY_STATUS);
+				int status_code = receivedMsg
+						.getInt(MessageVaribles.KEY_STATUS);
 				updateHardwareStatus(status_code);
 				break;
 			default:
 				break;
-			
+
 			}
-			
+
 		} catch (JSONException e) {
-			System.out.println(TAG + " handleInfoMessageFromSerialPort " + e.getMessage());
+			System.out.println(TAG + " handleInfoMessageFromSerialPort "
+					+ e.getMessage());
 		}
-		
+
 	}
-	
+
 	/**
 	 * Update hardware status by status code
+	 * 
 	 * @param statusCode
 	 */
-	private void updateHardwareStatus(int statusCode){
-		switch(MessageVaribles.StatusCode.get(statusCode)){
+	private void updateHardwareStatus(int statusCode) {
+		switch (MessageVaribles.StatusCode.get(statusCode)) {
 		case INFO_HARDWARE_STATUS_READY:
 			mIsHardwareReady = true;
-			break;
-		case INFO_SERVER_STATUS_READY:
+			setState(ApplicationStates.HARDWARE_READY);
 			break;
 		default:
 			break;
 		}
 	}
 
-
 	@Override
 	public void onSerialStatusChanged(boolean status) {
 		mIsSerialPortReady = status;
 	}
 
-
 	@Override
 	public void onSerialPortError(String msg) {
 		System.out.println("msg from Serial Port: " + msg);
-		
+
 	}
-
-
-
-
-	
-
-
-	
 
 }

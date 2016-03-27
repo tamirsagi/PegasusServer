@@ -40,8 +40,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	private InputStream mInputStream;
 	private PrintWriter mOutput;
 	
-	private Queue<String> messagesToArduino;					//keeps messages in order to Hardware unit
-	private HashMap<String,ISerialPortListener> listeners;		//keeps listeners
+	private Queue<String> mMessagesToArduino;					//keeps messages in order to Hardware unit
+	private ISerialPortListener mListener;		//keeps listeners
 	
 	public static SerialPortHandler getInstance(){
 		if(mSerialPortHandler == null){
@@ -52,8 +52,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 	private SerialPortHandler(){
 		setName(TAG);
-		messagesToArduino = new LinkedList<>();
-		listeners = new HashMap<String,ISerialPortListener>();
+		mMessagesToArduino = new LinkedList<>();
+		connect();
 	}
 	
 	/**
@@ -61,17 +61,16 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param name
 	 * @param listener
 	 */
-	public void registerMessagesListener(String name,ISerialPortListener listener){
-		listeners.put(name,listener);
+	public void registerMessagesListener(ISerialPortListener listener){
+		mListener = listener;
 	}
 	
 	/**
 	 * Unregister Listener
 	 * @param name
 	 */
-	public void unRegisterMessagesListener(String name){
-		if(listeners.containsKey(name))
-			listeners.remove(name);
+	public void unRegisterMessagesListener(){
+		mListener = null;
 	}
 	
 	/**
@@ -121,8 +120,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	public void run() {
 		System.out.println(TAG + " Service started");
 		while(mIsBoundedToUsbPort){
-			if(messagesToArduino.size() > 0)
-				writeMessage(messagesToArduino.poll());
+			if(mMessagesToArduino.size() > 0)
+				writeMessage(mMessagesToArduino.poll());
 		}
 		disconnect();
 	}
@@ -161,7 +160,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 								message.delete(endMessage, message.length());
 							System.out
 									.println(TAG + " : " + message.toString());
-							// fireMessageFromHardwareUnit(message.toString());
+							fireMessageFromHardwareUnit(message.toString());
 							message = new StringBuilder();
 							messageStarted = false;
 						}
@@ -196,7 +195,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * close connection to serial port
 	 */
 	public void disconnect(){
-//		mSerialOutputHandler.stopThread();		//stop output thread
 		try {
 			if(mInputStream != null)
 				mInputStream.close();
@@ -216,7 +214,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * Method starts the thread
 	 */
 	public void startThread(){
-		connect();
+		System.out.println("Starting Serial Port Thread");
 		start();
 	}
 	
@@ -227,7 +225,17 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		mIsBoundedToUsbPort = false;
 	}
 	
-	
+	/**
+	 * update Hardware unit that system is ready
+	 */
+	public void updateSystemReady(){
+		String msgToArduino = MessageVaribles.START_MESSAGE 
+				+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MessageType.INFO.getValue() + MessageVaribles.MESSAGE_SAPERATOR
+				+ MessageVaribles.KEY_INFO_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.InfoType.STATUS.toString() + MessageVaribles.MESSAGE_SAPERATOR
+				+ MessageVaribles.KEY_STATUS + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.StatusCode.INFO_SERVER_STATUS_READY.getStatusCode() 
+				+ MessageVaribles.END_MESSAGE;
+		mMessagesToArduino.add(msgToArduino);
+	}
 
 	
 	/**
@@ -293,9 +301,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param msg
 	 */
 	private void fireMessageFromHardwareUnit(String msg){
-		
-		for(String key : listeners.keySet())
-			listeners.get(key).onMessageReceivedFromHardwareUnit(msg);
+		mListener.onMessageReceivedFromHardwareUnit(msg);
 	}
 	
 	
@@ -304,9 +310,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param status
 	 */
 	private void fireStatusFromSerialPort(boolean status){
-		for(String key : listeners.keySet())
-			listeners.get(key).onSerialStatusChanged(status);
-		
+		mListener.onSerialPortReady();
 	}
 	
 	/**
@@ -314,9 +318,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param status
 	 */
 	private void fireSerialPortErrors(String msg){
-		for(String key : listeners.keySet())
-			listeners.get(key).onSerialPortError(msg);
-		
+		mListener.onSerialPortError(msg);
 	}
 	
 	
@@ -330,7 +332,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 						+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VehicleActions.CHANGE_DIRECTION.getValue() + MessageVaribles.MESSAGE_SAPERATOR
 						+ MessageVaribles.KEY_DRIVING_DIRECTION + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + direction 
 						+ MessageVaribles.END_MESSAGE;
-		messagesToArduino.add(msgToArduino);
+		mMessagesToArduino.add(msgToArduino);
 	}
 	
 	/**
@@ -343,7 +345,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 							+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VehicleActions.CHANGE_SPEED.getValue() + MessageVaribles.MESSAGE_SAPERATOR
 							+ MessageVaribles.KEY_DIGITAL_SPEED + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + digitalSpeed 
 							+ MessageVaribles.END_MESSAGE;
-		messagesToArduino.add(msgToArduino);
+		mMessagesToArduino.add(msgToArduino);
 	}
 	
 	/**
@@ -358,7 +360,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 							+ MessageVaribles.KEY_STEERING_DIRECTION + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + direction + MessageVaribles.MESSAGE_SAPERATOR
 							+ MessageVaribles.KEY_ROTATION_ANGLE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + angle
 							+ MessageVaribles.END_MESSAGE;
-		messagesToArduino.add(msgToArduino);
+		mMessagesToArduino.add(msgToArduino);
 	}
 	
 	

@@ -6,6 +6,10 @@ import java.util.HashMap;
 
 public class MessageVaribles {
 
+	public static final int INFO = 1000;
+	public static final int ACTION = 2000;
+	public static final int WARNING = 3000;
+	public static final int ERROR = 4000;
 	/*
 	 *  Message Entries
 	 */
@@ -50,7 +54,8 @@ public class MessageVaribles {
 	public static final String END_MESSAGE 					= 		"#";				//End Of Message
 	public static final String MESSAGE_SAPERATOR			=		",";				//message sparator
 	public static final String MESSAGE_KEY_VALUE_SAPERATOR 	= 		":";
-	
+	public static final String KEY_INFO_TYPE				=		"IT";				//Info Type Key
+	public static final String KEY_STATUS			 		= 		"ST";				//Status
 	
 	
 	/*
@@ -73,8 +78,6 @@ public class MessageVaribles {
 	 *  Incoming
 	 */
 	
-	public static final String KEY_INFO_TYPE				=		"IT";				//Info Type Key
-	public static final String KEY_STATUS			 		= 		"ST";				//Status
 	public static final String KEY_SERIAL_PORT		 		= 		"SP";				//SP = Serial Port
 	public static final String KEY_STEER_MOTOR 				= 		"SM";				//SM = Steer Motor
 	public static final String KEY_BACK_MOTOR				= 		"BM";				//BM = Back Motor

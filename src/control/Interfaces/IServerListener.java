@@ -2,6 +2,10 @@ package control.Interfaces;
 
 public interface IServerListener {
 	
+	/**
+	 * notifies when server is ready
+	 */
+	void onServerReady();
 	
 	/**
 	 * Handle message from inputStream
