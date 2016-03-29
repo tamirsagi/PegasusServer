@@ -1,3 +1,4 @@
+import logs.logger.PegasusLogger;
 import Util.LinuxCommands;
 import communication.serialPorts.SerialPortHandler;
 
@@ -5,6 +6,8 @@ import control.Controller;
 
 public class Main {
 
+	public static final String TAG = "MAIN";
+	
 	public static void main(String[] args) {
 		
 		if (LinuxCommands.attachedArduinoToSerialPort()
@@ -12,7 +15,7 @@ public class Main {
 			Controller PegasusVehicleController = new Controller();
 			PegasusVehicleController.bootCompleted();
 		}else{
-			System.out.println("Program Could not start"); //TODO - Maybe reset linux
+			PegasusLogger.getInstance().e(TAG, "Program Could not start");//TODO - Maybe reset linux
 		}
 		// SerialPortHandler mSerialPortHandler;
 		// mSerialPortHandler = SerialPortHandler.getInstance();
