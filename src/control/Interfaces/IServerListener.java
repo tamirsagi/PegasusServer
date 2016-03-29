@@ -15,10 +15,4 @@ public interface IServerListener {
 	void onMessageReceivedFromClient(String msg);
 	
 	
-	/**
-	 * Get Server Erros
-	 * @param msg
-	 */
-	void onServerError(String msg);
-	
 }

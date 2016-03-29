@@ -44,7 +44,7 @@ public class BluetoothServer extends Thread {
     /** Constructor */
     private BluetoothServer() {
         setName(TAG);
-        setServerState(BluetoothServerStatus.DISCONNECTED);
+        mServerStatus = BluetoothServerStatus.DISCONNECTED;
         clients = new HashMap<>();
         listeners = new HashMap<String, IServerListener>();
         prepareBluetooth();
@@ -113,7 +113,7 @@ public class BluetoothServer extends Thread {
         	mLocalDevice = LocalDevice.getLocalDevice();
             // generally discoverable, discoveryTimeout should be disabled - but isn't.
         	mLocalDevice.setDiscoverable(DiscoveryAgent.GIAC);
-        	setServerState(BluetoothServerStatus.CONNECTING);
+        	mServerStatus = BluetoothServerStatus.CONNECTING;
         	mNotifier = (StreamConnectionNotifier) Connector.open(connectionString);
         	isOnline = true;
         	setServerState(BluetoothServerStatus.CONNECTED);

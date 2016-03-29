@@ -204,12 +204,6 @@ public class Controller implements IServerListener, ISerialPortListener,
 		}
 	}
 
-	@Override
-	public void onServerError(String msg) {
-		System.out.println("ERROR From SERVER:" + msg);
-
-	}
-
 	// //////////////////////////////////////VEHICLE EVENTS & Relevant Methods
 	// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
