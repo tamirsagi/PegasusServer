@@ -23,35 +23,35 @@ public abstract class AbstractLogger {
 	 * @param msg - message
 	 * @return - Log format
 	 */
-	public String getLogFormat(String logType, String tag,String msg){
-		return String.format("%s/%s:[%s]",logType,tag,msg);
+	public String getLogFormat(String logType, String tag,String method,String msg){
+		return String.format("%s/%s - %s():[%s]",logType,tag,method,msg);
 	}
 	
 	/**
 	 * Log Info message
 	 * @param msg - Message to Log
 	 */
-	public abstract void i(String tag,String msg);
+	public abstract void i(String tag, String method, String msg);
 	
 	
 	/**
 	 * Log debug message
 	 * @param msg - Message to Log
 	 */
-	public abstract void d(String tag, String msg);
+	public abstract void d(String tag, String method, String msg);
 	
 	
 	/**
 	 * Log error message
 	 * @param msg - Message to Log
 	 */
-	public abstract void e(String tag,String msg);
+	public abstract void e(String tag, String method, String msg);
 	
 	
 	/**
 	 * Verbose messages
 	 * @param msg
 	 */
-	public abstract void v(String tag, String msg);
+	public abstract void v(String tag, String method, String msg);
 
 }

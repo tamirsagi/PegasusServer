@@ -1,5 +1,7 @@
 package control;
 
+import logs.logger.PegasusLogger;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -47,7 +49,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 	 * @param state
 	 */
 	public void setState(int state) {
-		System.out.println("State was "
+		PegasusLogger.getInstance().d(TAG,"setState", "tate was "
 				+ ApplicationStates.getStateName(mApplicationState)
 				+ " andd changed to:" + ApplicationStates.getStateName(state));
 		mApplicationState = state;
@@ -82,16 +84,16 @@ public class Controller implements IServerListener, ISerialPortListener,
 
 	@Override
 	public void onUpdateServerStatusChanged(int code) {
-		System.out.println(TAG + " State changed To"
+		PegasusLogger.getInstance().d(TAG,"onUpdateServerStatusChanged", "State changed To"
 				+ BluetoothServer.getInstance().getServerStatusName());
 		switch (code) {
 		case BluetoothServerStatus.DISCONNECTED:
-			// TODO - > decide what happand when server is disconnected
+			// TODO - > decide what happened when server is disconnected
 			mIsServerReady = false;
 			setState(ApplicationStates.WAITING_FOR_SERVER);
 			break;
 		case BluetoothServerStatus.CONNECTING:
-			// TODO - > decide what happand when server is connecting
+			// TODO - > decide what happened when server is connecting
 			break;
 		case BluetoothServerStatus.CONNECTED:
 			mIsServerReady = true;
@@ -102,7 +104,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 
 	@Override
 	public void onMessageReceivedFromClient(String msg) {
-		// System.out.println(TAG + " " + msg);
+		PegasusLogger.getInstance().d(TAG, "onMessageReceivedFromClient", msg);
 		try {
 			JSONObject receivedMsg = new JSONObject(msg);
 			String messageType = (String) receivedMsg
@@ -115,7 +117,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 				break;
 			}
 		} catch (JSONException e) {
-			System.err.println("OnMessageReceived Error: " + e.getMessage());
+			PegasusLogger.getInstance().e(TAG,"OnMessageReceived", e.getMessage());
 		}
 
 	}
@@ -140,8 +142,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 				break;
 			}
 		} catch (JSONException e) {
-			System.err.println(TAG + " handleActionFromClient "
-					+ e.getMessage());
+			PegasusLogger.getInstance().e(TAG, "handleActionFromClient", e.getMessage());
 		}
 	}
 
@@ -200,7 +201,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 				break;
 			}
 		} catch (JSONException e) {
-			System.err.println("handleAction Error : " + e.getMessage());
+			PegasusLogger.getInstance().e(TAG, "handleAction" ,e.getMessage());
 		}
 	}
 
@@ -251,16 +252,14 @@ public class Controller implements IServerListener, ISerialPortListener,
 
 	@Override
 	public void onSerialPortReady() {
-		System.out.println(TAG + " serial port is ready changed state to :"
-				+ ApplicationStates.WAITING_FOR_HARDWARE);
+		PegasusLogger.getInstance().d(TAG,"onSerialPortReady", "changed state to :"	+ ApplicationStates.WAITING_FOR_HARDWARE);
 		setState(ApplicationStates.WAITING_FOR_HARDWARE);
 
 	}
 
 	@Override
 	public void onHardwareReady() {
-		System.out.println(TAG + " HArdware  is ready current state:"
-				+ mApplicationState);
+		PegasusLogger.getInstance().d(TAG, "onHardwareReady", "current state:" + mApplicationState);
 		if (!mIsServerReady && !BluetoothServer.getInstance().isServerOnline()) {
 			mIsHardwareReady = true;
 			setState(ApplicationStates.WAITING_FOR_SERVER);
@@ -295,8 +294,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 			}
 
 		} catch (Exception e) {
-			System.out.println(TAG + " onMessageReceivedFromHardwareUnit "
-					+ e.getMessage());
+			PegasusLogger.getInstance().e(TAG, "onMessageReceivedFromHardwareUnit", e.getMessage());
 		}
 
 	}
@@ -323,8 +321,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 			}
 
 		} catch (JSONException e) {
-			System.out.println(TAG + " handleInfoMessageFromSerialPort "
-					+ e.getMessage());
+			PegasusLogger.getInstance().e(TAG, "handleInfoMessageFromSerialPort", e.getMessage());
 		}
 
 	}
@@ -352,7 +349,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 
 	@Override
 	public void onSerialPortError(String msg) {
-		System.out.println("msg from Serial Port: " + msg);
+		PegasusLogger.getInstance().e(TAG, "onSerialPortError", msg);
 
 	}
 

@@ -182,7 +182,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param msg - msg to send
 	 */
 	public synchronized void writeMessage(String msg){
-		PegasusLogger.getInstance().d(TAG, "before sending to arduino: " + msg);
+		PegasusLogger.getInstance().d(TAG, "writeMessage", "before sending to arduino: " + msg);
 		if(mOutput != null)
 			try {
 				mOutput.println(msg);
@@ -216,7 +216,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * Method starts the thread
 	 */
 	public void startThread(){
-		PegasusLogger.getInstance().d(TAG, "Starting Serial Port Thread");
+		PegasusLogger.getInstance().d(TAG, "startThread", "Starting Serial Port Thread");
 		System.out.println();
 		start();
 	}
@@ -225,7 +225,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * method stop Serial Thread
 	 */
 	public void stopThread(){
-		PegasusLogger.getInstance().d(TAG, "Stopping Serial Port Thread");
+		PegasusLogger.getInstance().d(TAG, "stopThread", "Stopping Serial Port Thread");
 		mIsBoundedToUsbPort = false;
 	}
 	
@@ -239,7 +239,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				+ MessageVaribles.KEY_STATUS + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.StatusCode.INFO_SERVER_STATUS_READY.getStatusCode() 
 				+ MessageVaribles.END_MESSAGE;
 		mMessagesToArduino.add(msgToArduino);
-		PegasusLogger.getInstance().d(TAG, "Update System Ready:" + msgToArduino);
+		PegasusLogger.getInstance().d(TAG, "updateSystemReady", "Update System Ready:" + msgToArduino);
 	}
 
 	
@@ -272,7 +272,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		CommPortIdentifier port;
 		while(ports.hasMoreElements()){
 			port = (CommPortIdentifier)ports.nextElement();
-			PegasusLogger.getInstance().e(TAG,"port name : " + port.getName() + " port type " + port.getPortType());
+			PegasusLogger.getInstance().e(TAG, "printAllAvailablePorts", "port name : " + port.getName() + " port type " + port.getPortType());
 		}
 	}
 	
@@ -305,7 +305,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param msg
 	 */
 	private void fireMessageFromHardwareUnit(String msg){
-		PegasusLogger.getInstance().d(TAG, "fire Message From Hardware Unit:" + msg);
+		PegasusLogger.getInstance().d(TAG, "fireMessageFromHardwareUnit", msg);
 		mListener.onMessageReceivedFromHardwareUnit(msg);
 	}
 	
@@ -323,7 +323,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param status
 	 */
 	private void fireSerialPortErrors(String msg){
-		PegasusLogger.getInstance().e(TAG, msg);
+		PegasusLogger.getInstance().e(TAG, "fireSerialPortErrors", msg);
 		mListener.onSerialPortError(msg);
 	}
 	
@@ -339,7 +339,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 						+ MessageVaribles.KEY_DRIVING_DIRECTION + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + direction 
 						+ MessageVaribles.END_MESSAGE;
 		mMessagesToArduino.add(msgToArduino);
-		PegasusLogger.getInstance().d(TAG,"Change driving direction:" + msgToArduino);
+		PegasusLogger.getInstance().d(TAG, "changeDrivingDirection", msgToArduino);
 	}
 	
 	/**
@@ -353,7 +353,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 							+ MessageVaribles.KEY_DIGITAL_SPEED + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + digitalSpeed 
 							+ MessageVaribles.END_MESSAGE;
 		mMessagesToArduino.add(msgToArduino);
-		PegasusLogger.getInstance().d(TAG,"Change speed:" + msgToArduino);
+		PegasusLogger.getInstance().d(TAG, "changeSpeed", msgToArduino);
 	}
 	
 	/**
@@ -369,7 +369,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 							+ MessageVaribles.KEY_ROTATION_ANGLE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + angle
 							+ MessageVaribles.END_MESSAGE;
 		mMessagesToArduino.add(msgToArduino);
-		PegasusLogger.getInstance().d(TAG,"Change steer motor:" + msgToArduino);
+		PegasusLogger.getInstance().d(TAG, "changeSteerMotor", msgToArduino);
 	}
 	
 	

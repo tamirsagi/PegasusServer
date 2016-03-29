@@ -20,26 +20,26 @@ public class PegasusLogger extends AbstractLogger {
 	
 
 	@Override
-	public void i(String tag, String msg) {
-		System.out.println(getLogFormat(I, tag, msg));
+	public void i(String tag, String method, String msg) {
+		System.out.println(getLogFormat(I, tag, method, msg));
 		
 	}
 
 	@Override
-	public void d(String tag, String msg) {
-		System.out.println(getLogFormat(D, tag, msg));
+	public void d(String tag, String method,String msg) {
+		System.out.println(getLogFormat(D, tag, method, msg));
 		
 	}
 
 	@Override
-	public void e(String tag, String msg) {
-		System.err.println(getLogFormat(E, tag, msg));
+	public void e(String tag, String method, String msg) {
+		System.err.println(getLogFormat(E, tag, method, msg));
 		
 	}
 
 	@Override
-	public void v(String tag, String msg) {
-		System.out.println(getLogFormat(V, tag, msg));
+	public void v(String tag, String method, String msg) {
+		System.out.println(getLogFormat(V, tag, method, msg));
 		
 	}
 	

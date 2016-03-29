@@ -58,7 +58,7 @@ public class BluetoothServer extends Thread {
 	 * @param listener
 	 */
 	public void registerMessagesListener(String name,IServerListener listener){
-		PegasusLogger.getInstance().d(TAG,"Listener : " + name + " has registered");
+		PegasusLogger.getInstance().d(TAG,"registerMessagesListener", "Listener : " + name + " has registered");
 		listeners.put(name,listener);
 	}
 	
@@ -76,7 +76,7 @@ public class BluetoothServer extends Thread {
 	 * @param status
 	 */
 	private void setServerState(int status){
-		PegasusLogger.getInstance().d(TAG ," Current Sserver Status: " + getServerStatusName() +
+		PegasusLogger.getInstance().d(TAG ,"setServerState", "Current Sserver Status: " + getServerStatusName() +
 				" new status is : " + BluetoothServerStatus.getServerStatusName(status));
 		if(status != mServerStatus){
 			mServerStatus = status;
@@ -120,9 +120,9 @@ public class BluetoothServer extends Thread {
         	mNotifier = (StreamConnectionNotifier) Connector.open(connectionString);
         	isOnline = true;
         	setServerState(BluetoothServerStatus.CONNECTED);
-        	PegasusLogger.getInstance().d(TAG ," Server Is Connected");
+        	PegasusLogger.getInstance().d(TAG ,"prepareBluetooth", "Server Is Connected");
         } catch (Exception e) {
-        	PegasusLogger.getInstance().e(TAG ,e.getMessage());
+        	PegasusLogger.getInstance().e(TAG ,"prepareBluetooth", e.getMessage());
             setServerState(BluetoothServerStatus.DISCONNECTED);
             return;
         }
@@ -139,7 +139,7 @@ public class BluetoothServer extends Thread {
 
     @Override
     public void run() {
-    	PegasusLogger.getInstance().d(TAG,"Bluetooth Server Thread Started");
+    	PegasusLogger.getInstance().d(TAG, "run", "Bluetooth Server Thread Started");
         waitForConnection();
     }
 
@@ -148,7 +148,7 @@ public class BluetoothServer extends Thread {
     private void waitForConnection() {
         while (isOnline) {
             try {
-            	PegasusLogger.getInstance().d(TAG,"Waiting for connections...");
+            	PegasusLogger.getInstance().d(TAG, "waitForConnection", "Waiting for connections...");
                 //wait for connection
                 final StreamConnection connection = mNotifier.acceptAndOpen();
                 final RemoteDevice remoteDevice = RemoteDevice.getRemoteDevice(connection);
@@ -158,13 +158,13 @@ public class BluetoothServer extends Thread {
                         try {
                             handleClient(connection,remoteDevice);
                         } catch (Exception e) {
-                        	PegasusLogger.getInstance().e(TAG ,e.getMessage());
+                        	PegasusLogger.getInstance().e(TAG ,"waitForConnection", e.getMessage());
                             //TODO - should remove client?
                         }
                     }
                 }).start();
             } catch (Exception e) {
-            	PegasusLogger.getInstance().e(TAG,e.getMessage());
+            	PegasusLogger.getInstance().e(TAG, "waitForConnection", e.getMessage());
                 isOnline = false;
                 setServerState(BluetoothServerStatus.DISCONNECTED);
                  return;
@@ -183,7 +183,7 @@ public class BluetoothServer extends Thread {
     private void handleClient(StreamConnection clientSocket,RemoteDevice remoteDevice) throws InterruptedException{
         SocketData client = new SocketData(clientSocket,remoteDevice);
         clients.put(client.getClientAddress(),client);
-        PegasusLogger.getInstance().d(TAG,"client:" + client.getDeviceName() + " Address: " + client.getClientAddress());
+        PegasusLogger.getInstance().d(TAG, "handleClient", "client:" + client.getDeviceName() + " Address: " + client.getClientAddress());
         client.setConnected(true);
      try { 
         int available = 0;
@@ -195,7 +195,7 @@ public class BluetoothServer extends Thread {
 	            	client.getInputStream().read(msg);
 	            	String last = "" + (char)msg[available - 1];
 	            	if(last.equals(MessageVaribles.END_MESSAGE)){
-	            		PegasusLogger.getInstance().d(TAG,receivedMsg.toString());
+	            		PegasusLogger.getInstance().d(TAG, "handleClient", receivedMsg.toString());
 	            		FireMessagesFromClient(receivedMsg.toString());
 	            		receivedMsg = new StringBuilder();
 	            	}
@@ -205,7 +205,7 @@ public class BluetoothServer extends Thread {
 	            sleep(100);
         }//while
       }catch (IOException e){
-    	  PegasusLogger.getInstance().e(TAG,e.getMessage());
+    	  PegasusLogger.getInstance().e(TAG, "handleClient", e.getMessage());
        }
     }
     
@@ -222,9 +222,9 @@ public class BluetoothServer extends Thread {
 		mNotifier.close();
 		mBluetoothServer = null;
 		setServerState(BluetoothServerStatus.DISCONNECTED);
-		PegasusLogger.getInstance().d(TAG,"Server shutted down");
+		PegasusLogger.getInstance().d(TAG, "shutDownServer", "Server shutted down");
 		} catch (IOException e) {
-			PegasusLogger.getInstance().e(TAG,e.getMessage() + " state:" + getServerStatusName());
+			PegasusLogger.getInstance().e(TAG, "shutDownServer", e.getMessage() + " state:" + getServerStatusName());
 		}
     }
     

@@ -15,7 +15,7 @@ public class Main {
 			Controller PegasusVehicleController = new Controller();
 			PegasusVehicleController.bootCompleted();
 		}else{
-			PegasusLogger.getInstance().e(TAG, "Program Could not start");//TODO - Maybe reset linux
+			PegasusLogger.getInstance().e(TAG, "main", "Program Could not start");//TODO - Maybe reset linux
 		}
 		// SerialPortHandler mSerialPortHandler;
 		// mSerialPortHandler = SerialPortHandler.getInstance();
