@@ -5,7 +5,8 @@ import org.json.JSONObject;
 
 import Util.MessagesMethods;
 
-import communication.bluetooth.BluetoothServer;
+import communication.bluetooth.Constants.BluetoothServerStatus;
+import communication.bluetooth.Server.BluetoothServer;
 import communication.messages.MessageVaribles;
 import communication.serialPorts.SerialPortHandler;
 
@@ -28,7 +29,9 @@ public class Controller implements IServerListener, ISerialPortListener,
 
 	private int mApplicationState = ApplicationStates.BOOTING;
 
-	public Controller() {PegasusVehicle.getInstance().registerVehicleActionsListener(this);}
+	public Controller() {
+		PegasusVehicle.getInstance().registerVehicleActionsListener(this);
+	}
 
 	/**
 	 * initialize system when boot is completed
@@ -56,31 +59,45 @@ public class Controller implements IServerListener, ISerialPortListener,
 			SerialPortHandler.getInstance().startThread();
 			break;
 		case ApplicationStates.HARDWARE_READY:
-				BluetoothServer.getInstance().registerMessagesListener(TAG,this);
-				BluetoothServer.getInstance().startThread();
-				mApplicationState = ApplicationStates.WAITING_FOR_SERVER;
+			BluetoothServer.getInstance().registerMessagesListener(TAG, this);
+			BluetoothServer.getInstance().startThread();
+			mApplicationState = ApplicationStates.WAITING_FOR_SERVER;
 			break;
+		case ApplicationStates.WAITING_FOR_SERVER:
+			// TODO - notify arduino maybe? decide what happand
+			break;
+		case ApplicationStates.SERVER_READY:
+			PegasusVehicle.getInstance().setName(
+					BluetoothServer.getInstance().getLocalDevice()
+							.getFriendlyName());
+			mApplicationState = ApplicationStates.READY;
 		case ApplicationStates.READY:
 			SerialPortHandler.getInstance().updateSystemReady();
 		}
 
 	}
 
-	// /////////////////////////////////////SERVER EVENTS & Relevant Methods
+	// ///////////////////////////////////// SERVER EVENTS & Relevant Methods
 	// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 	@Override
-	public void onServerReady() {
-		mIsServerReady = true;
-		setState(ApplicationStates.SERVER_READY);
-	}
+	public void onUpdateServerStatusChanged(int code) {
+		System.out.println(TAG + " State changed To"
+				+ BluetoothServer.getInstance().getServerStatusName());
+		switch (code) {
+		case BluetoothServerStatus.DISCONNECTED:
+			// TODO - > decide what happand when server is disconnected
+			mIsServerReady = false;
+			setState(ApplicationStates.WAITING_FOR_SERVER);
+			break;
+		case BluetoothServerStatus.CONNECTING:
+			// TODO - > decide what happand when server is connecting
+			break;
+		case BluetoothServerStatus.CONNECTED:
+			mIsServerReady = true;
+			setState(ApplicationStates.SERVER_READY);
+		}
 
-	@Override
-	public void onServerStatusChanged(boolean isReady) {
-
-		PegasusVehicle.getInstance().setName(
-				BluetoothServer.getInstance().getLocalDevice()
-						.getFriendlyName());
 	}
 
 	@Override
@@ -248,12 +265,13 @@ public class Controller implements IServerListener, ISerialPortListener,
 
 	@Override
 	public void onHardwareReady() {
-		System.out.println(TAG + " HArdware  is ready current state:" + mApplicationState);
-		if (!mIsServerReady && ! BluetoothServer.getInstance().isServerOnline()) {
+		System.out.println(TAG + " HArdware  is ready current state:"
+				+ mApplicationState);
+		if (!mIsServerReady && !BluetoothServer.getInstance().isServerOnline()) {
 			mIsHardwareReady = true;
 			setState(ApplicationStates.WAITING_FOR_SERVER);
 
-		}else{
+		} else {
 			setState(ApplicationStates.READY);
 		}
 

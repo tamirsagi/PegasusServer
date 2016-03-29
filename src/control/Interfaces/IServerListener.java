@@ -3,23 +3,16 @@ package control.Interfaces;
 public interface IServerListener {
 	
 	/**
-	 * notifies when server is ready
+	 * update server status
+	 * @param code
 	 */
-	void onServerReady();
+	void onUpdateServerStatusChanged(int code);
 	
 	/**
 	 * Handle message from inputStream
 	 * @param msg
 	 */
 	void onMessageReceivedFromClient(String msg);
-	
-	
-	/**
-	 * Get Server Status when changed
-	 * @param isReady
-	 */
-	void onServerStatusChanged(boolean isReady);
-	
 	
 	
 	/**

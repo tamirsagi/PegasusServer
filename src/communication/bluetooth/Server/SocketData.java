@@ -1,4 +1,4 @@
-package communication.bluetooth;
+package communication.bluetooth.Server;
  
 
 import javax.bluetooth.RemoteDevice;

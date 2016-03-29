@@ -1,4 +1,4 @@
-package communication.bluetooth;
+package communication.bluetooth.Server;
 
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.LocalDevice;
@@ -7,6 +7,7 @@ import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.io.StreamConnectionNotifier;
 
+import communication.bluetooth.Constants.BluetoothServerStatus;
 import communication.messages.MessageVaribles;
 
 import control.Interfaces.IServerListener;
@@ -19,6 +20,8 @@ public class BluetoothServer extends Thread {
 
     private static final String TAG = "Bluetooth Server";
     public static  BluetoothServer mBluetoothServer;
+    
+    private int mServerStatus;
     private final String uuid = "1101";
     private final String connectionString = "btspp://localhost:" + uuid + ";name=Pegasus";
     private LocalDevice mLocalDevice;
@@ -41,6 +44,7 @@ public class BluetoothServer extends Thread {
     /** Constructor */
     private BluetoothServer() {
         setName(TAG);
+        setServerState(BluetoothServerStatus.DISCONNECTED);
         clients = new HashMap<>();
         listeners = new HashMap<String, IServerListener>();
         prepareBluetooth();
@@ -63,6 +67,35 @@ public class BluetoothServer extends Thread {
 		if(listeners.containsKey(name))
 			listeners.remove(name);
 	}
+	
+	/**
+	 * set server state
+	 * @param status
+	 */
+	private void setServerState(int status){
+		System.out.println(TAG + " Current Sserver Status: " + getServerStatusName() +
+				" new status is : " + BluetoothServerStatus.getServerStatusName(status));
+		if(status != mServerStatus){
+			mServerStatus = status;
+			updateServerStatusChanged(mServerStatus);
+		}
+	}
+	
+	/**
+	 * 
+	 * @return server status name
+	 */
+	public String getServerStatusName(){
+		return BluetoothServerStatus.getServerStatusName(getServerStatusCode());
+	}
+	
+	/**
+	 * 
+	 * @return server status code
+	 */
+	private int getServerStatusCode(){
+		return mServerStatus;
+	}
     
     /**
      * 
@@ -80,11 +113,13 @@ public class BluetoothServer extends Thread {
         	mLocalDevice = LocalDevice.getLocalDevice();
             // generally discoverable, discoveryTimeout should be disabled - but isn't.
         	mLocalDevice.setDiscoverable(DiscoveryAgent.GIAC);
+        	setServerState(BluetoothServerStatus.CONNECTING);
         	mNotifier = (StreamConnectionNotifier) Connector.open(connectionString);
         	isOnline = true;
+        	setServerState(BluetoothServerStatus.CONNECTED);
         } catch (Exception e) {
             System.out.println("Server exception: " + e.getMessage());
-            e.printStackTrace();
+            setServerState(BluetoothServerStatus.DISCONNECTED);
             return;
         }
     	
@@ -119,15 +154,18 @@ public class BluetoothServer extends Thread {
                             handleClient(connection,remoteDevice);
                         } catch (Exception e) {
                             System.err.println(TAG +" :" + e.getMessage());
+                            //TODO - should remove client?
                         }
                     }
                 }).start();
             } catch (Exception e) {
                 System.err.println(TAG + " " + e.getMessage());
                 isOnline = false;
+                setServerState(BluetoothServerStatus.DISCONNECTED);
                  return;
             }
-        }
+        }//while
+        
     }
 
 
@@ -171,7 +209,17 @@ public class BluetoothServer extends Thread {
      * Shut Server Down
      */
     public void shutDownServer(){
+    	try {
+    	for(String clientAddress : clients.keySet()){
+    		clients.get(clientAddress).getSocket().close();
+    	}
     	isOnline = false;
+		mNotifier.close();
+		mBluetoothServer = null;
+		setServerState(BluetoothServerStatus.DISCONNECTED);
+		} catch (IOException e) {
+			System.out.println(TAG +" " + e.getMessage() + " State:" + getServerStatusName());
+		}
     }
     
     /**
@@ -186,10 +234,12 @@ public class BluetoothServer extends Thread {
     /**
      * update listeners when server is running
      */
-    public void updateServerReady(){
+    public void updateServerStatusChanged(int aStatusCode){
     	for(String key : listeners.keySet()){
-    		listeners.get(key).onServerReady();
+    		listeners.get(key).onUpdateServerStatusChanged(aStatusCode);
     	}
     }
+    
+    
 
 }
