@@ -1,14 +1,16 @@
-package pegasusVehicle;
+package pegasusVehicle.Sensor;
 
-public class Sensor {
+public abstract class AbstractSensor {
 
+	private int mType;
 	private int mId;
-	private double mValue;
-	private double mLastValue;
+	private String mPosition;
 	private boolean mEnabled;
-	private String mPosition; 	// keep the position on the vehicle (for example : "FL" = Front Left)
+	private double mIncomingData;
+	private double mLastValue;
+	
 
-	public Sensor(int id) {
+	public AbstractSensor(int id) {
 		mId = id;
 	}
 
@@ -21,11 +23,11 @@ public class Sensor {
 	}
 
 	public double getValue() {
-		return mValue;
+		return mIncomingData;
 	}
 
 	public void setValue(double mValue) {
-		this.mValue = mValue;
+		this.mIncomingData = mValue;
 	}
 
 	public double getLastValue() {
@@ -43,5 +45,14 @@ public class Sensor {
 	public void setSensorState(boolean isEnabled) {
 		mEnabled = isEnabled;
 	}
+
+	public int getType() {
+		return mType;
+	}
+
+	public void setType(int mType) {
+		this.mType = mType;
+	}
+	
 
 }

@@ -1,5 +1,6 @@
 package pegasusVehicle;
 
+import pegasusVehicle.params.VehicleParams;
 import control.Interfaces.IVehicleActionsListener;
 
 public abstract class AbstractVehicle {
@@ -10,10 +11,11 @@ public abstract class AbstractVehicle {
 	protected int mID;
 	protected double mVehicleLength;
 	protected double mVehicleWidth;
-	protected double mRadious;
-	protected int mNumberOfUltraSonicSensors;
-	protected Sensor[] mUltraSonicSensors;
-	
+	protected double mTurningRadious;
+	protected double mWheelRadius;
+	protected double mCurrentSpeed;
+	protected VehicleParams.DrivingDirection mCurrentDrivingDirection;
+	protected double mSteeringAngle;
 	
 	
 	public static AbstractVehicle getInstance() throws Exception{
@@ -24,8 +26,6 @@ public abstract class AbstractVehicle {
 		return mInstance;
 	}
 	
-	
-
 	public double getmVehicleLength() {
 		return mVehicleLength;
 	}
@@ -59,11 +59,11 @@ public abstract class AbstractVehicle {
 	}
 	
 	public double getRadious(){
-		return mRadious;
+		return mTurningRadious;
 	}
 	
 	public void setRadious(double radious){
-		mRadious = radious;
+		mTurningRadious = radious;
 	}
 	
 	/**
@@ -111,13 +111,11 @@ public abstract class AbstractVehicle {
 	 */
 	public abstract void stop();
 
-	
 	@Override
 	public String toString() {
 		return "Vehicle [mName=" + mName + ", mID=" + mID + ", mVehicleLength="
 				+ mVehicleLength + ", mVehicleWidth=" + mVehicleWidth
-				+ ", mRadious=" + mRadious + ", mNumberOfSensors="
-				+ mNumberOfUltraSonicSensors + "]";
+				+ ", mRadious=" + mTurningRadious + "]";
 	}
 	
 	
