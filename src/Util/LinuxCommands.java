@@ -1,5 +1,7 @@
 package Util;
 
+import logs.logger.PegasusLogger;
+
 public class LinuxCommands {
 
 	public static final String TAG = "LinuxCommands";
@@ -13,15 +15,31 @@ public class LinuxCommands {
 		String[] linkArduinoToPort = new String[] { "sh", "-c",
 				"sudo ln -s /dev/ttyACM0 /dev/ttyS0" };
 		try {
-			Process linkArduinoToPortProccess = Runtime.getRuntime().exec(
-					linkArduinoToPort);
-			linkArduinoToPortProccess.waitFor();
+			deattachedArduinoToSerialPort();
+			Process arduinoPortHandlerProcess = Runtime.getRuntime().exec(linkArduinoToPort);
+			arduinoPortHandlerProcess.waitFor();
 			return true;
 		} catch (Exception e) {
-			System.out.println(TAG + " " + e.getMessage());
+			PegasusLogger.getInstance().e(TAG,"attachedArduinoToSerialPort",e.getMessage());
 			return false;
 		}
-
+	}
+	
+	/* Link Arduino to Serial Port (Virtual Com)
+	 * 
+	 * @return
+	 */
+	public static boolean deattachedArduinoToSerialPort() {
+		String[] unlinkArduinoToPort = new String[] { "sh", "-c",
+		"sudo rm /dev/ttyS0" };
+		try {
+			Process arduinoPortHandlerProcess = Runtime.getRuntime().exec(unlinkArduinoToPort);
+			arduinoPortHandlerProcess.waitFor();
+			return true;
+		} catch (Exception e) {
+			PegasusLogger.getInstance().e(TAG,"deattachedArduinoToSerialPort",e.getMessage());
+			return false;
+		}
 	}
 
 	/**

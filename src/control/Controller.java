@@ -335,6 +335,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 	 * @param statusCode
 	 */
 	private void updateHardwareStatus(int statusCode) {
+		PegasusLogger.getInstance().d(TAG, "updateHardwareStatus", "Status code:" + statusCode);
 		switch (MessageVaribles.StatusCode.get(statusCode)) {
 		case INFO_HARDWARE_STATUS_READY:
 			if(!mIsHardwareReady){
