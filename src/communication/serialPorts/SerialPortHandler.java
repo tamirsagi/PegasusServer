@@ -136,47 +136,44 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 			StringBuilder message = new StringBuilder();
 			int available = 0;
 			byte[] received = null;
-			boolean messageStarted = false;
 			try {
-				
 				while ((available = mInputStream.available()) > 0) {
 					received = new byte[available + 1];
 					mInputStream.read(received);
 					message.append(new String(received));
-					// find Start Message symbol
-					if (!messageStarted) {
-						int startMessagePos = message
-								.indexOf(MessageVaribles.START_MESSAGE);
-						if (startMessagePos >= 0) {
-							if (startMessagePos == 0)
-								message.deleteCharAt(0);
-							else
-								message.delete(0, startMessagePos);
-							messageStarted = true;
-						} else
-							message = new StringBuilder();
-					}
-					if (message.length() > 0) {
-						int endMessage = message
-								.indexOf(MessageVaribles.END_MESSAGE);
-						if (endMessage > 0) {
-							if (message.length() > endMessage)
-								message.delete(endMessage, message.length());
-							System.out
-									.println(TAG + " : " + message.toString());
-							fireMessageFromHardwareUnit(message.toString());
-							message = new StringBuilder();
-							messageStarted = false;
-						}
-					}
+					pullMessages(message);
 					sleep(100);
 				}
+				if(message.length() > 0 ){
+					pullMessages(message);
+				}
+				
 				}catch (Exception e) {
 					fireSerialPortErrors("Serial Event Listener Exception:" + e.getMessage());
 				}
 				break;
 		}
 	}
+	
+	/**
+	 * pull all messages from current buffer
+	 * if could not find either start or end symbol method will end.
+	 * @param buffer -Message that received from stream
+	 */
+	private void pullMessages(StringBuilder buffer){
+		int first = buffer.indexOf(MessageVaribles.START_MESSAGE);
+		int last = buffer.indexOf(MessageVaribles.END_MESSAGE);
+		String msgToSend  = "";
+		while (first >= 0 && last >= 0) {
+			msgToSend = buffer.substring(first + 1, last);
+			PegasusLogger.getInstance().d(TAG, "pullMessages", msgToSend);
+			//fireMessageFromHardwareUnit(msgToSend);
+			buffer.delete(first, last + 1);
+			first = buffer.indexOf(MessageVaribles.START_MESSAGE);
+			last = buffer.indexOf(MessageVaribles.END_MESSAGE);
+		}
+	}
+			
 	
 
 	/**

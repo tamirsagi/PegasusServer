@@ -1,7 +1,5 @@
-import vehicle.Pegasus.PegausVehicleProperties;
 import logs.logger.PegasusLogger;
 import Util.LinuxCommands;
-import communication.serialPorts.SerialPortHandler;
 
 import control.Controller;
 
@@ -10,7 +8,7 @@ public class Main {
 	public static final String TAG = "MAIN";
 	
 	public static void main(String[] args) {
-		
+
 		if (LinuxCommands.attachedArduinoToSerialPort()
 				&& LinuxCommands.enableBluetooth()) {
 			Controller PegasusVehicleController = new Controller();
