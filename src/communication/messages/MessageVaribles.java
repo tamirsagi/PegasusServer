@@ -58,14 +58,15 @@ public class MessageVaribles {
 	public static final String KEY_STATUS			 		= 		"ST";				//Status
 	
 	
-	/*
-	 *  Outgoing
-	 */
+	public static final String KEY_SETTINGS_ACTION_TYPE		= 		"SA";				//SA = Settings Action Type
 	public static final String KEY_VEHICLE_ACTION_TYPE		= 		"VA";				//VA = Vehicle Action Type
 	public static final String KEY_DIGITAL_SPEED 			= 		"DS";				//DS = Digits Speed
 	public static final String KEY_ROTATION_ANGLE			= 		"RA";				//RA = Rotation Angle for steering
 	public static final String KEY_STEERING_DIRECTION		= 		"SD";				//SD = Steering direction either right or left
 	public static final String KEY_DRIVING_DIRECTION		= 		"DD";				//DD = Driving Direction
+	public static final String KEY_SENSOR_ID				=		"SID";				//Sensor ID
+	public static final String KEY_SENSOR_STATE				=		"SS";				//Sensor State
+	
 	
 	public static final String 	 VALUE_STEERING_RIGHT		= 		"R";
 	public static final String   VALUE_STEERING_LEFT 		= 		"L";
@@ -74,19 +75,16 @@ public class MessageVaribles {
 	public static final String   VALUE_DRIVING_REVERSE		= 		"B";				//Backward
 	
 	
-	/*
-	 *  Incoming
-	 */
-	
 	public static final String KEY_SERIAL_PORT		 		= 		"SP";				//SP = Serial Port
 	public static final String KEY_STEER_MOTOR 				= 		"SM";				//SM = Steer Motor
 	public static final String KEY_BACK_MOTOR				= 		"BM";				//BM = Back Motor
 	public static final String VALUE_OK						= 		"OK";				
-	public static final String VALUE_ERROR					= 		"ER";		
+	public static final String VALUE_ERROR					= 		"ER";	
+	public static final String KEY_SENSOR_DATA		 		= 		"SD";				//Sensor Data
 	
 	
 	public enum InfoType{
-		STATUS
+		STATUS, SENSOR_DATA
 	}
 
 	/*  Status CODE */

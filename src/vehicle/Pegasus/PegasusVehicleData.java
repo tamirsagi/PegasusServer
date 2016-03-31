@@ -2,6 +2,11 @@ package vehicle.Pegasus;
 
 import vehicle.VehicleData;
 
+/**
+ * hold Pegasus parameters
+ * @author pi
+ *
+ */
 public class PegasusVehicleData extends VehicleData {
 	
 	public static PegasusVehicleData mInstance;

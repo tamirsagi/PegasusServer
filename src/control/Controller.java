@@ -305,7 +305,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 	 * @param receivedMsg
 	 */
 	private void handleInfoMessageFromHardwareUnit(JSONObject receivedMsg) {
-
+		PegasusLogger.getInstance().d(TAG, "handleInfoMessageFromHardwareUnit", receivedMsg.toString());
 		try {
 			String info_type = (String) receivedMsg
 					.get(MessageVaribles.KEY_INFO_TYPE);
@@ -315,6 +315,9 @@ public class Controller implements IServerListener, ISerialPortListener,
 						.getInt(MessageVaribles.KEY_STATUS);
 				updateHardwareStatus(status_code);
 				break;
+			case SENSOR_DATA:
+				int sensorID = receivedMsg.getInt(MessageVaribles.KEY_SENSOR_ID);
+				
 			default:
 				break;
 
@@ -337,6 +340,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 			mIsHardwareReady = true;
 			setState(ApplicationStates.HARDWARE_READY);
 			break;
+		//TODO - add failure state
 		default:
 			break;
 		}

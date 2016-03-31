@@ -8,11 +8,12 @@ import vehicle.AbstractVehicle;
 import vehicle.VehicleConfigKeys;
 import vehicle.VehicleData;
 import vehicle.VehicleParams;
+import vehicle.Interfaces.onInputReceived;
 import vehicle.Sensor.InfraRed;
 import vehicle.Sensor.UltraSonic;
 import control.Interfaces.IVehicleActionsListener;
 
-public class PegasusVehicle extends AbstractVehicle {
+public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 	private static final String TAG = "Pegasus Vehicle";
 	private static final String PEGASUS_DEFAULT_ID = "302774773";
 	private static PegasusVehicle mInstance;
@@ -133,7 +134,9 @@ public class PegasusVehicle extends AbstractVehicle {
 		mUltraSonicSensors = new HashMap<String, UltraSonic>();
 		for (int i = 1; i <= PegasusVehicleData.getInstance().getNumberOfUltraSonicSensors(); i++) {
 			UltraSonic us = new UltraSonic(i);
+			us.registerListener(this);
 			String pos = getSensorPosition(us.getId());
+			us.setPosition(pos);
 			mUltraSonicSensors.put(pos, us);
 		}
 	}
@@ -193,6 +196,12 @@ public class PegasusVehicle extends AbstractVehicle {
 		mDigitalSpeed = 0;
 		mVehicleActionsListener.stop();
 
+	}
+	
+	@Override
+	public void onReceived(int sensorId,double value){
+		PegasusLogger.getInstance().i(TAG, "onReceived", "Sensor id:" + sensorId +" value:" + value);
+		
 	}
 
 	

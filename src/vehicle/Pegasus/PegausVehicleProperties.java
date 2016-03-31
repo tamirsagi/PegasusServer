@@ -7,12 +7,18 @@ import java.util.Properties;
 
 import logs.logger.PegasusLogger;
 
+/**
+ * Handles properties file
+ * @author Tamir
+ *
+ */
 public class PegausVehicleProperties extends Properties {
 	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	
 	private static final String TAG = "PegausVehicleProperties";
 	public static PegausVehicleProperties mInstance;
 	private static final String FILE_NAME = "PegasusVehicleConfig.properties";

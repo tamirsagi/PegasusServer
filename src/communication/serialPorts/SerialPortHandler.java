@@ -373,6 +373,24 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	}
 	
 	
+	/**
+	 * Change sensor state
+	 * @param sensorID - sensor id
+	 * @param state - 0 disable, 1 - enable
+	 */
+	public void changeSensorState(int sensorID,int state){
+		String msgToArduino = MessageVaribles.START_MESSAGE 
+				+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MessageType.ACTION.getValue() + MessageVaribles.MESSAGE_SAPERATOR
+				+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VehicleActions.CHANGE_SENSOR_STATE.getValue() + MessageVaribles.MESSAGE_SAPERATOR 
+				+ MessageVaribles.KEY_SENSOR_ID + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + sensorID + MessageVaribles.MESSAGE_SAPERATOR
+				+ MessageVaribles.KEY_SENSOR_STATE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + state
+				+ MessageVaribles.END_MESSAGE;
+		mMessagesToArduino.add(msgToArduino);
+		PegasusLogger.getInstance().d(TAG, "changeSensorState", msgToArduino);
+		
+	}
+	
+	
 	
 	
 	

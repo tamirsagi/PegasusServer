@@ -4,7 +4,9 @@ import java.util.EnumSet;
 import java.util.HashMap;
 
 public class VehicleParams {
-
+	
+	public static final int DISABLE_SENSOR = 0;
+	public static final int ENABLE_SENSOR = 1;
 
 	public enum VehicleControlType{
 		MANUAL, AUTONOMOUS;
@@ -19,7 +21,7 @@ public class VehicleParams {
 	 * Actions a vehicle is capable to do
 	 */
 	public enum VehicleActions{
-		CHANGE_DIRECTION(0),CHANGE_SPEED(1),STEERING(2);
+		CHANGE_DIRECTION(0),CHANGE_SPEED(1),STEERING(2), CHANGE_SENSOR_STATE(3);
 		
 		private int value;
 		 
