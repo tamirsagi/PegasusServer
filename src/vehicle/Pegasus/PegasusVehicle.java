@@ -1,15 +1,20 @@
-package pegasusVehicle;
+package vehicle.Pegasus;
 
 import java.util.HashMap;
 
-import pegasusVehicle.Sensor.InfraRed;
-import pegasusVehicle.Sensor.UltraSonic;
-import pegasusVehicle.params.VehicleParams;
+import logs.logger.PegasusLogger;
+
+import vehicle.AbstractVehicle;
+import vehicle.VehicleConfigKeys;
+import vehicle.VehicleData;
+import vehicle.VehicleParams;
+import vehicle.Sensor.InfraRed;
+import vehicle.Sensor.UltraSonic;
 import control.Interfaces.IVehicleActionsListener;
 
 public class PegasusVehicle extends AbstractVehicle {
 	private static final String TAG = "Pegasus Vehicle";
-	private static final int PEGASUS_ID = 302774773;
+	private static final String PEGASUS_DEFAULT_ID = "302774773";
 	private static PegasusVehicle mInstance;
 
 	private static final int MIN_DIGITAL_SPEED = 0;
@@ -41,7 +46,6 @@ public class PegasusVehicle extends AbstractVehicle {
 	
 	private IVehicleActionsListener mVehicleActionsListener;
 	private int mDigitalSpeed;
-	private int mNumberOfUltraSonicSensors;
 	private HashMap<String,UltraSonic> mUltraSonicSensors;
 	private InfraRed mTachometer;
 
@@ -51,6 +55,7 @@ public class PegasusVehicle extends AbstractVehicle {
 	 * @return
 	 */
 	public static PegasusVehicle getInstance() {
+		
 		if (mInstance == null)
 			mInstance = new PegasusVehicle();
 
@@ -59,10 +64,29 @@ public class PegasusVehicle extends AbstractVehicle {
 
 	private PegasusVehicle() {
 		mCurrentDrivingDirection = VehicleParams.DrivingDirection.FORWARD; // by default
-		setID(PEGASUS_ID);
+		setVehicleData();
 		setUltraSonicSensors();
 		mTachometer = new InfraRed(INFRA_RED_TACHOMETER_ID);
+	}
+	
 
+	@Override
+	public void setVehicleData() {
+		String id = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_ID,PEGASUS_DEFAULT_ID);
+		double length = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_LENGTH,0);
+		double width = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_WIDTH,0);
+		double steeringAngle = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_MAX_STEERING_ANGLE_FACTOR,0);
+		double wheelDiameter = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_WHEEL_DIAMETER,0);
+		int numberOfUltraSonicSensors = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_NUMBER_OF_ULTRA_SONIC_SENSORS,0);
+		
+		setID(id);
+		PegasusVehicleData.getInstance().setLength(length);
+		PegasusVehicleData.getInstance().setWidth(width);
+		PegasusVehicleData.getInstance().setWheelDiameter(wheelDiameter);
+		PegasusVehicleData.getInstance().setSteeringAngle(steeringAngle);
+		PegasusVehicleData.getInstance().setNumberOfUltraSonicSensors(numberOfUltraSonicSensors);
+		PegasusLogger.getInstance().d(TAG,"setVehicleData", PegasusVehicleData.getInstance().toString());
+		
 	}
 
 	@Override
@@ -70,6 +94,10 @@ public class PegasusVehicle extends AbstractVehicle {
 		mVehicleActionsListener = listener;
 	}
 	
+	@Override
+	public Object getVehicleData(){
+		return PegasusVehicle.getInstance();
+	}
 	
 	/**
 	 * 
@@ -101,9 +129,9 @@ public class PegasusVehicle extends AbstractVehicle {
 	 * set Ultra sonic sensors
 	 * save in map by its location on the car
 	 */
-	public void setUltraSonicSensors() {
+	private void setUltraSonicSensors() {
 		mUltraSonicSensors = new HashMap<String, UltraSonic>();
-		for (int i = 1; i <= mNumberOfUltraSonicSensors; i++) {
+		for (int i = 1; i <= PegasusVehicleData.getInstance().getNumberOfUltraSonicSensors(); i++) {
 			UltraSonic us = new UltraSonic(i);
 			String pos = getSensorPosition(us.getId());
 			mUltraSonicSensors.put(pos, us);

@@ -12,8 +12,8 @@ import communication.bluetooth.Server.BluetoothServer;
 import communication.messages.MessageVaribles;
 import communication.serialPorts.SerialPortHandler;
 
-import pegasusVehicle.PegasusVehicle;
-import pegasusVehicle.params.VehicleParams;
+import vehicle.VehicleParams;
+import vehicle.Pegasus.PegasusVehicle;
 
 import control.Constants.ApplicationStates;
 import control.Interfaces.ISerialPortListener;

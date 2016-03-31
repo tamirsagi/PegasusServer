@@ -1,4 +1,4 @@
-package pegasusVehicle.Sensor;
+package vehicle.Sensor;
 
 public abstract class AbstractSensor {
 

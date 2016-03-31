@@ -1,6 +1,6 @@
-package pegasusVehicle.Sensor;
+package vehicle.Sensor;
 
-public class UltraSonic extends AbstractSensor {
+public class UltraSonic extends AbstractSensor  {
 	
 	
 		public UltraSonic(int id){

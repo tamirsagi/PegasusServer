@@ -1,4 +1,4 @@
-package pegasusVehicle.params;
+package vehicle;
 
 import java.util.EnumSet;
 import java.util.HashMap;

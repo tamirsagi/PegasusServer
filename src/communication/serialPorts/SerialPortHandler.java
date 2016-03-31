@@ -13,7 +13,7 @@ import logs.logger.PegasusLogger;
 
 import communication.messages.MessageVaribles;
 
-import pegasusVehicle.params.VehicleParams;
+import vehicle.VehicleParams;
 
 import control.Interfaces.ISerialPortListener;
 

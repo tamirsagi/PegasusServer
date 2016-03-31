@@ -1,3 +1,4 @@
+import vehicle.Pegasus.PegausVehicleProperties;
 import logs.logger.PegasusLogger;
 import Util.LinuxCommands;
 import communication.serialPorts.SerialPortHandler;
@@ -9,6 +10,8 @@ public class Main {
 	public static final String TAG = "MAIN";
 	
 	public static void main(String[] args) {
+		PegausVehicleProperties.getInstance();
+		if(2>1)return;
 		
 		if (LinuxCommands.attachedArduinoToSerialPort()
 				&& LinuxCommands.enableBluetooth()) {
