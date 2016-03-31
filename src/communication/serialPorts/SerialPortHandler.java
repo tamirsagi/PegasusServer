@@ -166,7 +166,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		String msgToSend  = "";
 		while (first >= 0 && last >= 0) {
 			msgToSend = buffer.substring(first + 1, last);
-			PegasusLogger.getInstance().d(TAG, "pullMessages", msgToSend);
 			fireMessageFromHardwareUnit(msgToSend);
 			buffer.delete(first, last + 1);
 			first = buffer.indexOf(MessageVaribles.START_MESSAGE);
