@@ -49,7 +49,6 @@ public class BluetoothServer extends Thread {
         mServerStatus = BluetoothServerStatus.DISCONNECTED;
         clients = new HashMap<>();
         listeners = new HashMap<String, IServerListener>();
-        prepareBluetooth();
     }
     
 	/**
@@ -134,6 +133,8 @@ public class BluetoothServer extends Thread {
     }
     
     public void startThread(){
+    	PegasusLogger.getInstance().d(TAG, "startThread", "Bluetooth Server is inisitaing...");
+    	prepareBluetooth();
     	start();
     }
 

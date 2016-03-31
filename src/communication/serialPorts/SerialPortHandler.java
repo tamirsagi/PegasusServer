@@ -55,7 +55,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	private SerialPortHandler(){
 		setName(TAG);
 		mMessagesToArduino = new LinkedList<>();
-		connect();
 	}
 	
 	/**
@@ -120,7 +119,10 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 	@Override
 	public void run() {
-		System.out.println(TAG + " Service started");
+		if(!mIsBoundedToUsbPort){
+			connect();
+		}
+		PegasusLogger.getInstance().i(TAG,"run", "Serial port thread is running...");
 		while(mIsBoundedToUsbPort){
 			if(mMessagesToArduino.size() > 0)
 				writeMessage(mMessagesToArduino.poll());
@@ -217,7 +219,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 */
 	public void startThread(){
 		PegasusLogger.getInstance().d(TAG, "startThread", "Starting Serial Port Thread");
-		System.out.println();
 		start();
 	}
 	

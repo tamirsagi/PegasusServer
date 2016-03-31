@@ -10,8 +10,6 @@ public class Main {
 	public static final String TAG = "MAIN";
 	
 	public static void main(String[] args) {
-		PegausVehicleProperties.getInstance();
-		if(2>1)return;
 		
 		if (LinuxCommands.attachedArduinoToSerialPort()
 				&& LinuxCommands.enableBluetooth()) {

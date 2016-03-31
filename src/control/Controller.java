@@ -39,7 +39,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 	 * initialize system when boot is completed
 	 */
 	public void bootCompleted() {
-		System.out.println("System booted up");
+		PegasusLogger.getInstance().d(TAG, "bootCompleted", "System Booted up");
 		setState(ApplicationStates.INITIALIZE_SERIAL_PORT);
 	}
 
@@ -49,16 +49,16 @@ public class Controller implements IServerListener, ISerialPortListener,
 	 * @param state
 	 */
 	public void setState(int state) {
-		PegasusLogger.getInstance().d(TAG,"setState", "tate was "
+		PegasusLogger.getInstance().d(TAG,"setState", "State was "
 				+ ApplicationStates.getStateName(mApplicationState)
-				+ " andd changed to:" + ApplicationStates.getStateName(state));
+				+ " and changed to:" + ApplicationStates.getStateName(state));
 		mApplicationState = state;
 		switch (state) {
 		case ApplicationStates.INITIALIZE_SERIAL_PORT:
 			SerialPortHandler.getInstance().registerMessagesListener(this);
+			SerialPortHandler.getInstance().startThread();
 			break;
 		case ApplicationStates.WAITING_FOR_HARDWARE:
-			SerialPortHandler.getInstance().startThread();
 			break;
 		case ApplicationStates.HARDWARE_READY:
 			BluetoothServer.getInstance().registerMessagesListener(TAG, this);
