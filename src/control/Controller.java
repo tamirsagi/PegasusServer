@@ -337,8 +337,10 @@ public class Controller implements IServerListener, ISerialPortListener,
 	private void updateHardwareStatus(int statusCode) {
 		switch (MessageVaribles.StatusCode.get(statusCode)) {
 		case INFO_HARDWARE_STATUS_READY:
-			mIsHardwareReady = true;
-			setState(ApplicationStates.HARDWARE_READY);
+			if(!mIsHardwareReady){
+				mIsHardwareReady = true;
+				setState(ApplicationStates.HARDWARE_READY);
+			}
 			break;
 		//TODO - add failure state
 		default:
