@@ -31,7 +31,7 @@ import gnu.io.SerialPortEventListener;
  */
 public class SerialPortHandler extends Thread implements SerialPortEventListener {
 	private static final String TAG = "Serial Port Handler";
-	private static final String PortName = "/dev/ttyACM1"; 		//the mounted ttyPort for Arduino
+	private static final String PortName = "/dev/ttyACM0"; 		//the mounted ttyPort for Arduino
 	private static final int PORT_BAUD = 115200;
 	
 	private static SerialPortHandler mSerialPortHandler;
@@ -40,9 +40,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	private SerialPort mSerialPort;
 	
 	private InputStream mInputStream;
-	private PrintWriter mOutput;
+	private OutputStreamHandler mOutputStreamHandler;
 	
-	private Queue<String> mMessagesToArduino;					//keeps messages in order to Hardware unit
 	private ISerialPortListener mListener;		//keeps listeners
 	
 	public static SerialPortHandler getInstance(){
@@ -54,7 +53,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 	private SerialPortHandler(){
 		setName(TAG);
-		mMessagesToArduino = new LinkedList<>();
+		//mMessagesToArduino = new LinkedList<>();
 	}
 	
 	/**
@@ -103,7 +102,9 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 							SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
 					
 					mInputStream = mSerialPort.getInputStream();
-					mOutput = new PrintWriter(mSerialPort.getOutputStream(),true);
+					mOutputStreamHandler = new OutputStreamHandler(mSerialPort.getOutputStream());
+					mOutputStreamHandler.startThread();
+					
 					mSerialPort.addEventListener(this);
 					mSerialPort.notifyOnDataAvailable(true);
 					mSerialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE); //disable flow control
@@ -123,9 +124,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		}
 		PegasusLogger.getInstance().i(TAG,"run", "Serial port thread is running...");
 		while(mIsBoundedToUsbPort){
-			if(mMessagesToArduino.size() > 0){
-				writeMessage(mMessagesToArduino.poll());
-			}
+			
 		}
 		disconnect();
 	}
@@ -179,23 +178,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	}
 			
 	
-
-	/**
-	 * send message to Arduino
-	 * @param msg - msg to send
-	 */
-	public synchronized void writeMessage(String msg){
-		PegasusLogger.getInstance().d(TAG, "writeMessage", "before sending to arduino: " + msg);
-		if(mOutput != null)
-			try {
-				mOutput.println(msg);
-				sleep(100);
-			} catch (Exception e) {
-				fireSerialPortErrors("writeMessage(String msg) Exception " + e.getMessage());
-			}
-	}
-
-	
 	/**
 	 * close connection to serial port
 	 */
@@ -203,8 +185,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		try {
 			if(mInputStream != null)
 				mInputStream.close();
-			if(mOutput != null)
-				mOutput.close();
+			if(mOutputStreamHandler != null)
+				mOutputStreamHandler.disconnect();
 			if(mSerialPort != null){
 				mSerialPort.removeEventListener();
 				mSerialPort.close();	//close serial port
@@ -240,7 +222,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				+ MessageVaribles.KEY_INFO_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.InfoType.STATUS.toString() + MessageVaribles.MESSAGE_SAPERATOR
 				+ MessageVaribles.KEY_STATUS + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.StatusCode.INFO_SERVER_STATUS_READY.getStatusCode() 
 				+ MessageVaribles.END_MESSAGE;
-		mMessagesToArduino.add(msgToArduino);
+		mOutputStreamHandler.addMessageToQueue(msgToArduino);
 		PegasusLogger.getInstance().d(TAG, "updateSystemReady", "Update System Ready:" + msgToArduino);
 	}
 
@@ -340,7 +322,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 						+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VehicleActions.CHANGE_DIRECTION.getValue() + MessageVaribles.MESSAGE_SAPERATOR
 						+ MessageVaribles.KEY_DRIVING_DIRECTION + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + direction 
 						+ MessageVaribles.END_MESSAGE;
-		mMessagesToArduino.add(msgToArduino);
+		mOutputStreamHandler.addMessageToQueue(msgToArduino);
 		PegasusLogger.getInstance().d(TAG, "changeDrivingDirection", msgToArduino);
 	}
 	
@@ -354,7 +336,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 							+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VehicleActions.CHANGE_SPEED.getValue() + MessageVaribles.MESSAGE_SAPERATOR
 							+ MessageVaribles.KEY_DIGITAL_SPEED + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + digitalSpeed 
 							+ MessageVaribles.END_MESSAGE;
-		mMessagesToArduino.add(msgToArduino);
+		mOutputStreamHandler.addMessageToQueue(msgToArduino);
 		PegasusLogger.getInstance().d(TAG, "changeSpeed", msgToArduino);
 	}
 	
@@ -370,7 +352,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 							+ MessageVaribles.KEY_STEERING_DIRECTION + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + direction + MessageVaribles.MESSAGE_SAPERATOR
 							+ MessageVaribles.KEY_ROTATION_ANGLE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + angle
 							+ MessageVaribles.END_MESSAGE;
-		mMessagesToArduino.add(msgToArduino);
+		mOutputStreamHandler.addMessageToQueue(msgToArduino);
 		PegasusLogger.getInstance().d(TAG, "changeSteerMotor", msgToArduino);
 	}
 	
@@ -387,8 +369,83 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				+ MessageVaribles.KEY_SENSOR_ID + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + sensorID + MessageVaribles.MESSAGE_SAPERATOR
 				+ MessageVaribles.KEY_SENSOR_STATE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + state
 				+ MessageVaribles.END_MESSAGE;
-		mMessagesToArduino.add(msgToArduino);
+		mOutputStreamHandler.addMessageToQueue(msgToArduino);
 		PegasusLogger.getInstance().d(TAG, "changeSensorState", msgToArduino);
+		
+	}
+	
+	
+	/**
+	 * this class handles output stream in a separate thread.
+	 * @author Tamir
+	 *
+	 */
+	private class OutputStreamHandler extends Thread{
+		private static final String TAG = "SP-Output Stream Handler";
+		private boolean mIsBoundToSerial;
+		private PrintWriter mOutputHandler;
+		private Queue<String> mMessagesToArduino;
+		
+		public OutputStreamHandler(OutputStream aOutputStream){
+			mOutputHandler = new PrintWriter(aOutputStream,true);
+			mMessagesToArduino = new LinkedList<String>();
+			
+		}
+		
+		/**
+		 * Add message to queue,
+		 * @param msg - message which is sent to Hardwareunit(Arduino)
+		 */
+		public synchronized void addMessageToQueue(String msg){
+			if(msg != null && !msg.isEmpty()){
+				mMessagesToArduino.add(msg);
+			}
+		}
+		
+		@Override
+		public void run() {
+			while(mIsBoundToSerial){
+					if(mMessagesToArduino.size() > 0){
+						writeMessage(mMessagesToArduino.poll());
+					}
+				}
+				disconnect();
+			}
+
+		/**
+		 * send message to Arduino
+		 * @param msg - msg to send
+		 */
+		private synchronized void writeMessage(String msg){
+			PegasusLogger.getInstance().d(TAG, "writeMessage", "before sending to arduino: " + msg);
+			if(mOutputHandler != null)
+				try {
+					mOutputHandler.println(msg);
+					sleep(100);
+				} catch (Exception e) {
+					fireSerialPortErrors("writeMessage(String msg) Exception " + e.getMessage());
+				}
+		}
+
+
+		/**
+		 * start output thread
+		 */
+		public void startThread(){
+			mIsBoundToSerial = true;
+			start();
+		}
+		
+		
+		/**
+		 * close connection to output port
+		 */
+		public void disconnect(){
+			if(mOutputHandler != null){
+				mOutputHandler.close();
+			}
+			mIsBoundToSerial = false;
+		}
 		
 	}
 	
