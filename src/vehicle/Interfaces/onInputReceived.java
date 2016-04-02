@@ -1,5 +1,10 @@
 package vehicle.Interfaces;
 
+/**
+ * The vehicle implements that interface and waits for any sensor to notify its new data
+ * @author Tamir Sagi
+ *
+ */
 public interface onInputReceived {
 		
 	/**

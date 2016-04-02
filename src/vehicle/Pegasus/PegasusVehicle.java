@@ -67,18 +67,28 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 		mCurrentDrivingDirection = VehicleParams.DrivingDirection.FORWARD; // by default
 		setVehicleData();
 		setUltraSonicSensors();
-		mTachometer = new InfraRed(INFRA_RED_TACHOMETER_ID);
+		setupTachometerSensor();
+		
 	}
 	
 
 	@Override
 	public void setVehicleData() {
 		String id = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_ID,PEGASUS_DEFAULT_ID);
-		double length = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_LENGTH,0);
-		double width = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_WIDTH,0);
-		double steeringAngle = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_MAX_STEERING_ANGLE_FACTOR,0);
-		double wheelDiameter = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_WHEEL_DIAMETER,0);
-		int numberOfUltraSonicSensors = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_NUMBER_OF_ULTRA_SONIC_SENSORS,0);
+		double length = Double.parseDouble(PegausVehicleProperties.getInstance().
+					getValue(VehicleConfigKeys.KEY_LENGTH,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
+		
+		double width = Double.parseDouble(PegausVehicleProperties.getInstance().
+				getValue(VehicleConfigKeys.KEY_WIDTH,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
+		
+		double steeringAngle = Double.parseDouble(PegausVehicleProperties.getInstance().
+				getValue(VehicleConfigKeys.KEY_MAX_STEERING_ANGLE_FACTOR,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
+		
+		double wheelDiameter = Double.parseDouble(PegausVehicleProperties.getInstance().
+				getValue(VehicleConfigKeys.KEY_WHEEL_DIAMETER,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
+		
+		int numberOfUltraSonicSensors = Integer.parseInt(PegausVehicleProperties.getInstance().
+				getValue(VehicleConfigKeys.KEY_NUMBER_OF_ULTRA_SONIC_SENSORS,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
 		
 		setID(id);
 		PegasusVehicleData.getInstance().setLength(length);
@@ -141,6 +151,14 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 		}
 	}
 	
+	/**
+	 * Setup Tachometer Sensor
+	 */
+	private void setupTachometerSensor(){
+		mTachometer = new InfraRed(INFRA_RED_TACHOMETER_ID);
+		mTachometer.registerListener(this);
+	}
+	
 	public InfraRed getTachometer(){
 		return mTachometer;
 	}
@@ -201,7 +219,6 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 	@Override
 	public void onReceived(int sensorId,double value){
 		PegasusLogger.getInstance().i(TAG, "onReceived", "Sensor id:" + sensorId +" value:" + value);
-		
 	}
 
 	

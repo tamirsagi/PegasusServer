@@ -31,7 +31,7 @@ import gnu.io.SerialPortEventListener;
  */
 public class SerialPortHandler extends Thread implements SerialPortEventListener {
 	private static final String TAG = "Serial Port Handler";
-	private static final String PortName = "/dev/ttyACM0"; 		//the mounted ttyPort for Arduino
+	private static final String PortName = "/dev/ttyACM1"; 		//the mounted ttyPort for Arduino
 	private static final int PORT_BAUD = 115200;
 	
 	private static SerialPortHandler mSerialPortHandler;
@@ -104,7 +104,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 					
 					mInputStream = mSerialPort.getInputStream();
 					mOutput = new PrintWriter(mSerialPort.getOutputStream(),true);
-
 					mSerialPort.addEventListener(this);
 					mSerialPort.notifyOnDataAvailable(true);
 					mSerialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE); //disable flow control
@@ -124,8 +123,9 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		}
 		PegasusLogger.getInstance().i(TAG,"run", "Serial port thread is running...");
 		while(mIsBoundedToUsbPort){
-			if(mMessagesToArduino.size() > 0)
+			if(mMessagesToArduino.size() > 0){
 				writeMessage(mMessagesToArduino.poll());
+			}
 		}
 		disconnect();
 	}
@@ -165,9 +165,14 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		int last = buffer.indexOf(MessageVaribles.END_MESSAGE);
 		String msgToSend  = "";
 		while (first >= 0 && last >= 0) {
-			msgToSend = buffer.substring(first + 1, last);
-			fireMessageFromHardwareUnit(msgToSend);
-			buffer.delete(first, last + 1);
+			if(first > last){ //in case half message received 
+				buffer.delete(0, last + 1);
+			}else{
+				msgToSend = buffer.substring(first + 1, last);
+				PegasusLogger.getInstance().d(TAG, "pullMessages", msgToSend);
+				fireMessageFromHardwareUnit(msgToSend);
+				buffer.delete(first, last + 1);
+			}
 			first = buffer.indexOf(MessageVaribles.START_MESSAGE);
 			last = buffer.indexOf(MessageVaribles.END_MESSAGE);
 		}
@@ -387,8 +392,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		
 	}
 	
-	
-	
-	
+		
 	
 }

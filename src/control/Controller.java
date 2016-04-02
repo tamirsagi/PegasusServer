@@ -1,5 +1,7 @@
 package control;
 
+import java.util.HashMap;
+
 import logs.logger.PegasusLogger;
 
 import org.json.JSONException;
@@ -13,7 +15,9 @@ import communication.messages.MessageVaribles;
 import communication.serialPorts.SerialPortHandler;
 
 import vehicle.VehicleParams;
+import vehicle.Interfaces.onSensorDataRecieved;
 import vehicle.Pegasus.PegasusVehicle;
+import vehicle.Sensor.AbstractSensor;
 
 import control.Constants.ApplicationStates;
 import control.Interfaces.ISerialPortListener;
@@ -24,15 +28,23 @@ public class Controller implements IServerListener, ISerialPortListener,
 		IVehicleActionsListener {
 
 	public static final String TAG = Controller.class.getSimpleName();
-
+	private static Controller mInstance;
 	private boolean mIsServerReady;
 	private boolean mIsSerialPortReady;
 	private boolean mIsHardwareReady;
-
+	
+	private HashMap<Integer,onSensorDataRecieved> mSensorLisenters;
 	private int mApplicationState = ApplicationStates.BOOTING;
 
-	public Controller() {
-		PegasusVehicle.getInstance().registerVehicleActionsListener(this);
+	
+	public static Controller getInstance(){
+		if(mInstance == null){
+			mInstance = new Controller();
+		}
+		return mInstance;
+	}
+	private  Controller() {
+		mSensorLisenters = new HashMap<Integer, onSensorDataRecieved>();
 	}
 
 	/**
@@ -40,6 +52,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 	 */
 	public void bootCompleted() {
 		PegasusLogger.getInstance().d(TAG, "bootCompleted", "System Booted up");
+		PegasusVehicle.getInstance().registerVehicleActionsListener(this);
 		setState(ApplicationStates.INITIALIZE_SERIAL_PORT);
 	}
 
@@ -75,8 +88,20 @@ public class Controller implements IServerListener, ISerialPortListener,
 			mApplicationState = ApplicationStates.READY;
 		case ApplicationStates.READY:
 			SerialPortHandler.getInstance().updateSystemReady();
+			SerialPortHandler.getInstance().changeSensorState(7, 1);
 		}
 
+	}
+	
+	/**
+	 * register sensors to get incoming data
+	 * @param sensorID
+	 * @param listener - sensor who listens for a new input
+	 */
+	public void registerSensor(int sensorID, onSensorDataRecieved listener){
+		if(sensorID > 0 && listener != null){
+			mSensorLisenters.put(sensorID, listener);
+		}
 	}
 
 	// ///////////////////////////////////// SERVER EVENTS & Relevant Methods
@@ -253,6 +278,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 	@Override
 	public void onSerialPortReady() {
 		PegasusLogger.getInstance().d(TAG,"onSerialPortReady", "changed state to :"	+ ApplicationStates.WAITING_FOR_HARDWARE);
+		mIsSerialPortReady = true;
 		setState(ApplicationStates.WAITING_FOR_HARDWARE);
 
 	}
@@ -293,10 +319,10 @@ public class Controller implements IServerListener, ISerialPortListener,
 				}
 			}
 
-		} catch (Exception e) {
-			PegasusLogger.getInstance().e(TAG, "onMessageReceivedFromHardwareUnit", e.getMessage());
+		}catch (Exception e) {
+			PegasusLogger.getInstance().e(TAG, "onMessageReceivedFromHardwareUnit", "msg : " + msg 
+					+ " exception:" + e.getMessage());
 		}
-
 	}
 
 	/**
@@ -317,7 +343,8 @@ public class Controller implements IServerListener, ISerialPortListener,
 				break;
 			case SENSOR_DATA:
 				int sensorID = receivedMsg.getInt(MessageVaribles.KEY_SENSOR_ID);
-				
+				double sensorData = receivedMsg.getDouble(MessageVaribles.KEY_SENSOR_DATA);
+				notifySensorForIncomingData(sensorID,sensorData);
 			default:
 				break;
 
@@ -358,6 +385,17 @@ public class Controller implements IServerListener, ISerialPortListener,
 	public void onSerialPortError(String msg) {
 		PegasusLogger.getInstance().e(TAG, "onSerialPortError", msg);
 
+	}
+	
+	/**
+	 * notify relevant sensor for new data
+	 * @param sensorID
+	 * @param value
+	 */
+	private void notifySensorForIncomingData(int sensorID,double value){
+		if(sensorID > 0 && value >= 0){
+			mSensorLisenters.get(sensorID).onRecievedSensorData(value);
+		}
 	}
 
 }

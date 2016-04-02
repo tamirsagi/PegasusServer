@@ -3,25 +3,31 @@ package vehicle.Sensor;
 import java.util.Vector;
 
 import vehicle.Interfaces.onInputReceived;
+import vehicle.Interfaces.onSensorDataRecieved;
 
 /**
  * class represent a sensor 
  * @author Tamir
  *
  */
-public abstract class AbstractSensor {
+public abstract class AbstractSensor implements onSensorDataRecieved{
+
+	
 
 	private int mType;
 	private int mId;
 	private String mPosition;
 	private boolean mEnabled;
 	private double mIncomingData;
-	private Vector<Double> mLastValue;
+	private Vector<Double> mLastValues;
 	private Vector<onInputReceived> mListeners;
 	
 
 	public AbstractSensor(int id) {
 		mId = id;
+		mLastValues = new Vector<Double>();
+		//mListeners = new Vector<onInputReceived>();
+		registerToDataSupplier();
 	}
 
 	public int getId() {
@@ -42,12 +48,12 @@ public abstract class AbstractSensor {
 	}
 
 	public Vector<Double> getLastValues() {
-		return mLastValue;
+		return mLastValues;
 	}
 
 	public void setLastValue(double aLastValue) {
-		if(mLastValue.get(mLastValue.size() - 1).doubleValue() != aLastValue){
-			mLastValue.add(aLastValue);
+		if(mLastValues.size() > 0 && mLastValues.get(mLastValues.size() - 1).doubleValue() != aLastValue){
+			mLastValues.add(aLastValue);
 		}
 	}
 	
@@ -92,4 +98,14 @@ public abstract class AbstractSensor {
 			listener.onReceived(getId(), getValue());
 		}
 	}
+	
+	@Override
+	public void onRecievedSensorData(double value) {
+		receivedData(value);
+	}
+	
+	/**
+	 * each sensor must register itself to data supplier
+	 */
+	public abstract void registerToDataSupplier();
 }

@@ -11,8 +11,7 @@ public class Main {
 
 		if (LinuxCommands.attachedArduinoToSerialPort()
 				&& LinuxCommands.enableBluetooth()) {
-			Controller PegasusVehicleController = new Controller();
-			PegasusVehicleController.bootCompleted();
+			Controller.getInstance().bootCompleted();
 		}else{
 			PegasusLogger.getInstance().e(TAG, "main", "Program Could not start");//TODO - Maybe reset linux
 		}

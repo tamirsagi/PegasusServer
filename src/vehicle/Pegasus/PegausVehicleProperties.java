@@ -14,14 +14,13 @@ import logs.logger.PegasusLogger;
  */
 public class PegausVehicleProperties extends Properties {
 	
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
+	public static String DEFAULT_VALUE_ZERO = "0";
 	
 	private static final String TAG = "PegausVehicleProperties";
 	public static PegausVehicleProperties mInstance;
 	private static final String FILE_NAME = "PegasusVehicleConfig.properties";
+	
 	
 	private InputStream mInputStream;
 	
@@ -48,43 +47,28 @@ public class PegausVehicleProperties extends Properties {
 	 * @return - value if exist or an empty string otherwise
 	 */
 	public String getValue(String key,String defaultValue){
-		if(contains(key)){
-			return getProperty(key);
-		}
-		return defaultValue;
+			return getProperty(key,defaultValue);
 	}
 	
-	/**
-	 * @param key
-	 * @return - value if exist or an empty string otherwise
-	 */
-	public int getValue(String key,int defaultValue){
-		if(contains(key)){
-			return Integer.parseInt(getProperty(key));
-		}
-		return defaultValue;
-	}
-	
-	/**
-	 * @param key
-	 * @return - value if exist or an empty string otherwise
-	 */
-	public double getValue(String key,double defaultValue){
-		if(contains(key)){
-			return Double.parseDouble(getProperty(key));
-		}
-		return defaultValue;
-	}
 	
 	/**
 	 * print all context
 	 */
-	public void printAllContext(){
+	private void printAllContext(){
 		Enumeration<?> e = propertyNames();
 		while(e.hasMoreElements()){
 			String key = (String)e.nextElement();
 			String value = getProperty(key);
 			PegasusLogger.getInstance().d(TAG,"PegausVehicleProperties", "key : " + key + " Value:" + value);
+		}
+	}
+	
+	private void loadAllContext(){
+		Enumeration<?> e = propertyNames();
+		while(e.hasMoreElements()){
+			String key = (String)e.nextElement();
+			String value = getProperty(key);
+			put(key,value);
 		}
 	}
 
