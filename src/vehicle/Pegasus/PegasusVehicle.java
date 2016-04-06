@@ -4,13 +4,14 @@ import java.util.HashMap;
 
 import logs.logger.PegasusLogger;
 
-import vehicle.AbstractVehicle;
-import vehicle.VehicleConfigKeys;
-import vehicle.VehicleData;
-import vehicle.VehicleParams;
 import vehicle.Interfaces.onInputReceived;
 import vehicle.Sensor.InfraRed;
 import vehicle.Sensor.UltraSonic;
+import vehicle.common.AbstractVehicle;
+import vehicle.common.VehicleData;
+import vehicle.common.constants.VehicleConfigKeys;
+import vehicle.common.constants.VehicleParams;
+import vehicle.common.constants.VehicleState;
 import control.Interfaces.IVehicleActionsListener;
 
 public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
@@ -22,7 +23,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 	private static final int MAX_DIGITAL_SPEED = 255;
 	private static final int STRAIGHT_STEER_ANGLE = 90;
 	private static final int MIN_STEER_ANGLE = 50;
-	private static final int MAX_STEER_ANGLE = 130;
+	private static final int MAX_STEER_ANGLE = 140;
 	
 	//Ultra Sonic Sensors positions Keys
 	protected static final String UNKNOWN_SENSOR = "UNKNOWN_SENSOR";
@@ -107,7 +108,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 	
 	@Override
 	public Object getVehicleData(){
-		return PegasusVehicle.getInstance();
+		return PegasusVehicleData.getInstance();
 	}
 	
 	/**
@@ -208,19 +209,39 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 		mVehicleActionsListener.driveBackward();
 
 	}
+	
+	@Override
+	public String getTag() {
+		return TAG;
+	}
 
 	@Override
 	public void stop() {
 		mDigitalSpeed = 0;
 		mVehicleActionsListener.stop();
-
 	}
 	
 	@Override
 	public void onReceived(int sensorId,double value){
 		PegasusLogger.getInstance().i(TAG, "onReceived", "Sensor id:" + sensorId +" value:" + value);
+		if(sensorId == INFRA_RED_TACHOMETER_ID){
+			handleTachometerData(value);
+		}else{
+			//TODO - handle each sensor(when and where)
+		}
+	}
+	
+	/**
+	 * handles data from infra red sensor
+	 * @param value - round of wheel per second
+	 */
+	private void handleTachometerData(double aValue){
+		if(aValue >= 0){
+			setCurrentspeed(aValue);
+			double travelledDsitanceInSec = aValue * ((PegasusVehicleData)getVehicleData()).getWheelPerimeter();
+			setTravelledDistance(getTravelledDistance() + travelledDsitanceInSec);
+		}
 	}
 
-	
 
 }

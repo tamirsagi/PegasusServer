@@ -1,4 +1,4 @@
-package vehicle;
+package vehicle.common;
 
 public class VehicleData {
 	
@@ -6,6 +6,7 @@ public class VehicleData {
 	private double mWidth;
 	private double mTurningRadious;
 	private double mWheelDiameter;
+	private double mWheelPerimeter;
 	private double mSteeringAngle;
 	
 	public double getLength() {
@@ -31,6 +32,7 @@ public class VehicleData {
 	}
 	public void setWheelDiameter(double mWheelDiameter) {
 		this.mWheelDiameter = mWheelDiameter;
+		mWheelPerimeter = mWheelDiameter * Math.PI;
 	}
 	public double getSteeringAngle() {
 		return mSteeringAngle;
@@ -38,6 +40,8 @@ public class VehicleData {
 	public void setSteeringAngle(double mSteeringAngle) {
 		this.mSteeringAngle = mSteeringAngle;
 	}
+	
+	public double getWheelPerimeter(){return mWheelPerimeter;}
 	
 
 	

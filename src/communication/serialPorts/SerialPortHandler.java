@@ -13,7 +13,7 @@ import logs.logger.PegasusLogger;
 
 import communication.messages.MessageVaribles;
 
-import vehicle.VehicleParams;
+import vehicle.common.constants.VehicleParams;
 
 import control.Interfaces.ISerialPortListener;
 
@@ -129,6 +129,9 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		disconnect();
 	}
 	
+	/**
+	 * received message is being notified here
+	 */
 	public synchronized void serialEvent(SerialPortEvent event) {
 		switch (event.getEventType()) {
 		case SerialPortEvent.DATA_AVAILABLE:
@@ -159,7 +162,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * if could not find either start or end symbol method will end.
 	 * @param buffer -Message that received from stream
 	 */
-	private void pullMessages(StringBuilder buffer){
+	private synchronized void pullMessages(StringBuilder buffer){
 		int first = buffer.indexOf(MessageVaribles.START_MESSAGE);
 		int last = buffer.indexOf(MessageVaribles.END_MESSAGE);
 		String msgToSend  = "";

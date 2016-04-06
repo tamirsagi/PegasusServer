@@ -1,4 +1,4 @@
-package vehicle;
+package vehicle.common.constants;
 
 public class VehicleConfigKeys {
 	

@@ -1,6 +1,6 @@
 package vehicle.Pegasus;
 
-import vehicle.VehicleData;
+import vehicle.common.VehicleData;
 
 /**
  * hold Pegasus parameters

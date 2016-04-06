@@ -1,4 +1,4 @@
-package vehicle;
+package vehicle.common.constants;
 
 import java.util.EnumSet;
 import java.util.HashMap;

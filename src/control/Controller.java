@@ -14,10 +14,10 @@ import communication.bluetooth.Server.BluetoothServer;
 import communication.messages.MessageVaribles;
 import communication.serialPorts.SerialPortHandler;
 
-import vehicle.VehicleParams;
 import vehicle.Interfaces.onSensorDataRecieved;
 import vehicle.Pegasus.PegasusVehicle;
 import vehicle.Sensor.AbstractSensor;
+import vehicle.common.constants.VehicleParams;
 
 import control.Constants.ApplicationStates;
 import control.Interfaces.ISerialPortListener;
@@ -45,6 +45,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 	}
 	private  Controller() {
 		mSensorLisenters = new HashMap<Integer, onSensorDataRecieved>();
+		
 	}
 
 	/**
@@ -88,7 +89,6 @@ public class Controller implements IServerListener, ISerialPortListener,
 			mApplicationState = ApplicationStates.READY;
 		case ApplicationStates.READY:
 			SerialPortHandler.getInstance().updateSystemReady();
-			SerialPortHandler.getInstance().changeSensorState(7, 1);
 		}
 
 	}
