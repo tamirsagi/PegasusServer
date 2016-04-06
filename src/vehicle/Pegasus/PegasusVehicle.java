@@ -237,8 +237,8 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 	 */
 	private void handleTachometerData(double aValue){
 		if(aValue >= 0){
-			setCurrentspeed(aValue);
 			double travelledDsitanceInSec = aValue * ((PegasusVehicleData)getVehicleData()).getWheelPerimeter();
+			setCurrentspeed(travelledDsitanceInSec);
 			setTravelledDistance(getTravelledDistance() + travelledDsitanceInSec);
 		}
 	}
