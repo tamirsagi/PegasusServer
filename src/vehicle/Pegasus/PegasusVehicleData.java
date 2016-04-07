@@ -19,10 +19,20 @@ public class PegasusVehicleData extends VehicleData {
 		return mInstance;
 	}
 	
+	private PegasusVehicleData(){}
+	
 	public void setNumberOfUltraSonicSensors(int num){
 		mNumberOfUltraSonicSensors = num;
 	}
 	
 	public int getNumberOfUltraSonicSensors(){return mNumberOfUltraSonicSensors;}
+
+	@Override
+	public String toString() {
+		return "PegasusVehicleData [mNumberOfUltraSonicSensors="
+				+ mNumberOfUltraSonicSensors + "]";
+	}
+	
+	
 
 }

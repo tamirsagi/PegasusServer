@@ -1,7 +1,8 @@
 package vehicle.common;
 
 import logs.logger.PegasusLogger;
-import vehicle.common.constants.VehicleParams;
+import vehicle.common.constants.VehicleParams.DrivingDirection;
+import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.common.constants.VehicleState;
 import control.Constants.ApplicationStates;
 import control.Interfaces.IVehicleActionsListener;
@@ -10,13 +11,15 @@ public abstract class AbstractVehicle {
 	private static final String TAG = "Abstract Vehicle";
 	protected static AbstractVehicle mInstance;
 	
+	
 	protected String mName;
 	protected String mID;
 	protected double mSteeringAngle;
-	protected VehicleParams.DrivingDirection mCurrentDrivingDirection;
+	protected DrivingDirection mCurrentDrivingDirection;
+	protected VehicleControlType mVehicleControlType;
 	protected double mCurrentSpeed;
 	protected double mDistance;
-	protected int mCurrentState = VehicleState.VEHICLE_DEFAULT;
+	protected int mCurrentState;
 	
 	
 	public static AbstractVehicle getInstance() throws Exception{
@@ -40,6 +43,14 @@ public abstract class AbstractVehicle {
 
 	public void setID(String mID) {
 		this.mID = mID;
+	}
+	
+	public void setControlType(VehicleControlType aControlType){
+		mVehicleControlType = aControlType;
+	}
+	
+	public VehicleControlType getVehicleControlType(){
+		return mVehicleControlType;
 	}
 	
 	/**
@@ -86,8 +97,11 @@ public abstract class AbstractVehicle {
 	 */
 	public abstract void stop();
 	
-	
-	public abstract Object getVehicleData();
+	/**
+	 * handle looking for parking action
+	 * @param parkingType parking type(parallel, angular etc..)
+	 */
+	public abstract void findParkingSpot(int parkingType);
 	
 	
 	public double getCurrentSpeed(){
@@ -102,6 +116,9 @@ public abstract class AbstractVehicle {
 		}
 	}
 	
+	public int getCurrentState(){
+		return mCurrentState;
+	}
 	
 	public void setCurrentState(int aState){
 		if(aState != mCurrentState){
@@ -126,7 +143,7 @@ public abstract class AbstractVehicle {
 
 	@Override
 	public String toString() {
-		return "Vehicle [mName=" + mName + ", mID=" + mID + " " + getVehicleData().toString() + "]";
+		return "Vehicle [mName=" + mName + ", mID=" + mID + "]";
 	}
 	
 	

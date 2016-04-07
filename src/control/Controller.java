@@ -17,15 +17,17 @@ import communication.serialPorts.SerialPortHandler;
 import vehicle.Interfaces.onSensorDataRecieved;
 import vehicle.Pegasus.PegasusVehicle;
 import vehicle.Sensor.AbstractSensor;
+import vehicle.algorithms.ParkingFinder;
 import vehicle.common.constants.VehicleParams;
 
 import control.Constants.ApplicationStates;
 import control.Interfaces.ISerialPortListener;
 import control.Interfaces.IServerListener;
 import control.Interfaces.IVehicleActionsListener;
+import control.Interfaces.onParkingState;
 
 public class Controller implements IServerListener, ISerialPortListener,
-		IVehicleActionsListener {
+		IVehicleActionsListener, onParkingState {
 
 	public static final String TAG = Controller.class.getSimpleName();
 	private static Controller mInstance;
@@ -89,6 +91,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 			mApplicationState = ApplicationStates.READY;
 		case ApplicationStates.READY:
 			SerialPortHandler.getInstance().updateSystemReady();
+			ParkingFinder.getInstance().registerParkingEventsListner(this);
 		}
 
 	}
@@ -104,8 +107,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 		}
 	}
 
-	// ///////////////////////////////////// SERVER EVENTS & Relevant Methods
-	// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	// ///////////////////////////////////// SERVER EVENTS & Relevant Methods// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 	@Override
 	public void onUpdateServerStatusChanged(int code) {
@@ -191,22 +193,10 @@ public class Controller implements IServerListener, ISerialPortListener,
 				double rotationAngle = 0;
 				steeringDirection = msg
 						.getString(MessageVaribles.KEY_STEERING_DIRECTION);
-				rotationAngle = msg.getInt(MessageVaribles.KEY_ROTATION_ANGLE); // we
-																				// send
-																				// the
-																				// angle
-																				// as
-																				// an
-																				// int
-																				// but
-																				// might
-																				// be
-																				// double
-				if (steeringDirection
-						.equals(MessageVaribles.VALUE_STEERING_RIGHT))
+				rotationAngle = msg.getInt(MessageVaribles.KEY_ROTATION_ANGLE); // we send the angle as an int but might be double
+				if (steeringDirection.equals(MessageVaribles.VALUE_STEERING_RIGHT))
 					PegasusVehicle.getInstance().turnRight(rotationAngle);
-				else if (steeringDirection
-						.equals(MessageVaribles.VALUE_STEERING_LEFT))
+				else if (steeringDirection.equals(MessageVaribles.VALUE_STEERING_LEFT))
 					PegasusVehicle.getInstance().turnLeft(rotationAngle);
 				break;
 			case CHANGE_DIRECTION:
@@ -269,11 +259,20 @@ public class Controller implements IServerListener, ISerialPortListener,
 
 	@Override
 	public void stop() {
-
+		if (SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeSpeed(0);
+	}
+	
+	/**
+	 * handle parking action
+	 * @param parkingType
+	 */
+	@Override
+	public void findParkingSpot(int parkingType) {
+		ParkingFinder.getInstance().findParking(parkingType);
 	}
 
-	// ////////////////////////////////////// SERIAL PORT EVENTS & Relevant
-	// Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	// ////////////////////////////////////// SERIAL PORT EVENTS & Relevant Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 	@Override
 	public void onSerialPortReady() {
@@ -397,5 +396,23 @@ public class Controller implements IServerListener, ISerialPortListener,
 			mSensorLisenters.get(sensorID).onRecievedSensorData(value);
 		}
 	}
+	
+	
+	//////////////////////////////////////// Parking finder Area events \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	
+	
+	
+	@Override
+	public void onParkingFound() {
+		
+	}
+	@Override
+	public void onParkingNoFound() {
+		
+	}
+	
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }

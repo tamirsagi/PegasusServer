@@ -9,5 +9,7 @@ public class VehicleConfigKeys {
 	public static final String KEY_MAX_STEERING_ANGLE_FACTOR = "max_steering_angle_factor";
 	public static final String KEY_NUMBER_OF_ULTRA_SONIC_SENSORS = "number_of_ultra_sonic_sensors";
 	public static final String KEY_NUMBER_OF_INFRA_RED_SENSORS = "number_of_infra_red_sensors";
+	public static final String KEY_WHEEL_BASE = "wheel_base";
+	public static final String KEY_FRONT_WHEEL_FRONT_CAR = "front_wheel_front_car";
 
 }

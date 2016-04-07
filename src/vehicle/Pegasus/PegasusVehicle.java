@@ -7,10 +7,12 @@ import logs.logger.PegasusLogger;
 import vehicle.Interfaces.onInputReceived;
 import vehicle.Sensor.InfraRed;
 import vehicle.Sensor.UltraSonic;
+import vehicle.algorithms.ParkingFinder;
 import vehicle.common.AbstractVehicle;
 import vehicle.common.VehicleData;
 import vehicle.common.constants.VehicleConfigKeys;
 import vehicle.common.constants.VehicleParams;
+import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.common.constants.VehicleState;
 import control.Interfaces.IVehicleActionsListener;
 
@@ -65,7 +67,10 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 	}
 
 	private PegasusVehicle() {
+		
 		mCurrentDrivingDirection = VehicleParams.DrivingDirection.FORWARD; // by default
+		setControlType(VehicleControlType.AUTONOMOUS);
+		setCurrentState(VehicleState.VEHICLE_DEFAULT);
 		setVehicleData();
 		setUltraSonicSensors();
 		setupTachometerSensor();
@@ -91,12 +96,21 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 		int numberOfUltraSonicSensors = Integer.parseInt(PegausVehicleProperties.getInstance().
 				getValue(VehicleConfigKeys.KEY_NUMBER_OF_ULTRA_SONIC_SENSORS,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
 		
+		double wheelBase = Double.parseDouble(PegausVehicleProperties.getInstance().
+				getValue(VehicleConfigKeys.KEY_WHEEL_BASE,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
+		
+		double centreFrontWheelToFrontCar = Double.parseDouble(PegausVehicleProperties.getInstance().
+				getValue(VehicleConfigKeys.KEY_FRONT_WHEEL_FRONT_CAR,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
+		
 		setID(id);
 		PegasusVehicleData.getInstance().setLength(length);
 		PegasusVehicleData.getInstance().setWidth(width);
 		PegasusVehicleData.getInstance().setWheelDiameter(wheelDiameter);
 		PegasusVehicleData.getInstance().setSteeringAngle(steeringAngle);
 		PegasusVehicleData.getInstance().setNumberOfUltraSonicSensors(numberOfUltraSonicSensors);
+		PegasusVehicleData.getInstance().setWheelBase(wheelBase);
+		PegasusVehicleData.getInstance().setDistanceCenterFrontWheelToFrontCar(centreFrontWheelToFrontCar);
+		PegasusVehicleData.getInstance().setMinimumRequiredSpaceToPark();
 		PegasusLogger.getInstance().d(TAG,"setVehicleData", PegasusVehicleData.getInstance().toString());
 		
 	}
@@ -106,8 +120,8 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 		mVehicleActionsListener = listener;
 	}
 	
-	@Override
-	public Object getVehicleData(){
+	
+	public PegasusVehicleData getVehicleData(){
 		return PegasusVehicleData.getInstance();
 	}
 	
@@ -222,12 +236,20 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 	}
 	
 	@Override
+	public void findParkingSpot(int parkingType) {
+		setCurrentState(VehicleState.VEHICLE_LOOKING_FOR_PARKING);
+		PegasusLogger.getInstance().i(TAG, "findParkingSpot", "started looking for parking");
+		mVehicleActionsListener.findParkingSpot(parkingType);
+		
+	}
+	
+	@Override
 	public void onReceived(int sensorId,double value){
 		PegasusLogger.getInstance().i(TAG, "onReceived", "Sensor id:" + sensorId +" value:" + value);
 		if(sensorId == INFRA_RED_TACHOMETER_ID){
 			handleTachometerData(value);
 		}else{
-			//TODO - handle each sensor(when and where)
+			handleDistanceSensorData(sensorId,value);
 		}
 	}
 	
@@ -237,11 +259,31 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 	 */
 	private void handleTachometerData(double aValue){
 		if(aValue >= 0){
-			double travelledDsitanceInSec = aValue * ((PegasusVehicleData)getVehicleData()).getWheelPerimeter();
+			double travelledDsitanceInSec = aValue * PegasusVehicleData.getInstance().getWheelPerimeter();
 			setCurrentspeed(travelledDsitanceInSec);
 			setTravelledDistance(getTravelledDistance() + travelledDsitanceInSec);
 		}
 	}
+
+	/**
+	 * handle incoming data from distance sensor(ultra sonic)
+	 * @param sensorId source
+	 * @param value its reading
+	 */
+	private void handleDistanceSensorData(int sensorId, double value){
+		switch(getCurrentState()){
+		case VehicleState.VEHICLE_FREE_DRIVING:
+			break;
+		case VehicleState.VEHICLE_LOOKING_FOR_PARKING:
+			ParkingFinder.getInstance().updateInput(sensorId,value);
+			break;
+		case VehicleState.VEHICLE_PARKING:
+			
+			break;
+		}
+		
+	}
+	
 
 
 }

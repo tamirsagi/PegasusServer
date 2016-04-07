@@ -30,7 +30,16 @@ public interface IVehicleActionsListener {
 	 */
 	void driveBackward();
 	
+	/**
+	 * stop the vehicle
+	 */
 	void stop();
+	
+	/**
+	 * find parking spot
+	 * @param parkingType type of parking spot
+	 */
+	void findParkingSpot(int parkingType);
 	
 	
 	
