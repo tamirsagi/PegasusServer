@@ -1,4 +1,5 @@
 import logs.logger.PegasusLogger;
+import Util.CameraManager;
 import Util.LinuxCommands;
 
 import control.Controller;
@@ -9,8 +10,8 @@ public class Main {
 	
 	public static void main(String[] args) {
 
-		if (LinuxCommands.attachedArduinoToSerialPort()
-				&& LinuxCommands.enableBluetooth()) {
+		if (LinuxCommands.getInstance().attachedArduinoToSerialPort()
+				&& LinuxCommands.getInstance().enableBluetooth()) {
 			Controller.getInstance().bootCompleted();
 		}else{
 			PegasusLogger.getInstance().e(TAG, "main", "Program Could not start");//TODO - Maybe reset linux
