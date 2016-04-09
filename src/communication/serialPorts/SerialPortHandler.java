@@ -499,7 +499,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		
 		/**
 		 * add message to queue
-		 * @param aMsg incoming message from Hardwareunit
+		 * @param aMsg incoming message from Hardware Unit
 		 */
 		public synchronized void addMessageToQueue(String aMsg){
 			mMessageToHandle.add(aMsg);

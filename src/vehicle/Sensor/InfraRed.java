@@ -1,7 +1,12 @@
 package vehicle.Sensor;
 
-import control.Controller;
+import communication.serialPorts.SerialPortHandler;
 
+/**
+ * represents infra red sensor
+ * @author Tamir
+ *
+ */
 public class InfraRed extends AbstractSensor {
 	
 	public InfraRed(int id) {
@@ -11,7 +16,7 @@ public class InfraRed extends AbstractSensor {
 	
 	@Override
 	public void registerToDataSupplier() {
-		Controller.getInstance().registerSensor(getId(), this);
+		SerialPortHandler.getInstance().registerSensor(getId(), this);
 		
 	}
 

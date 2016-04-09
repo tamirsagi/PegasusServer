@@ -16,6 +16,7 @@ import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.common.constants.VehicleState;
 
 public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
+	
 	private static final String TAG = PegasusVehicle.class.getSimpleName();
 	private static final String PEGASUS_DEFAULT_ID = "302774773";
 	private static PegasusVehicle mInstance;
