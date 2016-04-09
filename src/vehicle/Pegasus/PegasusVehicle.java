@@ -1,23 +1,22 @@
 package vehicle.Pegasus;
 
 import java.util.HashMap;
-
+import communication.serialPorts.SerialPortHandler;
+import communication.serialPorts.messages.MessageVaribles;
 import logs.logger.PegasusLogger;
-
 import vehicle.Interfaces.onInputReceived;
+import vehicle.Sensor.AbstractSensor;
 import vehicle.Sensor.InfraRed;
 import vehicle.Sensor.UltraSonic;
 import vehicle.algorithms.ParkingFinder;
 import vehicle.common.AbstractVehicle;
-import vehicle.common.VehicleData;
 import vehicle.common.constants.VehicleConfigKeys;
 import vehicle.common.constants.VehicleParams;
 import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.common.constants.VehicleState;
-import control.Interfaces.IVehicleActionsListener;
 
-public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
-	private static final String TAG = "Pegasus Vehicle";
+public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
+	private static final String TAG = PegasusVehicle.class.getSimpleName();
 	private static final String PEGASUS_DEFAULT_ID = "302774773";
 	private static PegasusVehicle mInstance;
 
@@ -47,11 +46,10 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 	//Tachometer ID
 	private static final int INFRA_RED_TACHOMETER_ID = 18;
 	
-	
-	private IVehicleActionsListener mVehicleActionsListener;
 	private int mDigitalSpeed;
 	private HashMap<String,UltraSonic> mUltraSonicSensors;
 	private InfraRed mTachometer;
+	
 
 	/**
 	 * Get class instance
@@ -59,7 +57,6 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 	 * @return
 	 */
 	public static PegasusVehicle getInstance() {
-		
 		if (mInstance == null)
 			mInstance = new PegasusVehicle();
 
@@ -67,17 +64,16 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 	}
 
 	private PegasusVehicle() {
-		
 		mCurrentDrivingDirection = VehicleParams.DrivingDirection.FORWARD; // by default
 		setControlType(VehicleControlType.AUTONOMOUS);
 		setCurrentState(VehicleState.VEHICLE_DEFAULT);
 		setVehicleData();
 		setUltraSonicSensors();
 		setupTachometerSensor();
+		mListener.onVehicleStateChanged(true);
 		
 	}
 	
-
 	@Override
 	public void setVehicleData() {
 		String id = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_ID,PEGASUS_DEFAULT_ID);
@@ -114,12 +110,6 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 		PegasusLogger.getInstance().d(TAG,"setVehicleData", PegasusVehicleData.getInstance().toString());
 		
 	}
-
-	@Override
-	public void registerVehicleActionsListener(IVehicleActionsListener listener) {
-		mVehicleActionsListener = listener;
-	}
-	
 	
 	public PegasusVehicleData getVehicleData(){
 		return PegasusVehicleData.getInstance();
@@ -190,37 +180,55 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 		return null;
 	}
 	
+	public void registerAllSensorToDataProvider(){
+		for( String key : mUltraSonicSensors.keySet()){
+			mUltraSonicSensors.get(key).registerToDataSupplier();
+		}
+		mTachometer.registerToDataSupplier();
+	}
+	
 
 	@Override
 	public void changeSpeed(int digitalSpeed) {
 		mDigitalSpeed = digitalSpeed;
-		mVehicleActionsListener.changeSpeed(digitalSpeed);
+		if (SerialPortHandler.getInstance().isBoundToSerialPort()){
+			SerialPortHandler.getInstance().changeSpeed(digitalSpeed);
+		}
 	}
 
 	@Override
 	public void turnRight(double rotationAngle) {
 		mSteeringAngle = STRAIGHT_STEER_ANGLE - rotationAngle; // from 0-40 to 50 - 90
-		mVehicleActionsListener.turnRight(rotationAngle);
+		if (SerialPortHandler.getInstance().isBoundToSerialPort()){
+			SerialPortHandler.getInstance().changeSteerMotor(
+					MessageVaribles.VALUE_STEERING_RIGHT, rotationAngle);
+		}
 
 	}
 
 	@Override
 	public void turnLeft(double rotationAngle) {
 		mSteeringAngle = STRAIGHT_STEER_ANGLE + rotationAngle; // from 0-40 to 90 - 130
-		mVehicleActionsListener.turnLeft(rotationAngle);
+		if (SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeSteerMotor(
+					MessageVaribles.VALUE_STEERING_LEFT, rotationAngle);
 	}
 
 	@Override
 	public void driveForward() {
 		mCurrentDrivingDirection = VehicleParams.DrivingDirection.FORWARD;
-		mVehicleActionsListener.driveForward();
+		if (SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeDrivingDirection(
+					MessageVaribles.VALUE_DRIVING_FORWARD);
 
 	}
 
 	@Override
 	public void driveBackward() {
 		mCurrentDrivingDirection = VehicleParams.DrivingDirection.REVERSE;
-		mVehicleActionsListener.driveBackward();
+		if (SerialPortHandler.getInstance().isBoundToSerialPort())
+			SerialPortHandler.getInstance().changeDrivingDirection(
+					MessageVaribles.VALUE_DRIVING_REVERSE);
 
 	}
 	
@@ -231,17 +239,9 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 
 	@Override
 	public void stop() {
-		mDigitalSpeed = 0;
-		mVehicleActionsListener.stop();
+		changeSpeed(0);
 	}
 	
-	@Override
-	public void findParkingSpot(int parkingType) {
-		setCurrentState(VehicleState.VEHICLE_LOOKING_FOR_PARKING);
-		PegasusLogger.getInstance().i(TAG, "findParkingSpot", "started looking for parking");
-		mVehicleActionsListener.findParkingSpot(parkingType);
-		
-	}
 	
 	@Override
 	public void onReceived(int sensorId,double value){
@@ -283,7 +283,6 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived {
 		}
 		
 	}
-	
 
 
 }

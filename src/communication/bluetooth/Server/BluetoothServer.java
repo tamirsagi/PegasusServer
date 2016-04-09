@@ -7,10 +7,12 @@ import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.io.StreamConnectionNotifier;
 
-import communication.bluetooth.Constants.BluetoothServerStatus;
-import communication.messages.MessageVaribles;
 
-import control.Interfaces.IServerListener;
+
+import communication.bluetooth.Constants.BluetoothServerStatus;
+import communication.serialPorts.messages.MessageVaribles;
+
+import control.Interfaces.OnServerEventsListener;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -29,7 +31,7 @@ public class BluetoothServer extends Thread {
     private LocalDevice mLocalDevice;
     private StreamConnectionNotifier mNotifier;
     private boolean isOnline;
-    private HashMap<String,IServerListener> listeners;
+    private HashMap<String,OnServerEventsListener> listeners;
     private HashMap<String,SocketData> clients;
    
     /**
@@ -48,7 +50,7 @@ public class BluetoothServer extends Thread {
         setName(TAG);
         mServerStatus = BluetoothServerStatus.DISCONNECTED;
         clients = new HashMap<>();
-        listeners = new HashMap<String, IServerListener>();
+        listeners = new HashMap<String, OnServerEventsListener>();
     }
     
 	/**
@@ -56,7 +58,7 @@ public class BluetoothServer extends Thread {
 	 * @param name
 	 * @param listener
 	 */
-	public void registerMessagesListener(String name,IServerListener listener){
+	public void registerMessagesListener(String name,OnServerEventsListener listener){
 		PegasusLogger.getInstance().d(TAG,"registerMessagesListener", "Listener : " + name + " has registered");
 		listeners.put(name,listener);
 	}

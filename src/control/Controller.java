@@ -1,33 +1,28 @@
 package control;
 
-import java.util.HashMap;
-
 import logs.logger.PegasusLogger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import Util.MessagesMethods;
-
 import communication.bluetooth.Constants.BluetoothServerStatus;
 import communication.bluetooth.Server.BluetoothServer;
-import communication.messages.MessageVaribles;
 import communication.serialPorts.SerialPortHandler;
+import communication.serialPorts.messages.MessageVaribles;
 
 import vehicle.Interfaces.onSensorDataRecieved;
 import vehicle.Pegasus.PegasusVehicle;
-import vehicle.Sensor.AbstractSensor;
 import vehicle.algorithms.ParkingFinder;
 import vehicle.common.constants.VehicleParams;
+import vehicle.common.constants.VehicleState;
 
 import control.Constants.ApplicationStates;
-import control.Interfaces.ISerialPortListener;
-import control.Interfaces.IServerListener;
-import control.Interfaces.IVehicleActionsListener;
-import control.Interfaces.onParkingState;
+import control.Interfaces.OnSerialPortEventsListener;
+import control.Interfaces.OnServerEventsListener;
+import control.Interfaces.OnVehicleEventsListener;
+import control.Interfaces.OnParkingEventsListener;
 
-public class Controller implements IServerListener, ISerialPortListener,
-		IVehicleActionsListener, onParkingState {
+public class Controller implements OnServerEventsListener, OnParkingEventsListener, OnSerialPortEventsListener,OnVehicleEventsListener {
 
 	public static final String TAG = Controller.class.getSimpleName();
 	private static Controller mInstance;
@@ -35,10 +30,8 @@ public class Controller implements IServerListener, ISerialPortListener,
 	private boolean mIsSerialPortReady;
 	private boolean mIsHardwareReady;
 	
-	private HashMap<Integer,onSensorDataRecieved> mSensorLisenters;
 	private int mApplicationState = ApplicationStates.BOOTING;
 
-	
 	public static Controller getInstance(){
 		if(mInstance == null){
 			mInstance = new Controller();
@@ -46,7 +39,6 @@ public class Controller implements IServerListener, ISerialPortListener,
 		return mInstance;
 	}
 	private  Controller() {
-		mSensorLisenters = new HashMap<Integer, onSensorDataRecieved>();
 		
 	}
 
@@ -55,8 +47,7 @@ public class Controller implements IServerListener, ISerialPortListener,
 	 */
 	public void bootCompleted() {
 		PegasusLogger.getInstance().d(TAG, "bootCompleted", "System Booted up");
-		PegasusVehicle.getInstance().registerVehicleActionsListener(this);
-		setState(ApplicationStates.INITIALIZE_SERIAL_PORT);
+		setState(ApplicationStates.INITIALIZE_VEHICLE);
 	}
 
 	/**
@@ -70,9 +61,16 @@ public class Controller implements IServerListener, ISerialPortListener,
 				+ " and changed to:" + ApplicationStates.getStateName(state));
 		mApplicationState = state;
 		switch (state) {
+		case ApplicationStates.INITIALIZE_VEHICLE:
+			PegasusVehicle.getInstance().registerVehicleActionsListener(this);
+			break;
+		case ApplicationStates.VEHICLE_READY:
+			break;
 		case ApplicationStates.INITIALIZE_SERIAL_PORT:
-			SerialPortHandler.getInstance().registerMessagesListener(this);
+			SerialPortHandler.getInstance().registerStatesListener(this);
 			SerialPortHandler.getInstance().startThread();
+			break;
+		case ApplicationStates.SERIAL_PORT_READY:
 			break;
 		case ApplicationStates.WAITING_FOR_HARDWARE:
 			break;
@@ -92,22 +90,12 @@ public class Controller implements IServerListener, ISerialPortListener,
 		case ApplicationStates.READY:
 			SerialPortHandler.getInstance().updateSystemReady();
 			ParkingFinder.getInstance().registerParkingEventsListner(this);
+			break;
 		}
 
 	}
 	
-	/**
-	 * register sensors to get incoming data
-	 * @param sensorID
-	 * @param listener - sensor who listens for a new input
-	 */
-	public void registerSensor(int sensorID, onSensorDataRecieved listener){
-		if(sensorID > 0 && listener != null){
-			mSensorLisenters.put(sensorID, listener);
-		}
-	}
-
-	// ///////////////////////////////////// SERVER EVENTS & Relevant Methods// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	// ///////////////////////////////////// SERVER EVENTS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 	@Override
 	public void onUpdateServerStatusChanged(int code) {
@@ -220,139 +208,28 @@ public class Controller implements IServerListener, ISerialPortListener,
 		}
 	}
 
-	// //////////////////////////////////////VEHICLE EVENTS & Relevant Methods
-	// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-
+	// ////////////////////////////////////// VEHICLE EVENTS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
 	@Override
-	public void changeSpeed(int digitalSpeed) {
-		if (SerialPortHandler.getInstance().isBoundToSerialPort())
-			SerialPortHandler.getInstance().changeSpeed(digitalSpeed);
-	}
-
-	@Override
-	public void turnRight(double rotationAngle) {
-		if (SerialPortHandler.getInstance().isBoundToSerialPort())
-			SerialPortHandler.getInstance().changeSteerMotor(
-					MessageVaribles.VALUE_STEERING_RIGHT, rotationAngle);
-	}
-
-	@Override
-	public void turnLeft(double rotationAngle) {
-		if (SerialPortHandler.getInstance().isBoundToSerialPort())
-			SerialPortHandler.getInstance().changeSteerMotor(
-					MessageVaribles.VALUE_STEERING_LEFT, rotationAngle);
-	}
-
-	@Override
-	public void driveForward() {
-		if (SerialPortHandler.getInstance().isBoundToSerialPort())
-			SerialPortHandler.getInstance().changeDrivingDirection(
-					MessageVaribles.VALUE_DRIVING_FORWARD);
-	}
-
-	@Override
-	public void driveBackward() {
-		if (SerialPortHandler.getInstance().isBoundToSerialPort())
-			SerialPortHandler.getInstance().changeDrivingDirection(
-					MessageVaribles.VALUE_DRIVING_REVERSE);
-	}
-
-	@Override
-	public void stop() {
-		if (SerialPortHandler.getInstance().isBoundToSerialPort())
-			SerialPortHandler.getInstance().changeSpeed(0);
+	public void onVehicleStateChanged(boolean aIsVehicleReady){
+		if(aIsVehicleReady){
+			PegasusLogger.getInstance().d(TAG,"onVehicleStateChanged", "changed state to :"	+ ApplicationStates.INITIALIZE_SERIAL_PORT);
+			setState(ApplicationStates.INITIALIZE_SERIAL_PORT);
+		}
 	}
 	
-	/**
-	 * handle parking action
-	 * @param parkingType
-	 */
-	@Override
-	public void findParkingSpot(int parkingType) {
-		ParkingFinder.getInstance().findParking(parkingType);
-	}
-
 	// ////////////////////////////////////// SERIAL PORT EVENTS & Relevant Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 	@Override
-	public void onSerialPortReady() {
-		PegasusLogger.getInstance().d(TAG,"onSerialPortReady", "changed state to :"	+ ApplicationStates.WAITING_FOR_HARDWARE);
-		mIsSerialPortReady = true;
-		setState(ApplicationStates.WAITING_FOR_HARDWARE);
-
-	}
-
-	@Override
-	public void onHardwareReady() {
-		PegasusLogger.getInstance().d(TAG, "onHardwareReady", "current state:" + mApplicationState);
-		if (!mIsServerReady && !BluetoothServer.getInstance().isServerOnline()) {
-			mIsHardwareReady = true;
-			setState(ApplicationStates.WAITING_FOR_SERVER);
-
-		} else {
-			setState(ApplicationStates.READY);
+	public void onSerialPortStateChanged(boolean aIsReady) {
+		if(aIsReady){
+			PegasusLogger.getInstance().d(TAG,"onSerialPortReady", "changed state to :"	+ ApplicationStates.WAITING_FOR_HARDWARE);
+			mIsSerialPortReady = true;
+			PegasusVehicle.getInstance().registerAllSensorToDataProvider();
+			setState(ApplicationStates.WAITING_FOR_HARDWARE);
+		}else{
+			//TODO -> Failure
 		}
-
-	}
-
-	@Override
-	public void onMessageReceivedFromHardwareUnit(String msg) {
-		try {
-			JSONObject received = MessagesMethods
-					.convertSerialPortMessageToMap(msg);
-			if (received.length() > 0) {
-				int messageType = received
-						.getInt(MessageVaribles.KEY_MESSAGE_TYPE);
-				switch (MessageVaribles.MessageType.getMessageType(messageType)) {
-				case ACTION:
-					break;
-				case ERROR:
-					break;
-				case INFO:
-					handleInfoMessageFromHardwareUnit(received);
-					break;
-				case WARNING:
-					break;
-				default:
-					break;
-				}
-			}
-
-		}catch (Exception e) {
-			PegasusLogger.getInstance().e(TAG, "onMessageReceivedFromHardwareUnit", "msg : " + msg 
-					+ " exception:" + e.getMessage());
-		}
-	}
-
-	/**
-	 * Method handles info message from Serial Port
-	 * 
-	 * @param receivedMsg
-	 */
-	private void handleInfoMessageFromHardwareUnit(JSONObject receivedMsg) {
-		PegasusLogger.getInstance().d(TAG, "handleInfoMessageFromHardwareUnit", receivedMsg.toString());
-		try {
-			String info_type = (String) receivedMsg
-					.get(MessageVaribles.KEY_INFO_TYPE);
-			switch (MessageVaribles.InfoType.valueOf(info_type)) {
-			case STATUS:
-				int status_code = receivedMsg
-						.getInt(MessageVaribles.KEY_STATUS);
-				updateHardwareStatus(status_code);
-				break;
-			case SENSOR_DATA:
-				int sensorID = receivedMsg.getInt(MessageVaribles.KEY_SENSOR_ID);
-				double sensorData = receivedMsg.getDouble(MessageVaribles.KEY_SENSOR_DATA);
-				notifySensorForIncomingData(sensorID,sensorData);
-			default:
-				break;
-
-			}
-
-		} catch (JSONException e) {
-			PegasusLogger.getInstance().e(TAG, "handleInfoMessageFromSerialPort", e.getMessage());
-		}
-
 	}
 
 	/**
@@ -360,13 +237,21 @@ public class Controller implements IServerListener, ISerialPortListener,
 	 * 
 	 * @param statusCode
 	 */
-	private void updateHardwareStatus(int statusCode) {
+	public void updateHardwareStatus(int statusCode) {
 		PegasusLogger.getInstance().d(TAG, "updateHardwareStatus", "Status code:" + statusCode);
 		switch (MessageVaribles.StatusCode.get(statusCode)) {
 		case INFO_HARDWARE_STATUS_READY:
 			if(!mIsHardwareReady){
 				mIsHardwareReady = true;
 				setState(ApplicationStates.HARDWARE_READY);
+			}else{
+				if (!mIsServerReady && !BluetoothServer.getInstance().isServerOnline()) {
+					mIsHardwareReady = true;
+					setState(ApplicationStates.WAITING_FOR_SERVER);
+
+				} else {
+					setState(ApplicationStates.READY);
+				}
 			}
 			break;
 		//TODO - add failure state
@@ -376,31 +261,25 @@ public class Controller implements IServerListener, ISerialPortListener,
 	}
 
 	@Override
-	public void onSerialStatusChanged(boolean status) {
-		mIsSerialPortReady = status;
-	}
-
-	@Override
 	public void onSerialPortError(String msg) {
 		PegasusLogger.getInstance().e(TAG, "onSerialPortError", msg);
 
 	}
 	
+	
+	//////////////////////////////////////// Parking \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
 	/**
-	 * notify relevant sensor for new data
-	 * @param sensorID
-	 * @param value
+	 * handle parking action
+	 * @param parkingType
 	 */
-	private void notifySensorForIncomingData(int sensorID,double value){
-		if(sensorID > 0 && value >= 0){
-			mSensorLisenters.get(sensorID).onRecievedSensorData(value);
-		}
+	public void findParkingSpot(int parkingType) {
+		PegasusVehicle.getInstance().setCurrentState(VehicleState.VEHICLE_LOOKING_FOR_PARKING);
+		PegasusLogger.getInstance().i(TAG, "findParkingSpot", "started looking for parking");
+		ParkingFinder.getInstance().findParking(parkingType);
 	}
 	
-	
-	//////////////////////////////////////// Parking finder Area events \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-	
-	
+	////////////////////////////////////////Parking Finder events \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	
 	
 	@Override

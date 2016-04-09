@@ -1,4 +1,4 @@
-package communication.messages;
+package communication.serialPorts.messages;
 
 import java.util.EnumSet;
 import java.util.HashMap;

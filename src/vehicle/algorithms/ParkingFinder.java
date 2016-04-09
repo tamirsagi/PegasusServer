@@ -2,7 +2,7 @@ package vehicle.algorithms;
 
 import org.json.JSONObject;
 
-import control.Interfaces.onParkingState;
+import control.Interfaces.OnParkingEventsListener;
 
 import vehicle.Interfaces.OnTimerListener;
 import vehicle.common.ActionTimer;
@@ -15,7 +15,7 @@ public class ParkingFinder implements OnTimerListener{
 	private int mParkingType;
 	private boolean mFound;
 	private double mDistanceSinceStarted;
-	private onParkingState mListener;
+	private OnParkingEventsListener mListener;
 	private ActionTimer mTimer;
 	
 	
@@ -30,7 +30,7 @@ public class ParkingFinder implements OnTimerListener{
 		
 	}
 	
-	public void registerParkingEventsListner(onParkingState aListner){
+	public void registerParkingEventsListner(OnParkingEventsListener aListner){
 		if(aListner != null){
 			mListener = aListner;
 		}
@@ -65,9 +65,7 @@ public class ParkingFinder implements OnTimerListener{
 			
 		case ParkingType.ANGULAR_LEFT:
 			break;
-		
 		}
-		
 	}
 	
 	/**

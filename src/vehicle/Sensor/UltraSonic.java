@@ -1,20 +1,21 @@
 package vehicle.Sensor;
 
-import control.Controller;
+import communication.serialPorts.SerialPortHandler;
 
+/**
+ * represent ultra sonic sensor
+ * @author Tamir
+ *
+ */
 public class UltraSonic extends AbstractSensor  {
-	
 	
 		public UltraSonic(int id){
 			super(id);
 			setType(Constants.ULTRA_SONIC);
 		}
 		
-
 		@Override
 		public void registerToDataSupplier() {
-			Controller.getInstance().registerSensor(getId(), this);
-			
+			SerialPortHandler.getInstance().registerSensor(getId(), this);
 		}
-
 }

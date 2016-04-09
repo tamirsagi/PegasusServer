@@ -5,7 +5,10 @@ import java.util.HashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import communication.messages.MessageVaribles;
+import communication.serialPorts.messages.MessageVaribles;
+
+
+
 
 
 public class MessagesMethods {

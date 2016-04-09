@@ -1,6 +1,6 @@
 package control.Interfaces;
 
-public interface onParkingState {
+public interface OnParkingEventsListener {
 	
 	/**
 	 * fire an event that a parking spot has been found

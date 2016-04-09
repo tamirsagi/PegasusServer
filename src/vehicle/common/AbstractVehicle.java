@@ -5,10 +5,10 @@ import vehicle.common.constants.VehicleParams.DrivingDirection;
 import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.common.constants.VehicleState;
 import control.Constants.ApplicationStates;
-import control.Interfaces.IVehicleActionsListener;
+import control.Interfaces.OnVehicleEventsListener;
 
 public abstract class AbstractVehicle {
-	private static final String TAG = "Abstract Vehicle";
+	private static final String TAG = AbstractVehicle.class.getSimpleName();
 	protected static AbstractVehicle mInstance;
 	
 	
@@ -20,6 +20,7 @@ public abstract class AbstractVehicle {
 	protected double mCurrentSpeed;
 	protected double mDistance;
 	protected int mCurrentState;
+	protected OnVehicleEventsListener mListener; 
 	
 	
 	public static AbstractVehicle getInstance() throws Exception{
@@ -61,7 +62,11 @@ public abstract class AbstractVehicle {
 	/**
 	 * Register Listener
 	 */
-	public abstract void registerVehicleActionsListener(IVehicleActionsListener listener);
+	public void registerVehicleActionsListener(OnVehicleEventsListener aListener){
+		if(aListener != null){
+			mListener = aListener;
+		}
+	}
 	
 	/**
 	 * Handle the vehicle speed
@@ -97,11 +102,11 @@ public abstract class AbstractVehicle {
 	 */
 	public abstract void stop();
 	
-	/**
-	 * handle looking for parking action
-	 * @param parkingType parking type(parallel, angular etc..)
-	 */
-	public abstract void findParkingSpot(int parkingType);
+//	/**
+//	 * handle looking for parking action
+//	 * @param parkingType parking type(parallel, angular etc..)
+//	 */
+//	public abstract void findParkingSpot(int parkingType);
 	
 	
 	public double getCurrentSpeed(){

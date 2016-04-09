@@ -1,4 +1,4 @@
-package communication.messages;
+package communication.serialPorts.messages;
 
 /**
  * This class represent message object 

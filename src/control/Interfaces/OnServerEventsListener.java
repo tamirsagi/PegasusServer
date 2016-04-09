@@ -1,6 +1,6 @@
 package control.Interfaces;
 
-public interface IServerListener {
+public interface OnServerEventsListener {
 	
 	/**
 	 * update server status
