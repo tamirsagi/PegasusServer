@@ -102,13 +102,7 @@ public abstract class AbstractVehicle {
 	 */
 	public abstract void stop();
 	
-//	/**
-//	 * handle looking for parking action
-//	 * @param parkingType parking type(parallel, angular etc..)
-//	 */
-//	public abstract void findParkingSpot(int parkingType);
-	
-	
+
 	public double getCurrentSpeed(){
 		return mCurrentSpeed;
 	}
@@ -127,9 +121,9 @@ public abstract class AbstractVehicle {
 	
 	public void setCurrentState(int aState){
 		if(aState != mCurrentState){
-			PegasusLogger.getInstance().d(TAG,"setState", "State was "
+			PegasusLogger.getInstance().d(TAG,"setCurrentState", "State was "
 					+ VehicleState.getVehicleStateName(mCurrentState)
-					+ " and changed to:" + ApplicationStates.getStateName(aState));
+					+ " and changed to:" + VehicleState.getVehicleStateName(aState));
 			mCurrentState = aState;
 		}
 	}

@@ -3,6 +3,7 @@ package vehicle.Pegasus;
 import java.util.HashMap;
 import communication.serialPorts.SerialPortHandler;
 import communication.serialPorts.messages.MessageVaribles;
+import control.Interfaces.OnVehicleEventsListener;
 import logs.logger.PegasusLogger;
 import vehicle.Interfaces.onInputReceived;
 import vehicle.Sensor.AbstractSensor;
@@ -50,6 +51,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	private int mDigitalSpeed;
 	private HashMap<String,UltraSonic> mUltraSonicSensors;
 	private InfraRed mTachometer;
+	private boolean mIsReady;
 	
 
 	/**
@@ -58,12 +60,12 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	 * @return
 	 */
 	public static PegasusVehicle getInstance() {
-		if (mInstance == null)
+		if (mInstance == null){
 			mInstance = new PegasusVehicle();
-
+		}
 		return mInstance;
 	}
-
+	
 	private PegasusVehicle() {
 		mCurrentDrivingDirection = VehicleParams.DrivingDirection.FORWARD; // by default
 		setControlType(VehicleControlType.AUTONOMOUS);
@@ -71,8 +73,19 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 		setVehicleData();
 		setUltraSonicSensors();
 		setupTachometerSensor();
-		mListener.onVehicleStateChanged(true);
 		
+	}
+	
+	/**
+	 * is used after insance first created.
+	 * @param aListener
+	 */
+	public void notifyWhenReady(OnVehicleEventsListener aListener){
+		if(aListener != null && !mIsReady){
+			mIsReady = true;
+			registerVehicleActionsListener(aListener);
+			aListener.onVehicleStateChanged(true);
+		}
 	}
 	
 	@Override

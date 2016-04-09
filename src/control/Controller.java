@@ -62,7 +62,7 @@ public class Controller implements OnServerEventsListener, OnParkingEventsListen
 		mApplicationState = state;
 		switch (state) {
 		case ApplicationStates.INITIALIZE_VEHICLE:
-			PegasusVehicle.getInstance().registerVehicleActionsListener(this);
+			PegasusVehicle.getInstance().notifyWhenReady(this);
 			break;
 		case ApplicationStates.VEHICLE_READY:
 			break;

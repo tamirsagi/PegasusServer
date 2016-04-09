@@ -37,7 +37,7 @@ public class PegausVehicleProperties extends Properties {
 	private PegausVehicleProperties(){
 		try {
 		mInputStream = getClass().getClassLoader().getResourceAsStream(FILE_NAME);
-		mWriter = new PrintWriter(new File(getClass().getResource(FILE_NAME).getPath()));
+		mWriter = new PrintWriter(new File(getClass().getClassLoader().getResource(FILE_NAME).getPath()));
 		load(mInputStream);
 		PegasusLogger.getInstance().i(TAG,"PegausVehicleProperties","Configuration file was loaded succefully");
 			
