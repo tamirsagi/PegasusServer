@@ -1,7 +1,10 @@
 package vehicle.Sensor;
 
-public class Constants {
+public class SensorConstants {
 
+	public static final int DISABLE_SENSOR = 0;
+	public static final int ENABLE_SENSOR = 1;
+	
 	public static final int ULTRA_SONIC = 0;
 	public static final int INFRA_RED = 1;
 

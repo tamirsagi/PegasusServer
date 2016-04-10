@@ -214,6 +214,7 @@ public class Controller implements OnServerEventsListener, OnParkingEventsListen
 	public void onVehicleStateChanged(boolean aIsVehicleReady){
 		if(aIsVehicleReady){
 			PegasusLogger.getInstance().d(TAG,"onVehicleStateChanged", "changed state to :"	+ ApplicationStates.INITIALIZE_SERIAL_PORT);
+			PegasusVehicle.getInstance().registerVehicleActionsListener(this);
 			setState(ApplicationStates.INITIALIZE_SERIAL_PORT);
 		}
 	}
@@ -274,9 +275,9 @@ public class Controller implements OnServerEventsListener, OnParkingEventsListen
 	 * @param parkingType
 	 */
 	public void findParkingSpot(int parkingType) {
-		PegasusVehicle.getInstance().setCurrentState(VehicleState.VEHICLE_LOOKING_FOR_PARKING);
 		PegasusLogger.getInstance().i(TAG, "findParkingSpot", "started looking for parking");
 		ParkingFinder.getInstance().findParking(parkingType);
+		PegasusVehicle.getInstance().setCurrentState(VehicleState.VEHICLE_LOOKING_FOR_PARKING);
 	}
 	
 	////////////////////////////////////////Parking Finder events \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\

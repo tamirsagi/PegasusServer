@@ -5,9 +5,6 @@ import java.util.HashMap;
 
 public class VehicleParams {
 	
-	public static final int DISABLE_SENSOR = 0;
-	public static final int ENABLE_SENSOR = 1;
-
 	public enum VehicleControlType{
 		MANUAL, AUTONOMOUS;
 	}

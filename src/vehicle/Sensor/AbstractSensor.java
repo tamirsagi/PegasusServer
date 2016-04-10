@@ -11,9 +11,7 @@ import vehicle.Interfaces.onSensorDataRecieved;
  *
  */
 public abstract class AbstractSensor implements onSensorDataRecieved{
-
 	
-
 	private int mType;
 	private int mId;
 	private String mPosition;

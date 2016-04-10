@@ -125,8 +125,11 @@ public abstract class AbstractVehicle {
 					+ VehicleState.getVehicleStateName(mCurrentState)
 					+ " and changed to:" + VehicleState.getVehicleStateName(aState));
 			mCurrentState = aState;
+			changeSensorState();
 		}
 	}
+	
+	public abstract void changeSensorState();
 	
 	public double getTravelledDistance(){return mDistance;}
 	
