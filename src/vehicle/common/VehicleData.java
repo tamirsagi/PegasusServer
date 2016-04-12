@@ -2,7 +2,6 @@ package vehicle.common;
 
 public abstract class VehicleData {
 	
-	
 	private double mLength;
 	private double mWidth;
 	protected double mTurningRadious;

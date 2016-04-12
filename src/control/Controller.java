@@ -5,10 +5,13 @@ import logs.logger.PegasusLogger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import vehicle.common.VehicleData;
 import vehicle.common.constants.VehicleParams;
 import vehicle.common.constants.VehicleState;
+import vehicle.managers.driving_manager.DrivingManager;
 import vehicle.managers.finder.ParkingFinder;
 import vehicle.pegasus.PegasusVehicle;
+import vehicle.pegasus.PegausVehicleProperties;
 
 import communication.bluetooth.Constants.BluetoothServerStatus;
 import communication.bluetooth.Server.BluetoothServer;
@@ -89,6 +92,7 @@ public class Controller implements OnServerEventsListener, OnParkingEventsListen
 		case ApplicationStates.READY:
 			SerialPortHandler.getInstance().updateSystemReady();
 			ParkingFinder.getInstance().registerParkingEventsListner(this);
+			DrivingManager.getInstance().startThread();
 			break;
 		}
 
@@ -274,9 +278,15 @@ public class Controller implements OnServerEventsListener, OnParkingEventsListen
 	 * @param parkingType
 	 */
 	public void findParkingSpot(int parkingType) {
-		PegasusLogger.getInstance().i(TAG, "findParkingSpot", "started looking for parking");
-		ParkingFinder.getInstance().findParking(parkingType);
-		PegasusVehicle.getInstance().setCurrentState(VehicleState.VEHICLE_LOOKING_FOR_PARKING);
+		if(PegausVehicleProperties.getInstance().isDataLoaded()){
+			PegasusLogger.getInstance().i(TAG, "findParkingSpot", "started looking for parking");
+			VehicleData vehicleData = PegasusVehicle.getInstance().getVehicleData();
+			double mMinSpace = vehicleData.getLength() + 2 * vehicleData.getMinimumRequiredSpaceToPark();
+			ParkingFinder.getInstance().findParking(parkingType, mMinSpace);
+			PegasusVehicle.getInstance().setCurrentState(VehicleState.VEHICLE_LOOKING_FOR_PARKING);
+		}else{
+			//TODO - send callback parking cannot be performed
+		}
 	}
 	
 	////////////////////////////////////////Parking Finder events \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\

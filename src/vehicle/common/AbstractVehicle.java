@@ -30,6 +30,7 @@ public abstract class AbstractVehicle {
 	 */
 	public void notifyWhenReady(OnVehicleEventsListener aListener){
 		if(aListener != null && !mIsReady){
+			PegasusLogger.getInstance().i("notifyWhenReady", "Vehicle is ready");
 			mIsReady = true;
 			registerVehicleActionsListener(aListener);
 			aListener.onVehicleStateChanged(true);
