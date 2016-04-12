@@ -4,7 +4,7 @@ import logs.logger.PegasusLogger;
 import vehicle.common.constants.VehicleParams.DrivingDirection;
 import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.common.constants.VehicleState;
-import control.Interfaces.OnVehicleEventsListener;
+import control.interfaces.OnVehicleEventsListener;
 
 public abstract class AbstractVehicle {
 	
@@ -18,7 +18,7 @@ public abstract class AbstractVehicle {
 	protected VehicleControlType mVehicleControlType;
 	protected double mCurrentSpeed;
 	protected double mDistance;
-	protected int mCurrentState;
+	protected int mCurrentState = VehicleState.VEHICLE_DEFAULT;
 	protected OnVehicleEventsListener mListener; 
 	private boolean mIsReady;
 	private VehicleData mVehicleData;
@@ -141,11 +141,11 @@ public abstract class AbstractVehicle {
 					+ VehicleState.getVehicleStateName(mCurrentState)
 					+ " and changed to:" + VehicleState.getVehicleStateName(aState));
 			mCurrentState = aState;
-			changeSensorState();
+			changeUltraSonicSensorState();
 		}
 	}
 	
-	public abstract void changeSensorState();
+	public abstract void changeUltraSonicSensorState();
 	
 	public double getTravelledDistance(){return mDistance;}
 	

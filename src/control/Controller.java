@@ -5,21 +5,21 @@ import logs.logger.PegasusLogger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import vehicle.Pegasus.PegasusVehicle;
-import vehicle.algorithms.ParkingFinder;
 import vehicle.common.constants.VehicleParams;
 import vehicle.common.constants.VehicleState;
+import vehicle.managers.finder.ParkingFinder;
+import vehicle.pegasus.PegasusVehicle;
 
 import communication.bluetooth.Constants.BluetoothServerStatus;
 import communication.bluetooth.Server.BluetoothServer;
 import communication.serialPorts.SerialPortHandler;
 import communication.serialPorts.messages.MessageVaribles;
 
-import control.Constants.ApplicationStates;
-import control.Interfaces.OnParkingEventsListener;
-import control.Interfaces.OnSerialPortEventsListener;
-import control.Interfaces.OnServerEventsListener;
-import control.Interfaces.OnVehicleEventsListener;
+import control.constants.ApplicationStates;
+import control.interfaces.OnParkingEventsListener;
+import control.interfaces.OnSerialPortEventsListener;
+import control.interfaces.OnServerEventsListener;
+import control.interfaces.OnVehicleEventsListener;
 
 public class Controller implements OnServerEventsListener, OnParkingEventsListener, OnSerialPortEventsListener,OnVehicleEventsListener {
 

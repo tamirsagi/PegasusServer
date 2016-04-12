@@ -12,7 +12,6 @@ import java.util.Queue;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import Util.MessagesMethods;
 
 import communication.serialPorts.messages.MessageVaribles;
 
@@ -20,10 +19,11 @@ import communication.serialPorts.messages.MessageVaribles;
 import logs.logger.PegasusLogger;
 
 
-import vehicle.Interfaces.onSensorDataRecieved;
+import util.MessagesMethods;
 import vehicle.common.constants.VehicleParams;
+import vehicle.interfaces.onSensorDataRecieved;
 
-import control.Interfaces.OnSerialPortEventsListener;
+import control.interfaces.OnSerialPortEventsListener;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;

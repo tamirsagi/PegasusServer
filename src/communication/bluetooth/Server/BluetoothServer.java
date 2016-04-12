@@ -12,7 +12,7 @@ import javax.microedition.io.StreamConnectionNotifier;
 import communication.bluetooth.Constants.BluetoothServerStatus;
 import communication.serialPorts.messages.MessageVaribles;
 
-import control.Interfaces.OnServerEventsListener;
+import control.interfaces.OnServerEventsListener;
 
 import java.io.IOException;
 import java.util.HashMap;

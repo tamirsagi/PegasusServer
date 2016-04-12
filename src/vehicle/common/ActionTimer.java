@@ -1,6 +1,6 @@
 package vehicle.common;
 
-import vehicle.Interfaces.OnTimerListener;
+import vehicle.interfaces.OnTimerListener;
 
 public class ActionTimer extends Thread {
 	private static final String TAG = "ActionTimer";
