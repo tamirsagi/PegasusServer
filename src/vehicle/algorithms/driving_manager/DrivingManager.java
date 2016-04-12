@@ -6,23 +6,22 @@ import logs.logger.PegasusLogger;
 public class DrivingManager extends AbstractManager {
 
 	private static DrivingManager mInstance;
-	private static final String TAG = DrivingManager.class.getSimpleName();
 	
 	
 	public static DrivingManager getInstance(){
 		if(mInstance == null){
-			mInstance = new DrivingManager();
+			mInstance = new DrivingManager(DrivingManager.class.getSimpleName());
 		}
 		return mInstance;
 	}
 	
-	private DrivingManager(){
-		setName(TAG);
+	private DrivingManager(String aTag){
+		super(aTag);
 	}
 
 	@Override
 	public void run() {
-		PegasusLogger.getInstance().i(TAG,"Driving Manager has been started...");
+		PegasusLogger.getInstance().i(getTag(),"Driving Manager has been started...");
 		while(mIsworking){
 			
 			synchronized (this) {
@@ -31,12 +30,16 @@ public class DrivingManager extends AbstractManager {
 						wait();
 					}
 				}catch(InterruptedException e){
-					PegasusLogger.getInstance().e(TAG,e.getMessage());
+					PegasusLogger.getInstance().e(getTag(),e.getMessage());
 				}
 			}
 			
-			
 		}
+	}
+	
+	@Override
+	public void updateInput(int sensorId, double value){
+		
 	}
 	
 	

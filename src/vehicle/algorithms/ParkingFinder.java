@@ -15,7 +15,6 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	
 	private static ParkingFinder mInstance;
 	
-	private static final String TAG = ParkingFinder.class.getSimpleName();
 	private static final long FINDING_PARKING_SPOT_TIMEOUT = 60 * 1000 * 2; // 2 minutes for searching
 	
 	private static final int DEFAULT_VALUE = -1;
@@ -32,12 +31,13 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	
 	public static ParkingFinder getInstance(){
 		if(mInstance == null){
-			mInstance = new ParkingFinder();
+			mInstance = new ParkingFinder(ParkingFinder.class.getSimpleName());
 		}
 		return mInstance;
 	}
 	
-	private ParkingFinder(){
+	private ParkingFinder(String aTag){
+		super(aTag);
 		VehicleData vehicleData = PegasusVehicle.getInstance().getVehicleData();
 		mMinSpace = vehicleData.getLength() + 2 * vehicleData.getMinimumRequiredSpaceToPark();
 		mCurrentParkingProcessParams = new JSONObject();
@@ -45,7 +45,7 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	
 	@Override
 	public void run() {
-		PegasusLogger.getInstance().i(TAG,"PArking Finder has been started...");
+		PegasusLogger.getInstance().i(getTag(),"PArking Finder has been started...");
 		while(mIsworking){
 			
 			synchronized (this) {
@@ -54,7 +54,7 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 						wait();
 					}
 				}catch(InterruptedException e){
-					PegasusLogger.getInstance().e(TAG,e.getMessage());
+					PegasusLogger.getInstance().e(getTag(),e.getMessage());
 				}
 			}
 			
@@ -73,7 +73,7 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	 * @param aParkingType given position
 	 */
 	public void findParking(int aParkingType){
-		PegasusLogger.getInstance().i(TAG, "findParking", "started looking for parking");
+		PegasusLogger.getInstance().i(getTag(), "findParking", "started looking for parking");
 		mParkingType = aParkingType;
 		mFound = false;
 		if(mTimer != null){
@@ -86,6 +86,7 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	/**
 	 * 
 	 */
+	@Override
 	public void updateInput(int sensorId, double value){
 		switch (mParkingType){
 		case ParkingType.PARALLEL_RIGHT:

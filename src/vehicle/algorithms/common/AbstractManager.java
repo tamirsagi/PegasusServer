@@ -1,14 +1,29 @@
 package vehicle.algorithms.common;
 
 
-public class AbstractManager extends Thread {
+public abstract class AbstractManager extends Thread {
 	
+	protected String mTag;
 	protected boolean mIsworking;
 	protected boolean mIsSuspended;
 	
 	
+	public AbstractManager(String aTag){
+		setName(aTag);
+		setTag(aTag);
+	}
+	
+	public abstract void updateInput(int sensorId, double value);
 	
 	
+	
+	private void setTag(String aTag){
+		mTag = aTag;
+	}
+	
+	public String getTag(){
+		return mTag;
+	}
 	/**
 	 * start thread
 	 */
