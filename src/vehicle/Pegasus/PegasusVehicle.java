@@ -1,13 +1,10 @@
 package vehicle.Pegasus;
 
 import java.util.HashMap;
-import communication.serialPorts.SerialPortHandler;
-import communication.serialPorts.messages.MessageVaribles;
-import control.Interfaces.OnVehicleEventsListener;
+
 import logs.logger.PegasusLogger;
 import vehicle.Interfaces.onInputReceived;
 import vehicle.Pegasus.Constants.SensorPositions;
-import vehicle.Sensor.AbstractSensor;
 import vehicle.Sensor.InfraRed;
 import vehicle.Sensor.SensorConstants;
 import vehicle.Sensor.UltraSonic;
@@ -19,11 +16,14 @@ import vehicle.common.constants.VehicleParams;
 import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.common.constants.VehicleState;
 
+import communication.serialPorts.SerialPortHandler;
+import communication.serialPorts.messages.MessageVaribles;
+
 public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	
+	private static PegasusVehicle mInstance;
 	private static final String TAG = PegasusVehicle.class.getSimpleName();
 	private static final String PEGASUS_DEFAULT_ID = "302774773";
-	private static PegasusVehicle mInstance;
 
 	private static final int MIN_DIGITAL_SPEED = 0;
 	private static final int MAX_DIGITAL_SPEED = 255;
@@ -34,9 +34,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	private int mDigitalSpeed;
 	private HashMap<String,UltraSonic> mUltraSonicSensors;
 	private InfraRed mTachometer;
-	private boolean mIsReady;
 	
-
 	/**
 	 * Get class instance
 	 * 
@@ -58,17 +56,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 		setupTachometerSensor();
 	}
 	
-	/**
-	 * is used after insance first created.
-	 * @param aListener
-	 */
-	public void notifyWhenReady(OnVehicleEventsListener aListener){
-		if(aListener != null && !mIsReady){
-			mIsReady = true;
-			registerVehicleActionsListener(aListener);
-			aListener.onVehicleStateChanged(true);
-		}
-	}
+	
 	
 	@Override
 	public void setVehicleData() {
@@ -107,6 +95,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 		
 	}
 	
+	@Override
 	public PegasusVehicleData getVehicleData(){
 		return PegasusVehicleData.getInstance();
 	}
@@ -151,6 +140,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 		return null;
 	}
 	
+	@Override
 	public void registerAllSensorToDataProvider(){
 		for( String key : mUltraSonicSensors.keySet()){
 			mUltraSonicSensors.get(key).registerToDataSupplier();
@@ -245,11 +235,16 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	 * @param value its reading
 	 */
 	private void handleDistanceSensorData(int sensorId, double value){
+		String sensorPosition = SensorPositions.getSensorPosition(sensorId);
 		switch(getCurrentState()){
 		case VehicleState.VEHICLE_FREE_DRIVING:
 			break;
 		case VehicleState.VEHICLE_LOOKING_FOR_PARKING:
-			ParkingFinder.getInstance().updateInput(sensorId,value);
+			if(!sensorPosition.equals(SensorPositions.FRONT_ULTRA_SONIC_SENSOR)){
+				ParkingFinder.getInstance().updateInput(sensorId,value);
+			}else{
+				//TODO send data to driving manager
+			}
 			break;
 		case VehicleState.VEHICLE_PARKING:
 			
@@ -262,8 +257,11 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	 * handle findParkingState
 	 * @param parkyingType
 	 */
+	@Override
 	public void changeSensorState(){
-		disableUpperSensors();
+		changeUpperRightSensorsState(false);
+		changeUpperLeftSensorsState(false);
+		changeRearSensorState(false);
 		switch(getCurrentState()){
 		case VehicleState.VEHICLE_FREE_DRIVING:
 			changeFrontSensorState(true);
@@ -271,37 +269,21 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 		case VehicleState.VEHICLE_LOOKING_FOR_PARKING:
 			switch(ParkingFinder.getInstance().getParkingType()){
 			case ParkingType.PARALLEL_RIGHT:
-				enableUpperRightSensorsState();
+				changeUpperRightSensorsState(true);
 				break;
 			case ParkingType.PARALLEL_LEFT:
-				enableUpperLeftSensorsState();
+				changeUpperLeftSensorsState(true);
 					break;
 			}
 			break;
 		case VehicleState.VEHICLE_PARKING:
+			changeRearSensorState(true);
 			
 			break;
 		}
 	}
 	
 	
-	/**
-	 * disable upper sensors
-	 */
-	private void disableUpperSensors(){
-		for(String pos : mUltraSonicSensors.keySet()){
-			switch(pos){
-			case SensorPositions.FRONT_RIGHT_ULTRA_SONIC_SENSOR:
-			case SensorPositions.FRONT_LEFT_ULTRA_SONIC_SENSOR:
-			case SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR:
-			case SensorPositions.BACK_RIGHT_ULTRA_SONIC_SENSOR:
-				UltraSonic us = mUltraSonicSensors.get(pos);
-				us.setSensorState(false);
-				SerialPortHandler.getInstance().changeSensorState(us.getId(), SensorConstants.DISABLE_SENSOR);
-				break;
-			}
-		}
-	}
 	
 	/**
 	 * change front sensor state
@@ -333,35 +315,29 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	}
 	
 	/**
-	 * enable 2 right sensors
+	 * change state for 2 right sensors
 	 */
-	private void enableUpperRightSensorsState(){
-		for(String pos : mUltraSonicSensors.keySet()){
-			switch(pos){
-			case SensorPositions.FRONT_RIGHT_ULTRA_SONIC_SENSOR:
-			case SensorPositions.BACK_RIGHT_ULTRA_SONIC_SENSOR:
-				UltraSonic us = mUltraSonicSensors.get(pos);
-				us.setSensorState(true);
-				SerialPortHandler.getInstance().changeSensorState(us.getId(), SensorConstants.ENABLE_SENSOR);
-				break;
-			}
-		}
+	private void changeUpperRightSensorsState(boolean aIsEnabled){
+		int state = aIsEnabled ? SensorConstants.ENABLE_SENSOR : SensorConstants.DISABLE_SENSOR;
+		mUltraSonicSensors.get(SensorPositions.FRONT_RIGHT_ULTRA_SONIC_SENSOR).setSensorState(aIsEnabled);
+		int frontLeftId = mUltraSonicSensors.get(SensorPositions.FRONT_LEFT_ULTRA_SONIC_SENSOR).getId();
+		SerialPortHandler.getInstance().changeSensorState(frontLeftId, state);
+		mUltraSonicSensors.get(SensorPositions.BACK_RIGHT_ULTRA_SONIC_SENSOR).setSensorState(aIsEnabled);
+		int backLeftId = mUltraSonicSensors.get(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR).getId();
+		SerialPortHandler.getInstance().changeSensorState(backLeftId, state);
 	}
 	
 	/**
-	 * enable 2 left sensors
+	 * change state for 2 left sensors
 	 */
-	private void enableUpperLeftSensorsState(){
-		for(String pos : mUltraSonicSensors.keySet()){
-			switch(pos){
-			case SensorPositions.FRONT_LEFT_ULTRA_SONIC_SENSOR:
-			case SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR:
-				UltraSonic us = mUltraSonicSensors.get(pos);
-				us.setSensorState(true);
-				SerialPortHandler.getInstance().changeSensorState(us.getId(), SensorConstants.ENABLE_SENSOR);
-				break;
-			}
-		}
+	private void changeUpperLeftSensorsState(boolean aIsEnabled){
+		int state = aIsEnabled ? SensorConstants.ENABLE_SENSOR : SensorConstants.DISABLE_SENSOR;
+		mUltraSonicSensors.get(SensorPositions.FRONT_LEFT_ULTRA_SONIC_SENSOR).setSensorState(aIsEnabled);
+		int frontLeftId = mUltraSonicSensors.get(SensorPositions.FRONT_LEFT_ULTRA_SONIC_SENSOR).getId();
+		SerialPortHandler.getInstance().changeSensorState(frontLeftId, state);
+		mUltraSonicSensors.get(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR).setSensorState(aIsEnabled);
+		int backLeftId = mUltraSonicSensors.get(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR).getId();
+		SerialPortHandler.getInstance().changeSensorState(backLeftId, state);
 	}
 
 }

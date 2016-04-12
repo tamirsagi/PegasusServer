@@ -4,12 +4,11 @@ import logs.logger.PegasusLogger;
 import vehicle.common.constants.VehicleParams.DrivingDirection;
 import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.common.constants.VehicleState;
-import control.Constants.ApplicationStates;
 import control.Interfaces.OnVehicleEventsListener;
 
 public abstract class AbstractVehicle {
+	
 	private static final String TAG = AbstractVehicle.class.getSimpleName();
-	protected static AbstractVehicle mInstance;
 	
 	
 	protected String mName;
@@ -21,13 +20,20 @@ public abstract class AbstractVehicle {
 	protected double mDistance;
 	protected int mCurrentState;
 	protected OnVehicleEventsListener mListener; 
+	private boolean mIsReady;
+	private VehicleData mVehicleData;
 	
 	
-	public static AbstractVehicle getInstance() throws Exception{
-		if(mInstance == null){
-			throw new Exception("Vehcile Instance has not initialized yet");
+	/**
+	 * is used after insance first created.
+	 * @param aListener
+	 */
+	public void notifyWhenReady(OnVehicleEventsListener aListener){
+		if(aListener != null && !mIsReady){
+			mIsReady = true;
+			registerVehicleActionsListener(aListener);
+			aListener.onVehicleStateChanged(true);
 		}
-		return mInstance;
 	}
 	
 	public String getName() {
@@ -59,6 +65,11 @@ public abstract class AbstractVehicle {
 	 */
 	public abstract void setVehicleData();
 	
+	
+	public VehicleData getVehicleData(){
+		return mVehicleData;
+	}
+	
 	/**
 	 * Register Listener
 	 */
@@ -67,6 +78,11 @@ public abstract class AbstractVehicle {
 			mListener = aListener;
 		}
 	}
+	
+	/**
+	 * register sensors to data provider
+	 */
+	public abstract void registerAllSensorToDataProvider();
 	
 	/**
 	 * Handle the vehicle speed

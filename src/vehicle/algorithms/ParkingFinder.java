@@ -2,19 +2,16 @@ package vehicle.algorithms;
 
 import logs.logger.PegasusLogger;
 
-import org.json.JSONException;
 import org.json.JSONObject;
-
-import control.Interfaces.OnParkingEventsListener;
 
 import vehicle.Interfaces.OnTimerListener;
 import vehicle.Pegasus.PegasusVehicle;
-import vehicle.Pegasus.Constants.SensorPositions;
-import vehicle.algorithms.Constants.ParkingFinderStateKeys;
+import vehicle.algorithms.common.AbstractManager;
 import vehicle.common.ActionTimer;
 import vehicle.common.VehicleData;
+import control.Interfaces.OnParkingEventsListener;
 
-public class ParkingFinder implements OnTimerListener{
+public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	
 	private static ParkingFinder mInstance;
 	
@@ -28,8 +25,8 @@ public class ParkingFinder implements OnTimerListener{
 	private double mDistanceSinceStarted;
 	private OnParkingEventsListener mListener;
 	private ActionTimer mTimer;
-	private double mMinSpaceToParallel;
-	private String mcurrentRelevantSensor;
+	private double mMinSpace;
+	private JSONObject mCurrentParkingProcessParams;
 	
 	
 	
@@ -42,9 +39,29 @@ public class ParkingFinder implements OnTimerListener{
 	
 	private ParkingFinder(){
 		VehicleData vehicleData = PegasusVehicle.getInstance().getVehicleData();
-		mMinSpaceToParallel = vehicleData.getLength() + 2 * vehicleData.getMinimumRequiredSpaceToPark();
+		mMinSpace = vehicleData.getLength() + 2 * vehicleData.getMinimumRequiredSpaceToPark();
+		mCurrentParkingProcessParams = new JSONObject();
 	}
 	
+	@Override
+	public void run() {
+		PegasusLogger.getInstance().i(TAG,"PArking Finder has been started...");
+		while(mIsworking){
+			
+			synchronized (this) {
+				try{
+					while(mIsSuspended){
+						wait();
+					}
+				}catch(InterruptedException e){
+					PegasusLogger.getInstance().e(TAG,e.getMessage());
+				}
+			}
+			
+			
+		}
+	}
+
 	public void registerParkingEventsListner(OnParkingEventsListener aListner){
 		if(aListner != null){
 			mListener = aListner;
@@ -58,6 +75,7 @@ public class ParkingFinder implements OnTimerListener{
 	public void findParking(int aParkingType){
 		PegasusLogger.getInstance().i(TAG, "findParking", "started looking for parking");
 		mParkingType = aParkingType;
+		mFound = false;
 		if(mTimer != null){
 			mTimer.killThread();
 		}
@@ -87,7 +105,14 @@ public class ParkingFinder implements OnTimerListener{
 	 * @param incomingData
 	 */
 	private void handleIncomingDataOnParallelParking(int aSensorId, double aValue){
-		
+		if(!mFound){
+			if(aValue == 0){
+				
+				
+				
+				
+			}
+		}
 		
 		
 		
@@ -96,6 +121,14 @@ public class ParkingFinder implements OnTimerListener{
 	
 	public int getParkingType(){
 		return mParkingType;
+	}
+	
+	/**
+	 * set minimum space required for a proper parking spot
+	 * @param aMinSpace
+	 */
+	public void setMinSpaceForParking(double aMinSpace){
+		mMinSpace = aMinSpace;
 	}
 	
 	public synchronized void  setTravelledDistance(double aDistance){

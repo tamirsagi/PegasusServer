@@ -1,5 +1,4 @@
 import logs.logger.PegasusLogger;
-import Util.CameraManager;
 import Util.LinuxCommands;
 
 import control.Controller;
@@ -16,20 +15,6 @@ public class Main {
 		}else{
 			PegasusLogger.getInstance().e(TAG, "main", "Program Could not start");//TODO - Maybe reset linux
 		}
-		// SerialPortHandler mSerialPortHandler;
-		// mSerialPortHandler = SerialPortHandler.getInstance();
-		// mSerialPortHandler.startThread();
-		// while (true) {
-		//
-		// for (int i = 90; i <= 180; i++){
-		// mSerialPortHandler.changeSpeed(i);
-		// }
-		// mSerialPortHandler.changeDrivingDirection("B");
-		// for (int i = 90; i <= 180; i++){
-		// mSerialPortHandler.changeSpeed(i);
-		// }
-		// mSerialPortHandler.changeDrivingDirection("F");
-		// }
 	}
 
 }
