@@ -108,11 +108,40 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	private void setUltraSonicSensors() {
 		mUltraSonicSensors = new HashMap<String, UltraSonic>();
 		for (int i = 1; i <= PegasusVehicleData.getInstance().getNumberOfUltraSonicSensors(); i++) {
-			UltraSonic us = new UltraSonic(i);
-			us.registerListener(this);
-			String pos = SensorPositions.getSensorPosition(us.getId());
-			us.setPosition(pos);
-			mUltraSonicSensors.put(pos, us);
+			String pos = SensorPositions.getSensorPosition(i);
+			String relevantDistanceKey = "";
+			if(!pos.equals(SensorPositions.UNKNOWN_SENSOR)){
+				switch(pos){
+				case SensorPositions.FRONT_ULTRA_SONIC_SENSOR:
+					relevantDistanceKey = VehicleConfigKeys.KEY_FRONT_SENSOR_MAX_DISTANCE;
+					break;
+				case SensorPositions.FRONT_LEFT_ULTRA_SONIC_SENSOR:
+					relevantDistanceKey = VehicleConfigKeys.KEY_FRONT_LEFT_SENSOR_MAX_DISTANCE;
+						break;
+				case SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR:
+					relevantDistanceKey = VehicleConfigKeys.KEY_BACK_LEFT_SENSOR_MAX_DISTANCE;
+						break;
+				case SensorPositions.REAR_LEFT_ULTRA_SONIC_SENSOR:
+					relevantDistanceKey = VehicleConfigKeys.KEY_REAR_LEFT_SENSOR_MAX_DISTANCE;
+					break;
+				case SensorPositions.REAR_RIGHT_ULTRA_SONIC_SENSOR:
+					relevantDistanceKey = VehicleConfigKeys.KEY_REAR_RIGHT_SENSOR_MAX_DISTANCE;
+					break;
+				case SensorPositions.BACK_RIGHT_ULTRA_SONIC_SENSOR:
+					relevantDistanceKey = VehicleConfigKeys.KEY_BACK_RIGHT_SENSOR_MAX_DISTANCE;
+					break;
+				case SensorPositions.FRONT_RIGHT_ULTRA_SONIC_SENSOR:
+					relevantDistanceKey = VehicleConfigKeys.KEY_FRONT_RIGHT_SENSOR_MAX_DISTANCE;
+					break;
+				}
+				int maxDetectionDistance = Integer.parseInt(PegausVehicleProperties.getInstance().
+						getValue(relevantDistanceKey,PegausVehicleProperties.DEFAULT_SENSOR_DISTANCE_VALUE));
+				UltraSonic us = new UltraSonic(i,maxDetectionDistance);
+				us.registerListener(this);
+				
+				us.setPosition(pos);
+				mUltraSonicSensors.put(pos, us);
+			}
 		}
 	}
 	

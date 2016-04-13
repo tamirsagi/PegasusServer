@@ -19,7 +19,9 @@ public class PegasusVehicleData extends VehicleData {
 		return mInstance;
 	}
 	
-	private PegasusVehicleData(){}
+	private PegasusVehicleData(){
+		
+	}
 	
 	public void setNumberOfUltraSonicSensors(int num){
 		mNumberOfUltraSonicSensors = num;
