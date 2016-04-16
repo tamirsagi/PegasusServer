@@ -24,6 +24,7 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	
 	private static final String KEY_SHOULD_ADD_TRAVELLED_DISTANCE = "should_add_travelled_distance";
 	private static final String KEY_LAST_SENSOR_DATA = "last_Sensor_data";
+	private static final String KEY_DISTANCE_SINCE_STARTED = "distance_since_started";
 	
 	private int mParkingType;
 	private boolean mFound;
@@ -139,6 +140,7 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 						mCurrentParkingProcessParams.put(KEY_SHOULD_ADD_TRAVELLED_DISTANCE,true);
 					}
 				}
+				mCurrentParkingProcessParams.put(KEY_DISTANCE_SINCE_STARTED, mDistanceSinceStarted);
 			}
 		}catch (JSONException e) {
 					e.printStackTrace();

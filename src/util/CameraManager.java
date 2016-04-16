@@ -1,18 +1,24 @@
 package util;
 
+import java.io.File;
+import java.io.IOException;
+
 import logs.logger.PegasusLogger;
 
 public class CameraManager {
 	
 	private static CameraManager mInstance;
 	private static final String TAG = "Camera Manager";
+	private static final String FILE_PATH = "";//TODO - TBD
+	private static final String FILE_NAME = "output.jpg";
+	private static final String IP_ADDRESS = "192.168.42.1";
 	private static final int DEFAULT_ID = -1;
 	private static final int COMMAND_INDEX = 2;
 	
-	private static final int mPort = 8090;
-	private static int mFPS = 100;
-	private static int res_width = 640;
-	private static int res_height = 480;
+	private static final int PORT_NUMBER = 8090;
+	private static int FPS = 100;
+	private static int RESOLUTION_WIDTH = 640;
+	private static int RESOLUTION_HEIGHT = 480;
 	
 	private int mUpperCameraProcessId = DEFAULT_ID;
 	private boolean mIsCameraEnable;
@@ -62,6 +68,30 @@ public class CameraManager {
 			System.out.println(TAG +" " + e.getMessage());
 			return false;
 		}
+	}
+	
+	/**
+	 * Method use camera and take snapshop
+	 * @throws InterruptedException 
+	 * @throws IOException 
+	 */
+	public void takeSnapshot() throws InterruptedException, IOException{
+		if(mIsCameraEnable){
+			String[] command = new String[] {"sh", "-c",
+					"wget http://192.168.42.1:8090/?action=snapshot -O " + FILE_PATH + FILE_NAME};
+			Process snapshot = Runtime.getRuntime().exec(command);
+			snapshot.waitFor();
+			snapshot.destroy();
+			if(new File(FILE_PATH + FILE_NAME).exists()){
+				PegasusLogger.getInstance().i(TAG,"takeSnapShop()" , "Snapshot has been taken succefully");
+				PegasusLogger.getInstance().i(TAG,"takeSnapShop()" , "Converting jpg file to bitmap..");
+				command[COMMAND_INDEX] = "mogrify -format bmp" +  FILE_PATH + FILE_NAME;
+				Process toBitmap = Runtime.getRuntime().exec(command);
+				toBitmap.waitFor();
+				toBitmap.destroy();
+			}
+		}
+		
 	}
 	
 	public void turnCameraOff(){

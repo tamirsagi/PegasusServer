@@ -339,17 +339,28 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 			}
 	}
 	
+	private void changeSensorState(String pos, boolean aIsEnabled){
+		int state = aIsEnabled ? SensorConstants.ENABLE_SENSOR : SensorConstants.DISABLE_SENSOR;
+		UltraSonic us = mUltraSonicSensors.get(pos);
+		if(us != null){
+			SerialPortHandler.getInstance().changeSensorState(us.getId(), state);
+		}
+	}
 	
+	/**
+	 * @param aSensorId
+	 * @return true if sensor exist in system, false otherwise
+	 */
+	private boolean isValidSensorID(int aSensorId){
+		return SensorPositions.getSensorPosition(aSensorId).equals(SensorPositions.UNKNOWN_SENSOR);
+	}
 	
 	/**
 	 * change front sensor state
 	 * @param aIsEnabled
 	 */
 	private void changeFrontSensorState(boolean aIsEnabled){
-		int state = aIsEnabled ? SensorConstants.ENABLE_SENSOR : SensorConstants.DISABLE_SENSOR;
-		UltraSonic us = mUltraSonicSensors.get(SensorPositions.FRONT_ULTRA_SONIC_SENSOR);
-		us.setSensorState(aIsEnabled);
-		SerialPortHandler.getInstance().changeSensorState(us.getId(), state);
+		changeSensorState(SensorPositions.FRONT_ULTRA_SONIC_SENSOR,aIsEnabled);
 	}
 	
 	/**
@@ -357,14 +368,11 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	 * @param aIsEnabled
 	 */
 	private void changeRearSensorState(boolean aIsEnabled){
-		int state = aIsEnabled ? SensorConstants.ENABLE_SENSOR : SensorConstants.DISABLE_SENSOR;
 		for(String pos : mUltraSonicSensors.keySet()){
 			switch(pos){
 			case SensorPositions.REAR_RIGHT_ULTRA_SONIC_SENSOR:
 			case SensorPositions.REAR_LEFT_ULTRA_SONIC_SENSOR:
-				UltraSonic us = mUltraSonicSensors.get(pos);
-				us.setSensorState(aIsEnabled);
-				SerialPortHandler.getInstance().changeSensorState(us.getId(), state);
+				changeSensorState(pos,aIsEnabled);
 				break;
 			}
 		}
@@ -374,26 +382,16 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	 * change state for 2 right sensors
 	 */
 	private void changeUpperRightSensorsState(boolean aIsEnabled){
-		int state = aIsEnabled ? SensorConstants.ENABLE_SENSOR : SensorConstants.DISABLE_SENSOR;
-		mUltraSonicSensors.get(SensorPositions.FRONT_RIGHT_ULTRA_SONIC_SENSOR).setSensorState(aIsEnabled);
-		int frontLeftId = mUltraSonicSensors.get(SensorPositions.FRONT_LEFT_ULTRA_SONIC_SENSOR).getId();
-		SerialPortHandler.getInstance().changeSensorState(frontLeftId, state);
-		mUltraSonicSensors.get(SensorPositions.BACK_RIGHT_ULTRA_SONIC_SENSOR).setSensorState(aIsEnabled);
-		int backLeftId = mUltraSonicSensors.get(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR).getId();
-		SerialPortHandler.getInstance().changeSensorState(backLeftId, state);
+		changeSensorState(SensorPositions.FRONT_RIGHT_ULTRA_SONIC_SENSOR,aIsEnabled);
+		changeSensorState(SensorPositions.BACK_RIGHT_ULTRA_SONIC_SENSOR,aIsEnabled);
 	}
 	
 	/**
 	 * change state for 2 left sensors
 	 */
 	private void changeUpperLeftSensorsState(boolean aIsEnabled){
-		int state = aIsEnabled ? SensorConstants.ENABLE_SENSOR : SensorConstants.DISABLE_SENSOR;
-		mUltraSonicSensors.get(SensorPositions.FRONT_LEFT_ULTRA_SONIC_SENSOR).setSensorState(aIsEnabled);
-		int frontLeftId = mUltraSonicSensors.get(SensorPositions.FRONT_LEFT_ULTRA_SONIC_SENSOR).getId();
-		SerialPortHandler.getInstance().changeSensorState(frontLeftId, state);
-		mUltraSonicSensors.get(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR).setSensorState(aIsEnabled);
-		int backLeftId = mUltraSonicSensors.get(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR).getId();
-		SerialPortHandler.getInstance().changeSensorState(backLeftId, state);
+		changeSensorState(SensorPositions.FRONT_LEFT_ULTRA_SONIC_SENSOR,aIsEnabled);
+		changeSensorState(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR,aIsEnabled);
 	}
 
 }
