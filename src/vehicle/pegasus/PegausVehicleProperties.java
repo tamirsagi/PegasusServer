@@ -16,12 +16,13 @@ import logs.logger.PegasusLogger;
  *
  */
 public class PegausVehicleProperties extends Properties {
+	private static final String TAG = "PegausVehicleProperties";
 	
 	private static final long serialVersionUID = 1L;
 	public static String DEFAULT_VALUE_ZERO = "-1";
 	public static String DEFAULT_SENSOR_DISTANCE_VALUE = "60";
 	
-	private static final String TAG = "PegausVehicleProperties";
+	
 	private static PegausVehicleProperties mInstance;
 	private static final String FILE_NAME = "PegasusVehicleConfig.properties";
 	private static final String RESOURCE_LINUX_FORMAT = "/Resources/";

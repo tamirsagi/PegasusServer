@@ -31,7 +31,7 @@ public class PegasusVehicleData extends VehicleData {
 
 	@Override
 	public void setTurningRadious() {
-		mTurningRadious = getLength() / (2 * Math.sin(getSteeringAngle()));
+		mTurningRadious = getLength() / (2 * Math.sin(getSteeringAngle() * DEGREE_RADIANS_FACTOR));
 		
 	}
 

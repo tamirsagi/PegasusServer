@@ -50,7 +50,7 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	
 	@Override
 	public void run() {
-		PegasusLogger.getInstance().i(getTag(),"PArking Finder has been started...");
+		PegasusLogger.getInstance().i(getTag(),"Parking Finder has been started...");
 		while(mIsworking){
 			
 			synchronized (this) {

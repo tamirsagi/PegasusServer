@@ -2,6 +2,8 @@ package vehicle.common;
 
 public abstract class VehicleData {
 	
+	
+	protected static final double DEGREE_RADIANS_FACTOR = Math.PI / 180;
 	private double mLength;
 	private double mWidth;
 	protected double mTurningRadious;
@@ -43,6 +45,11 @@ public abstract class VehicleData {
 	public double getSteeringAngle() {
 		return mSteeringAngle;
 	}
+	
+	/**
+	 * save the angle in degree
+	 * @param mSteeringAngle
+	 */
 	public void setSteeringAngle(double mSteeringAngle) {
 		this.mSteeringAngle = mSteeringAngle;
 		setTurningRadious();
