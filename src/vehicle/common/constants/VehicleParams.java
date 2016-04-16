@@ -18,7 +18,7 @@ public class VehicleParams {
 	 * Actions a vehicle is capable to do
 	 */
 	public enum VehicleActions{
-		CHANGE_DIRECTION(0),CHANGE_SPEED(1),STEERING(2), CHANGE_SENSOR_STATE(3);
+		CHANGE_DIRECTION(2001),CHANGE_SPEED(2002),STEERING(2003), CHANGE_SENSOR_STATE(2004);
 		
 		private int value;
 		 

@@ -6,16 +6,12 @@ import java.util.HashMap;
 
 public class MessageVaribles {
 
-	public static final int INFO = 1000;
-	public static final int ACTION = 2000;
-	public static final int WARNING = 3000;
-	public static final int ERROR = 4000;
 	/*
 	 *  Message Entries
 	 */
 	
 	public enum MessageType{
-		 INFO(1000), ACTION(2000), WARNING(3000), ERROR(4000);
+		 INFO(1000), ACTION(2000), SETTINGS(3000), ERROR(4000) ;
 		 
 		 private int value;
 		 
@@ -58,7 +54,8 @@ public class MessageVaribles {
 	public static final String KEY_STATUS			 		= 		"ST";				//Status
 	
 	
-	public static final String KEY_SETTINGS_ACTION_TYPE		= 		"SA";				//SA = Settings Action Type
+	public static final String KEY_SETTINGS_TYPE			= 		"ST";				//SA = Settings Action Type
+	public static final String KEY_SETTINGS_SENSOR_PREFIX	= 		"S";				//SA = Settings Action Type
 	public static final String KEY_VEHICLE_ACTION_TYPE		= 		"VA";				//VA = Vehicle Action Type
 	public static final String KEY_DIGITAL_SPEED 			= 		"DS";				//DS = Digits Speed
 	public static final String KEY_ROTATION_ANGLE			= 		"RA";				//RA = Rotation Angle for steering
@@ -68,11 +65,11 @@ public class MessageVaribles {
 	public static final String KEY_SENSOR_STATE				=		"SS";				//Sensor State
 	
 	
-	public static final String 	 VALUE_STEERING_RIGHT		= 		"R";
-	public static final String   VALUE_STEERING_LEFT 		= 		"L";
-	public static final String   VALUE_STEERING_NONE 		= 		"N";
-	public static final String   VALUE_DRIVING_FORWARD		= 		"F";				//Forward
-	public static final String   VALUE_DRIVING_REVERSE		= 		"B";				//Backward
+	public static final String VALUE_STEERING_RIGHT			= 		"R";
+	public static final String VALUE_STEERING_LEFT 			= 		"L";
+	public static final String VALUE_STEERING_NONE 			= 		"N";
+	public static final String VALUE_DRIVING_FORWARD		= 		"F";				//Forward
+	public static final String VALUE_DRIVING_REVERSE		= 		"B";				//Backward
 	
 	
 	public static final String KEY_SERIAL_PORT		 		= 		"SP";				//SP = Serial Port
@@ -86,7 +83,10 @@ public class MessageVaribles {
 	public enum InfoType{
 		STATUS, SENSOR_DATA
 	}
-
+	
+	public static final int SETTINGS_SET_SENSORS = 3001;
+	
+	
 	/*  Status CODE */
 	 
 	public enum StatusCode{

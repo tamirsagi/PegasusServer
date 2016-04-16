@@ -2,6 +2,9 @@ package vehicle.pegasus;
 
 import java.util.HashMap;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import logs.logger.PegasusLogger;
 import vehicle.common.AbstractVehicle;
 import vehicle.common.constants.VehicleConfigKeys;
@@ -82,6 +85,9 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 		double centreFrontWheelToFrontCar = Double.parseDouble(PegausVehicleProperties.getInstance().
 				getValue(VehicleConfigKeys.KEY_FRONT_WHEEL_FRONT_CAR,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
 		
+		double wheelDistance = Double.parseDouble(PegausVehicleProperties.getInstance().
+				getValue(VehicleConfigKeys.KEY_FRONT_WHEEL_DISTANCE,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
+		
 		setID(id);
 		PegasusVehicleData.getInstance().setLength(length);
 		PegasusVehicleData.getInstance().setWidth(width);
@@ -91,6 +97,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 		PegasusVehicleData.getInstance().setWheelBase(wheelBase);
 		PegasusVehicleData.getInstance().setDistanceCenterFrontWheelToFrontCar(centreFrontWheelToFrontCar);
 		PegasusVehicleData.getInstance().setMinimumRequiredSpaceToPark();
+		PegasusVehicleData.getInstance().setFrontWheelDistance(wheelDistance);
 		PegasusLogger.getInstance().d(TAG,"setVehicleData", PegasusVehicleData.getInstance().toString());
 		
 	}
@@ -169,6 +176,8 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 		return null;
 	}
 	
+	
+	
 	@Override
 	public void registerAllSensorToDataProvider(){
 		for( String key : mUltraSonicSensors.keySet()){
@@ -177,7 +186,25 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 		mTachometer.registerToDataSupplier();
 	}
 	
-
+	@Override
+	public void sendSensorConfiguration(){
+		JSONObject sensorData = new JSONObject();
+		for( String key : mUltraSonicSensors.keySet()){
+			UltraSonic us = mUltraSonicSensors.get(key);
+			String id = "" + us.getId();
+			int maxDistance =  us.getMaxDistance();
+			try {
+				sensorData.put(id, maxDistance);
+			} catch (JSONException e) {
+				PegasusLogger.getInstance().e(TAG,"sendSensorConfiguration", e.getMessage());
+			}
+		}
+		if (SerialPortHandler.getInstance().isBoundToSerialPort()){
+			int defaultMaxDistance = Integer.parseInt(PegausVehicleProperties.DEFAULT_SENSOR_DISTANCE_VALUE);
+			SerialPortHandler.getInstance().configSensors(sensorData, defaultMaxDistance);
+		}
+	}
+	
 	@Override
 	public void changeSpeed(int digitalSpeed) {
 		mDigitalSpeed = digitalSpeed;

@@ -1,4 +1,5 @@
 import util.LinuxCommands;
+import vehicle.pegasus.PegausVehicleProperties;
 import logs.logger.PegasusLogger;
 
 import control.Controller;

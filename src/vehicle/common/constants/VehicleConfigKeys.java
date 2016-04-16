@@ -11,6 +11,7 @@ public class VehicleConfigKeys {
 	public static final String KEY_NUMBER_OF_INFRA_RED_SENSORS = "number_of_infra_red_sensors";
 	public static final String KEY_WHEEL_BASE = "wheel_base";
 	public static final String KEY_FRONT_WHEEL_FRONT_CAR = "front_wheel_front_car";
+	public static final String KEY_FRONT_WHEEL_DISTANCE = "front_wheel_distance";
 	
 	public static final String KEY_FRONT_SENSOR_MAX_DISTANCE = "front_sensor_max_distance";
 	public static final String KEY_FRONT_LEFT_SENSOR_MAX_DISTANCE = "front_left_sensor_max_distance";

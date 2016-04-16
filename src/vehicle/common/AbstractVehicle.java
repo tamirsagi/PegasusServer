@@ -148,6 +148,13 @@ public abstract class AbstractVehicle {
 	
 	public abstract void changeUltraSonicSensorState();
 	
+	/**
+	 * send sensor configuration file to Hardware unit
+	 * Configuration are loaded from configuration file
+	 */
+	public abstract void sendSensorConfiguration();
+	
+	
 	public double getTravelledDistance(){return mDistance;}
 	
 	/**

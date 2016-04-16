@@ -1,6 +1,7 @@
 package vehicle.pegasus;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -18,11 +19,16 @@ public class PegausVehicleProperties extends Properties {
 	
 	private static final long serialVersionUID = 1L;
 	public static String DEFAULT_VALUE_ZERO = "-1";
-	public static String DEFAULT_SENSOR_DISTANCE_VALUE = "200";
+	public static String DEFAULT_SENSOR_DISTANCE_VALUE = "60";
 	
 	private static final String TAG = "PegausVehicleProperties";
 	private static PegausVehicleProperties mInstance;
 	private static final String FILE_NAME = "PegasusVehicleConfig.properties";
+	private static final String RESOURCE_LINUX_FORMAT = "/Resources/";
+	private static final String RESOURCE_WIN_FORMAT = "\\Resources\\";
+	
+	private String mRunningOs; 
+	private String mFilePath;
 	
 	
 	private InputStream mInputStream;
@@ -37,16 +43,20 @@ public class PegausVehicleProperties extends Properties {
 	}
 	
 	private PegausVehicleProperties(){
+		mRunningOs = System.getProperty("os.name");
 		try {
-			mInputStream = getClass().getClassLoader().getResourceAsStream(FILE_NAME);
-			mWriter = new PrintWriter(new File(getClass().getClassLoader().getResource(FILE_NAME).getPath()));
+			if(mRunningOs.contains("Windows")){
+				mFilePath = System.getProperty("user.dir") + RESOURCE_WIN_FORMAT + FILE_NAME;
+			}else{
+				mFilePath = System.getProperty("user.dir") + RESOURCE_LINUX_FORMAT + FILE_NAME;
+			}
+			mInputStream = new FileInputStream(new File(mFilePath));
 			load(mInputStream);
-			printAllContext();
 			if(keySet().size() > 0){
-				PegasusLogger.getInstance().i(TAG,"PegausVehicleProperties","Configuration file was loaded succefully");
+				PegasusLogger.getInstance().i(TAG,"PegausVehicleProperties","Configurations file was loaded succefully");
 				mIsLoaded = true;
 			}else{
-				PegasusLogger.getInstance().i(TAG,"PegausVehicleProperties","Configuration file was not loaded");
+				PegasusLogger.getInstance().i(TAG,"PegausVehicleProperties","Configurations file was not loaded");
 				mIsLoaded = false;
 			}
 			

@@ -9,7 +9,7 @@ import vehicle.common.VehicleData;
  */
 public class PegasusVehicleData extends VehicleData {
 	
-	public static PegasusVehicleData mInstance;
+	private static PegasusVehicleData mInstance;
 	private int mNumberOfUltraSonicSensors;
 	
 	public static PegasusVehicleData getInstance(){

@@ -9,6 +9,7 @@ public abstract class VehicleData {
 	private double mWheelPerimeter;
 	private double mSteeringAngle;
 	private double mWheelBase;
+	private double mFrontWheelDistance;
 	protected double mMinimumRequiredSpace;
 	private double mDistCentreFrontWheelToFrontCar;
 	
@@ -69,7 +70,13 @@ public abstract class VehicleData {
 	
 	public double getMinimumRequiredSpaceToPark(){
 		return mMinimumRequiredSpace;
-		}
+	}
+	
+	public double getFrontWheelDistance(){return mFrontWheelDistance;}
+	
+	public void setFrontWheelDistance(double aFrontWheelDistance){
+		mFrontWheelDistance = aFrontWheelDistance;
+	}
 	
 	/**
 	 * calculate the minimum distance shall be added to vehicle length in order to park in parallel

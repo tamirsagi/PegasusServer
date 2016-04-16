@@ -24,7 +24,6 @@ public abstract class AbstractSensor implements onSensorDataRecieved{
 	public AbstractSensor(int id) {
 		mId = id;
 		mLastValues = new Vector<Double>();
-		registerToDataSupplier();
 	}
 
 	public int getId() {

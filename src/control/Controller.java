@@ -31,6 +31,7 @@ public class Controller implements OnServerEventsListener, OnParkingEventsListen
 	private boolean mIsServerReady;
 	private boolean mIsSerialPortReady;
 	private boolean mIsHardwareReady;
+	private StringBuilder mExtraDataToSend;
 	
 	private int mApplicationState = ApplicationStates.BOOTING;
 
@@ -41,7 +42,7 @@ public class Controller implements OnServerEventsListener, OnParkingEventsListen
 		return mInstance;
 	}
 	private  Controller() {
-		
+		mExtraDataToSend = new StringBuilder();
 	}
 
 	/**
@@ -91,8 +92,14 @@ public class Controller implements OnServerEventsListener, OnParkingEventsListen
 			mApplicationState = ApplicationStates.READY;
 		case ApplicationStates.READY:
 			SerialPortHandler.getInstance().updateSystemReady();
-			ParkingFinder.getInstance().registerParkingEventsListner(this);
-			DrivingManager.getInstance().startThread();
+			//PegasusVehicle.getInstance().sendSensorConfiguration();
+			if(!ParkingFinder.getInstance().isAlive()){
+				ParkingFinder.getInstance().registerParkingEventsListner(this);
+				ParkingFinder.getInstance().startThread();
+				ParkingFinder.getInstance().suspendThread();
+			}
+			if(!DrivingManager.getInstance().isAlive())
+				DrivingManager.getInstance().startThread();
 			break;
 		}
 
@@ -253,7 +260,7 @@ public class Controller implements OnServerEventsListener, OnParkingEventsListen
 					mIsHardwareReady = true;
 					setState(ApplicationStates.WAITING_FOR_SERVER);
 
-				} else {
+				} else{
 					setState(ApplicationStates.READY);
 				}
 			}

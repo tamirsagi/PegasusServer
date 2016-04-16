@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -61,7 +62,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 	private SerialPortHandler(){
 		setName(TAG);
-		mSerialPortParser = new SerialPortParser();
+		
 	}
 	
 	/**
@@ -114,6 +115,9 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 					mSerialPort.setSerialPortParams(PORT_BAUD, SerialPort.DATABITS_8,
 							SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
 					
+					
+					mSerialPortParser = new SerialPortParser();
+					mSerialPortParser.startThread();
 					mInputStream = mSerialPort.getInputStream();
 					mOutputStreamHandler = new OutputStreamHandler(mSerialPort.getOutputStream());
 					mOutputStreamHandler.startThread();
@@ -318,11 +322,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * @param status
 	 */
 	private void fireStatusFromSerialPort(boolean aIsReady){
-		if(aIsReady){
-			mSerialPortParser.startThread();
-		}
 		mListener.onSerialPortStateChanged(aIsReady);
-		
 	}
 	
 	/**
@@ -398,6 +398,39 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 	
 	/**
+	 * set sensors max distance, 
+	 * @param sensorConfigurations sensor configuration containing relevant settings,
+	 * key = id, value = max distance
+	 */
+	public void configSensors(JSONObject sensorConfigurations,int aDefaultMaxDistance){
+		if(sensorConfigurations != null && sensorConfigurations.length() > 0){
+			StringBuilder msgToSend = new StringBuilder();
+			msgToSend.append(MessageVaribles.START_MESSAGE);
+			msgToSend.append(MessageVaribles.KEY_MESSAGE_TYPE);
+			msgToSend.append(MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR);
+			msgToSend.append(MessageVaribles.MessageType.SETTINGS.getValue());
+			msgToSend.append(MessageVaribles.MESSAGE_SAPERATOR);
+			msgToSend.append(MessageVaribles.KEY_SETTINGS_TYPE);
+			msgToSend.append(MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR);
+			msgToSend.append(MessageVaribles.SETTINGS_SET_SENSORS);
+			Iterator<String> it = sensorConfigurations.keys();
+			while(it.hasNext()){
+				msgToSend.append(MessageVaribles.MESSAGE_SAPERATOR);
+				String key = it.next();
+				int maxDistance = sensorConfigurations.optInt(key, aDefaultMaxDistance);
+				msgToSend.append(MessageVaribles.KEY_SETTINGS_SENSOR_PREFIX + key);
+				msgToSend.append(MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR);
+				msgToSend.append(maxDistance);
+			}
+			msgToSend.append(MessageVaribles.END_MESSAGE);	
+			String msgToArduino = msgToSend.toString();
+			mOutputStreamHandler.addMessageToQueue(msgToArduino);
+			PegasusLogger.getInstance().d(TAG, "configSensors", msgToArduino);
+		}
+	}
+	
+	
+	/**
 	 * this class handles output stream in a separate thread.
 	 * @author Tamir
 	 *
@@ -409,6 +442,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		private Queue<String> mMessagesToArduino;
 		
 		public OutputStreamHandler(OutputStream aOutputStream){
+			setName(TAG);
 			mOutputHandler = new PrintWriter(aOutputStream,true);
 			mMessagesToArduino = new LinkedList<String>();
 			
@@ -438,12 +472,12 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		 * send message to Arduino
 		 * @param msg - msg to send
 		 */
-		private synchronized void writeMessage(String msg){
-			PegasusLogger.getInstance().d(TAG, "writeMessage", "before sending to arduino: " + msg);
+		private void writeMessage(String msg){
 			if(mOutputHandler != null)
 				try {
+					PegasusLogger.getInstance().d(TAG, "writeMessage", "before sending to arduino: " + msg);
 					mOutputHandler.println(msg);
-					sleep(100);
+					sleep(200);
 				} catch (Exception e) {
 					fireSerialPortErrors("writeMessage(String msg) Exception " + e.getMessage());
 				}
@@ -533,8 +567,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 						break;
 					case INFO:
 						handleInfoMessageFromHardwareUnit(received);
-						break;
-					case WARNING:
 						break;
 					default:
 						break;
