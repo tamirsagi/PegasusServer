@@ -368,14 +368,8 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	 * @param aIsEnabled
 	 */
 	private void changeRearSensorState(boolean aIsEnabled){
-		for(String pos : mUltraSonicSensors.keySet()){
-			switch(pos){
-			case SensorPositions.REAR_RIGHT_ULTRA_SONIC_SENSOR:
-			case SensorPositions.REAR_LEFT_ULTRA_SONIC_SENSOR:
-				changeSensorState(pos,aIsEnabled);
-				break;
-			}
-		}
+		changeSensorState(SensorPositions.REAR_RIGHT_ULTRA_SONIC_SENSOR,aIsEnabled);
+		changeSensorState(SensorPositions.REAR_LEFT_ULTRA_SONIC_SENSOR,aIsEnabled);
 	}
 	
 	/**
