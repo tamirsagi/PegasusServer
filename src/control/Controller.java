@@ -286,6 +286,7 @@ public class Controller implements OnServerEventsListener, OnParkingEventsListen
 	 */
 	public void findParkingSpot(int parkingType) {
 		if(PegausVehicleProperties.getInstance().isDataLoaded()){
+			ParkingFinder.getInstance().resumeThread();
 			PegasusLogger.getInstance().i(TAG, "findParkingSpot", "started looking for parking");
 			VehicleData vehicleData = PegasusVehicle.getInstance().getVehicleData();
 			double mMinSpace = vehicleData.getLength() + 2 * vehicleData.getMinimumRequiredSpaceToPark();

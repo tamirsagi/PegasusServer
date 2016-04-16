@@ -2,6 +2,7 @@ package vehicle.managers.finder;
 
 import logs.logger.PegasusLogger;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import vehicle.common.ActionTimer;
@@ -10,6 +11,7 @@ import vehicle.interfaces.OnTimerListener;
 import vehicle.managers.common.AbstractManager;
 import vehicle.managers.finder.constants.ParkingType;
 import vehicle.pegasus.PegasusVehicle;
+import vehicle.pegasus.constants.SensorPositions;
 import control.interfaces.OnParkingEventsListener;
 
 public class ParkingFinder extends AbstractManager implements OnTimerListener{
@@ -19,6 +21,9 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	private static final long FINDING_PARKING_SPOT_TIMEOUT = 60 * 1000 * 2; // 2 minutes for searching
 	
 	private static final int DEFAULT_VALUE = -1;
+	
+	private static final String KEY_SHOULD_ADD_TRAVELLED_DISTANCE = "should_add_travelled_distance";
+	private static final String KEY_LAST_SENSOR_DATA = "last_Sensor_data";
 	
 	private int mParkingType;
 	private boolean mFound;
@@ -57,6 +62,13 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 					PegasusLogger.getInstance().e(getTag(),e.getMessage());
 				}
 			}
+			if(mDistanceSinceStarted >= mMinSpace){
+				mFound = true;
+				mListener.onParkingFound();
+				mTimer.killThread();
+			}else{
+				
+			}
 			
 			
 		}
@@ -78,6 +90,7 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 			mMinSpace = aMinSpaceToPark;
 			mParkingType = aParkingType;
 			mFound = false;
+			mDistanceSinceStarted = 0;
 			if(mTimer != null){
 				mTimer.killThread();
 			}
@@ -90,7 +103,7 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	 * 
 	 */
 	@Override
-	public void updateInput(int sensorId, double value){
+	public synchronized void updateInput(int sensorId, double value){
 		switch (mParkingType){
 		case ParkingType.PARALLEL_RIGHT:
 		case ParkingType.PARALLEL_LEFT:
@@ -109,26 +122,32 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	 * @param incomingData
 	 */
 	private void handleIncomingDataOnParallelParking(int aSensorId, double aValue){
-		if(!mFound){
-			if(aValue == 0){
-				
-				
-				
-				
+		try {
+			if(!mFound){
+				if(aSensorId == SensorPositions.INFRA_RED_TACHOMETER_ID){
+					boolean relevantDistance = mCurrentParkingProcessParams.optBoolean(KEY_SHOULD_ADD_TRAVELLED_DISTANCE,true);
+					if(relevantDistance){
+						mDistanceSinceStarted += aValue;
+					}
+				}else{
+					mCurrentParkingProcessParams.put(KEY_LAST_SENSOR_DATA,aValue);
+					if(aValue != 0){
+						mDistanceSinceStarted = 0;
+						mCurrentParkingProcessParams.put(KEY_SHOULD_ADD_TRAVELLED_DISTANCE,false);
+						
+					}else{
+						mCurrentParkingProcessParams.put(KEY_SHOULD_ADD_TRAVELLED_DISTANCE,true);
+					}
+				}
 			}
-		}
-		
-		
-		
+		}catch (JSONException e) {
+					e.printStackTrace();
+				}
 		
 	}
 	
 	public int getParkingType(){
 		return mParkingType;
-	}
-	
-	public synchronized void  setTravelledDistance(double aDistance){
-		mDistanceSinceStarted += aDistance;
 	}
 
 	

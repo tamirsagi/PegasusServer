@@ -280,7 +280,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 			setCurrentspeed(travelledDsitanceInSec);
 			setTravelledDistance(getTravelledDistance() + travelledDsitanceInSec);
 			if(getCurrentState() == VehicleState.VEHICLE_LOOKING_FOR_PARKING){
-				ParkingFinder.getInstance().setTravelledDistance(travelledDsitanceInSec);
+				ParkingFinder.getInstance().updateInput(SensorPositions.INFRA_RED_TACHOMETER_ID,travelledDsitanceInSec);
 			}
 		}
 	}
