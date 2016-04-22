@@ -3,7 +3,7 @@ package vehicle.common;
 import logs.logger.PegasusLogger;
 import vehicle.common.constants.VehicleParams.DrivingDirection;
 import vehicle.common.constants.VehicleParams.VehicleControlType;
-import vehicle.common.constants.VehicleState;
+import vehicle.common.constants.VehicleAutonomousMode;
 import control.interfaces.OnVehicleEventsListener;
 
 public abstract class AbstractVehicle {
@@ -18,7 +18,7 @@ public abstract class AbstractVehicle {
 	protected VehicleControlType mVehicleControlType;
 	protected double mCurrentSpeed;
 	protected double mDistance;
-	protected int mCurrentState = VehicleState.VEHICLE_DEFAULT;
+	protected int mCurrentState = VehicleAutonomousMode.VEHICLE_NONE;
 	protected OnVehicleEventsListener mListener; 
 	private boolean mIsReady;
 	private VehicleData mVehicleData;
@@ -139,8 +139,8 @@ public abstract class AbstractVehicle {
 	public void setCurrentState(int aState){
 		if(aState != mCurrentState){
 			PegasusLogger.getInstance().d(TAG,"setCurrentState", "State was "
-					+ VehicleState.getVehicleStateName(mCurrentState)
-					+ " and changed to:" + VehicleState.getVehicleStateName(aState));
+					+ VehicleAutonomousMode.getVehicleStateName(mCurrentState)
+					+ " and changed to:" + VehicleAutonomousMode.getVehicleStateName(aState));
 			mCurrentState = aState;
 			changeUltraSonicSensorState();
 		}

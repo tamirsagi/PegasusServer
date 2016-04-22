@@ -1,6 +1,8 @@
-package vehicle.managers.finder;
+package managers.finder;
 
 import logs.logger.PegasusLogger;
+import managers.common.AbstractManager;
+import managers.finder.constants.ParkingType;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -8,12 +10,15 @@ import org.json.JSONObject;
 import vehicle.common.ActionTimer;
 import vehicle.common.VehicleData;
 import vehicle.interfaces.OnTimerListener;
-import vehicle.managers.common.AbstractManager;
-import vehicle.managers.finder.constants.ParkingType;
 import vehicle.pegasus.PegasusVehicle;
 import vehicle.pegasus.constants.SensorPositions;
 import control.interfaces.OnParkingEventsListener;
 
+/**
+ * Handle parking searching.
+ * @author Tamir
+ *
+ */
 public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	
 	private static ParkingFinder mInstance;
@@ -85,7 +90,7 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	 * find parking spot in a given position
 	 * @param aParkingType given position
 	 */
-	public void findParking(int aParkingType, double aMinSpaceToPark){
+	public void searchParking(int aParkingType, double aMinSpaceToPark){
 		if(aMinSpaceToPark > 0){
 			PegasusLogger.getInstance().i(getTag(), "findParking", "started looking for parking with min space of: " + aMinSpaceToPark);
 			mMinSpace = aMinSpaceToPark;

@@ -2,7 +2,7 @@ package vehicle.common;
 
 public abstract class VehicleData {
 	
-	
+	public static final int MIN_REQUIRED_DISTANCE_SAFE_FACTOR = 2;
 	protected static final double DEGREE_RADIANS_FACTOR = Math.PI / 180;
 	private double mLength;
 	private double mWidth;

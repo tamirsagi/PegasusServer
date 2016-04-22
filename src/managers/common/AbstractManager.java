@@ -1,4 +1,4 @@
-package vehicle.managers.common;
+package managers.common;
 
 
 public abstract class AbstractManager extends Thread {
@@ -8,7 +8,7 @@ public abstract class AbstractManager extends Thread {
 	protected boolean mIsSuspended;
 	
 	
-	public AbstractManager(String aTag){
+	protected AbstractManager(String aTag){
 		setName(aTag);
 		setTag(aTag);
 	}

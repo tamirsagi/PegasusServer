@@ -6,15 +6,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import logs.logger.PegasusLogger;
+import managers.driving_manager.DrivingManager;
+import managers.finder.ParkingFinder;
+import managers.finder.constants.ParkingType;
 import vehicle.common.AbstractVehicle;
 import vehicle.common.constants.VehicleConfigKeys;
 import vehicle.common.constants.VehicleParams;
 import vehicle.common.constants.VehicleParams.VehicleControlType;
-import vehicle.common.constants.VehicleState;
+import vehicle.common.constants.VehicleAutonomousMode;
 import vehicle.interfaces.onInputReceived;
-import vehicle.managers.driving_manager.DrivingManager;
-import vehicle.managers.finder.ParkingFinder;
-import vehicle.managers.finder.constants.ParkingType;
 import vehicle.pegasus.constants.SensorPositions;
 import vehicle.sensors.InfraRed;
 import vehicle.sensors.SensorConstants;
@@ -52,8 +52,6 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	}
 	
 	private PegasusVehicle() {
-		mCurrentDrivingDirection = VehicleParams.DrivingDirection.FORWARD; // by default
-		setControlType(VehicleControlType.AUTONOMOUS);
 		setVehicleData();
 		setUltraSonicSensors();
 		setupTachometerSensor();
@@ -92,9 +90,9 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 		PegasusVehicleData.getInstance().setLength(length);
 		PegasusVehicleData.getInstance().setWidth(width);
 		PegasusVehicleData.getInstance().setWheelDiameter(wheelDiameter);
+		PegasusVehicleData.getInstance().setWheelBase(wheelBase);
 		PegasusVehicleData.getInstance().setSteeringAngle(steeringAngle);
 		PegasusVehicleData.getInstance().setNumberOfUltraSonicSensors(numberOfUltraSonicSensors);
-		PegasusVehicleData.getInstance().setWheelBase(wheelBase);
 		PegasusVehicleData.getInstance().setDistanceCenterFrontWheelToFrontCar(centreFrontWheelToFrontCar);
 		PegasusVehicleData.getInstance().setMinimumRequiredSpaceToPark();
 		PegasusVehicleData.getInstance().setFrontWheelDistance(wheelDistance);
@@ -162,6 +160,20 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	
 	public InfraRed getTachometer(){
 		return mTachometer;
+	}
+	
+	@Override
+	public void setControlType(VehicleControlType aVehicleControlType){
+		super.setControlType(aVehicleControlType);
+		switch (aVehicleControlType) {
+		case AUTONOMOUS:
+			changeFrontSensorState(true);
+			break;
+		case MANUAL:
+			disableAllSensors();
+			setCurrentState(VehicleAutonomousMode.VEHICLE_NONE);
+			break;
+		}
 	}
 	
 	/**
@@ -279,7 +291,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 			double travelledDsitanceInSec = aValue * PegasusVehicleData.getInstance().getWheelPerimeter();
 			setCurrentspeed(travelledDsitanceInSec);
 			setTravelledDistance(getTravelledDistance() + travelledDsitanceInSec);
-			if(getCurrentState() == VehicleState.VEHICLE_LOOKING_FOR_PARKING){
+			if(getCurrentState() == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING){
 				ParkingFinder.getInstance().updateInput(SensorPositions.INFRA_RED_TACHOMETER_ID,travelledDsitanceInSec);
 			}
 		}
@@ -293,16 +305,16 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	private void handleDistanceSensorData(int sensorId, double value){
 		String sensorPosition = SensorPositions.getSensorPosition(sensorId);
 		switch(getCurrentState()){
-		case VehicleState.VEHICLE_FREE_DRIVING:
+		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
 			break;
-		case VehicleState.VEHICLE_LOOKING_FOR_PARKING:
+		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
 			if(!sensorPosition.equals(SensorPositions.FRONT_ULTRA_SONIC_SENSOR)){
 				ParkingFinder.getInstance().updateInput(sensorId,value);
 			}else{
 				DrivingManager.getInstance().updateInput(sensorId,value);
 			}
 			break;
-		case VehicleState.VEHICLE_PARKING:
+		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKING:
 			
 			break;
 		}
@@ -319,10 +331,9 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 			changeUpperLeftSensorsState(false);
 			changeRearSensorState(false);
 			switch(getCurrentState()){
-			case VehicleState.VEHICLE_FREE_DRIVING:
-				changeFrontSensorState(true);
+			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
 				break;
-			case VehicleState.VEHICLE_LOOKING_FOR_PARKING:
+			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
 				switch(ParkingFinder.getInstance().getParkingType()){
 				case ParkingType.PARALLEL_RIGHT:
 					changeUpperRightSensorsState(true);
@@ -332,11 +343,20 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 						break;
 				}
 				break;
-			case VehicleState.VEHICLE_PARKING:
+			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKING:
 				changeRearSensorState(true);
-				
 				break;
 			}
+	}
+	
+	/**
+	 * disable all sensors;
+	 */
+	private void disableAllSensors(){
+		changeFrontSensorState(false);
+		changeUpperRightSensorsState(false);
+		changeUpperLeftSensorsState(false);
+		changeRearSensorState(false);
 	}
 	
 	private void changeSensorState(String pos, boolean aIsEnabled){

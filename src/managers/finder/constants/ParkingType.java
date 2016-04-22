@@ -1,4 +1,4 @@
-package vehicle.managers.finder.constants;
+package managers.finder.constants;
 
 public class ParkingType {
 
