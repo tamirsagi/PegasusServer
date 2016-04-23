@@ -29,8 +29,8 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	private static final String TAG = PegasusVehicle.class.getSimpleName();
 	private static final String PEGASUS_DEFAULT_ID = "302774773";
 
-	private static final int MIN_DIGITAL_SPEED = 0;
-	private static final int MAX_DIGITAL_SPEED = 255;
+	public static final int MIN_DIGITAL_SPEED = 70;
+	public static final int MAX_DIGITAL_SPEED = 255;
 	private static final int STRAIGHT_STEER_ANGLE = 90;
 	private static final int MIN_STEER_ANGLE = 50;
 	private static final int MAX_STEER_ANGLE = 140;

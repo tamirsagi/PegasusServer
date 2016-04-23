@@ -303,7 +303,16 @@ public class Controller implements OnServerEventsListener,
 	
 	
 	
-	//////////////////////////////////////// Parking \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	//////////////////////////////////////// AUTONOMOUS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	/**
+	 * Method initiate driving manager thread
+	 */
+	public void freeDrive(){
+		PegasusLogger.getInstance().i(TAG, "freeDrive", "free driving...");
+		PegasusVehicle.getInstance().setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+		DrivingManager.getInstance().freeDrive();
+	}
 	
 	/**
 	 * handle parking action
@@ -321,14 +330,7 @@ public class Controller implements OnServerEventsListener,
 		}
 	}
 	
-	/**
-	 * Method initiate driving manager thread
-	 */
-	public void freeDrive(){
-		PegasusLogger.getInstance().i(TAG, "freeDrive", "free driving...");
-		PegasusVehicle.getInstance().setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
-		DrivingManager.getInstance().freeDrive();
-	}
+
 	
 	
 	////////////////////////////////////////Driving Manager events \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -337,9 +339,16 @@ public class Controller implements OnServerEventsListener,
 	public void onStop() {
 		PegasusVehicle.getInstance().stop();
 	}
+	
 	@Override
-	public void onResumeDriving(double aSpeed) {
-		// TODO Auto-generated method stub
+	public void onStartDriving(){
+		PegasusVehicle.getInstance().changeSpeed(PegasusVehicle.MIN_DIGITAL_SPEED);
+	}
+	@Override
+	public void onResumeDriving(int aSpeed) {
+		if(aSpeed >= PegasusVehicle.MIN_DIGITAL_SPEED && aSpeed <= PegasusVehicle.MAX_DIGITAL_SPEED){
+			PegasusVehicle.getInstance().changeSpeed(aSpeed);
+		}
 		
 	}
 	@Override

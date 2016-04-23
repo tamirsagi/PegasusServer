@@ -20,7 +20,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	private static DrivingManager mInstance;
 	private LaneFollowingService mLaneFollowingService;
 	private OnDrivingManagerEventsListener mListener;
-	private int mLastSpeed;
+	private int mCurrentSpeed;
 	private VehicleParams.DrivingDirection mCurrentDirection;
 	private int mCurrentMode;
 	
@@ -88,6 +88,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		if(mLaneFollowingService != null){
 			mLaneFollowingService.stopService();
 		}
+		ParkingFinder.getInstance().stopThread();
 	}
 
 	@Override
@@ -101,10 +102,6 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		}
 	}
 	
-	public boolean isThreadSuspended(){
-		return mIsSuspended;
-	}
-
 	@Override
 	public synchronized void resumeThread() {
 		if(mIsSuspended){
@@ -123,14 +120,19 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	 */
 	public void setCurrentMode(int aMode){
 		mCurrentMode = aMode;
+		switch(mCurrentMode){
+		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
+		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
+			initialization();
+			break;
+		}
 	}
 	
 	/**
-	 * handle free driving
+	 * start relevant functionalities 
 	 */
-	public void freeDrive(){
-		setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
-		if(mLaneFollowingService != null){
+	private void initialization(){
+		if(mLaneFollowingService == null){
 			mLaneFollowingService = new LaneFollowingService();
 			mLaneFollowingService.startService();
 		}else if(!mLaneFollowingService.isAlive()){
@@ -138,6 +140,21 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		}else if(mLaneFollowingService.mIsServiceSuspended){
 			mLaneFollowingService.resumeService();
 		}
+		if(mCurrentSpeed == 0 ){
+			mListener.onStartDriving();
+		}
+		
+	}
+	
+	/**
+	 * handle free driving
+	 */
+	public void freeDrive(){
+		if(!ParkingFinder.getInstance().isThreadSuspended()){
+			ParkingFinder.getInstance().suspendThread();
+		}
+		setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+		
 	}
 	
 	/**
@@ -147,9 +164,6 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	 */
 	public void findParkingSpot(int parkingType, double aMinSpace){
 		setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING);
-		if(mLaneFollowingService != null && !mLaneFollowingService.mIsServiceSuspended){
-			mLaneFollowingService.suspendService();
-		}
 		ParkingFinder.getInstance().searchParking(parkingType, aMinSpace);
 		ParkingFinder.getInstance().resumeThread();
 	}

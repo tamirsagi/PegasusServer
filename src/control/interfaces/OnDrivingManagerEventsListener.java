@@ -9,10 +9,14 @@ public interface OnDrivingManagerEventsListener {
 	 */
 	void onStop();
 	
+	/**
+	 * start Driving
+	 */
+	void onStartDriving();
 	/*
 	 *continue driving with given speed 
 	 */
-	void onResumeDriving(double aSpeed);
+	void onResumeDriving(int aSpeed);
 	
 	/**
 	 * turn right according to lane following

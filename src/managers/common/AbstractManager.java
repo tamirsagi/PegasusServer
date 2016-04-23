@@ -45,5 +45,9 @@ public abstract class AbstractManager extends Thread {
 		mIsSuspended = false;
 		notify();
 	}
+	
+	public boolean isThreadSuspended(){
+		return mIsSuspended;
+	}
 
 }
