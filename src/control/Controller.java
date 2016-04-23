@@ -2,18 +2,15 @@ package control;
 
 import logs.logger.PegasusLogger;
 import managers.driving_manager.DrivingManager;
-import managers.finder.ParkingFinder;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import vehicle.common.VehicleData;
 import vehicle.common.constants.VehicleParams;
-import vehicle.common.constants.VehicleParams.DrivingDirection;
 import vehicle.common.constants.VehicleParams.VehicleControlType;
-import vehicle.common.constants.VehicleAutonomousMode;
 import vehicle.pegasus.PegasusVehicle;
 import vehicle.pegasus.PegausVehicleProperties;
+import vehicle.pegasus.constants.SensorPositions;
 
 import communication.bluetooth.Constants.BluetoothServerStatus;
 import communication.bluetooth.Server.BluetoothServer;
@@ -21,8 +18,6 @@ import communication.serialPorts.SerialPortHandler;
 import communication.serialPorts.messages.MessageVaribles;
 
 import control.constants.ApplicationStates;
-import control.interfaces.OnDrivingManagerEventsListener;
-import control.interfaces.OnParkingEventsListener;
 import control.interfaces.OnSerialPortEventsListener;
 import control.interfaces.OnServerEventsListener;
 import control.interfaces.OnVehicleEventsListener;
@@ -48,7 +43,7 @@ public class Controller implements OnServerEventsListener,
 	private  Controller() {
 		mExtraDataToSend = new StringBuilder();
 	}
-
+	
 	/**
 	 * initialize system when boot is completed
 	 */
@@ -287,6 +282,7 @@ public class Controller implements OnServerEventsListener,
 				if(!DrivingManager.getInstance().isAlive()){
 					DrivingManager.getInstance().registerListener(PegasusVehicle.getInstance());
 					DrivingManager.getInstance().startThread();
+					while(!DrivingManager.getInstance().isAlive());
 				}else if(DrivingManager.getInstance().isThreadSuspended()){
 					DrivingManager.getInstance().resumeThread();
 				}

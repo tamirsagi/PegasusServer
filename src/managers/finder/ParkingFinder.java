@@ -33,7 +33,7 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 	
 	private int mParkingType;
 	private boolean mFound;
-	private double mDistanceSinceStarted;
+	private double mRelevantSpace = DEFAULT_VALUE;
 	private OnParkingEventsListener mListener;
 	private ActionTimer mTimer;
 	private double mMinSpace;
@@ -68,10 +68,12 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 					PegasusLogger.getInstance().e(getTag(),e.getMessage());
 				}
 			}
-			if(mDistanceSinceStarted >= mMinSpace){
+			if(mRelevantSpace >= mMinSpace){
 				mFound = true;
 				mListener.onParkingFound();
-				mTimer.killThread();
+				if(mTimer != null){
+					mTimer.killThread();
+				}
 			}else{
 				
 			}
@@ -96,7 +98,7 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 			mMinSpace = aMinSpaceToPark;
 			mParkingType = aParkingType;
 			mFound = false;
-			mDistanceSinceStarted = 0;
+			mRelevantSpace = 0;
 			if(mTimer != null){
 				mTimer.killThread();
 			}
@@ -133,19 +135,19 @@ public class ParkingFinder extends AbstractManager implements OnTimerListener{
 				if(aSensorId == SensorPositions.INFRA_RED_TACHOMETER_ID){
 					boolean relevantDistance = mCurrentParkingProcessParams.optBoolean(KEY_SHOULD_ADD_TRAVELLED_DISTANCE,true);
 					if(relevantDistance){
-						mDistanceSinceStarted += aValue;
+						mRelevantSpace += aValue;
 					}
 				}else{
 					mCurrentParkingProcessParams.put(KEY_LAST_SENSOR_DATA,aValue);
 					if(aValue != 0){
-						mDistanceSinceStarted = 0;
+						mRelevantSpace = 0;
 						mCurrentParkingProcessParams.put(KEY_SHOULD_ADD_TRAVELLED_DISTANCE,false);
 						
 					}else{
 						mCurrentParkingProcessParams.put(KEY_SHOULD_ADD_TRAVELLED_DISTANCE,true);
 					}
 				}
-				mCurrentParkingProcessParams.put(KEY_DISTANCE_SINCE_STARTED, mDistanceSinceStarted);
+				mCurrentParkingProcessParams.put(KEY_DISTANCE_SINCE_STARTED, mRelevantSpace);
 			}
 		}catch (JSONException e) {
 					e.printStackTrace();

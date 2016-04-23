@@ -274,6 +274,11 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived, 
 	}
 	
 	@Override
+	public int getSpeed(){
+		return mDigitalSpeed;
+	}
+	
+	@Override
 	public String getTag() {
 		return TAG;
 	}
@@ -311,14 +316,16 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived, 
 	 */
 	private void handleDistanceSensorData(int sensorId, double value){
 		String sensorPosition = SensorPositions.getSensorPosition(sensorId);
+		if(sensorPosition.equals(SensorPositions.FRONT_ULTRA_SONIC_SENSOR)){
+			DrivingManager.getInstance().updateInput(sensorId,value);
+		}
 		switch(getCurrentState()){
 		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
+			
 			break;
 		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
 			if(!sensorPosition.equals(SensorPositions.FRONT_ULTRA_SONIC_SENSOR)){
 				ParkingFinder.getInstance().updateInput(sensorId,value);
-			}else{
-				DrivingManager.getInstance().updateInput(sensorId,value);
 			}
 			break;
 		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKING:
@@ -367,6 +374,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived, 
 	}
 	
 	private void changeSensorState(String pos, boolean aIsEnabled){
+		PegasusLogger.getInstance().v(Thread.currentThread().getName(), "changing state");
 		int state = aIsEnabled ? SensorConstants.ENABLE_SENSOR : SensorConstants.DISABLE_SENSOR;
 		UltraSonic us = mUltraSonicSensors.get(pos);
 		if(us != null){

@@ -1,5 +1,7 @@
 package managers.common;
 
+import logs.logger.PegasusLogger;
+
 
 public abstract class AbstractManager extends Thread {
 	
@@ -38,10 +40,12 @@ public abstract class AbstractManager extends Thread {
 	}
 	
 	public void suspendThread(){
+		PegasusLogger.getInstance().i(getName(), "suspedning...");
 		mIsSuspended = true;
 	}
 	
 	public synchronized void resumeThread(){
+		PegasusLogger.getInstance().i(getName(), "resuming...");
 		mIsSuspended = false;
 		notify();
 	}

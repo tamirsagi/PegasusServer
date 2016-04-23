@@ -475,9 +475,9 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		private void writeMessage(String msg){
 			if(mOutputHandler != null)
 				try {
-					PegasusLogger.getInstance().d(TAG, "writeMessage", "before sending to arduino: " + msg);
+					PegasusLogger.getInstance().d(Thread.currentThread().getName(), "writeMessage", "before sending to arduino: " + msg);
 					mOutputHandler.println(msg);
-					sleep(200);
+					sleep(100);
 				} catch (Exception e) {
 					fireSerialPortErrors("writeMessage(String msg) Exception " + e.getMessage());
 				}

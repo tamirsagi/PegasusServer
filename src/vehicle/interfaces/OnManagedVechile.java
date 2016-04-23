@@ -15,7 +15,7 @@ public interface OnManagedVechile {
 
 	public void turnRight(double rotationAngle);
 
-	public void turnLeft(double rotationAngle) ;
+	public void turnLeft(double rotationAngle);
 
 	public void driveForward();
 
@@ -24,5 +24,7 @@ public interface OnManagedVechile {
 	public int getCurrentState();
 	
 	public void setCurrentState(int aState);
+	
+	public int getSpeed(); 
 	
 }
