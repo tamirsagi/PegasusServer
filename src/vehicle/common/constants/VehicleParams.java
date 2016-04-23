@@ -11,7 +11,7 @@ public class VehicleParams {
 	
 	
 	public enum DrivingDirection{
-		FORWARD, REVERSE
+		FORWARD, BACKWARD
 	}
 	
 	/**

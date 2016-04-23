@@ -28,8 +28,7 @@ import control.interfaces.OnServerEventsListener;
 import control.interfaces.OnVehicleEventsListener;
 
 public class Controller implements OnServerEventsListener, 
-									OnSerialPortEventsListener,OnVehicleEventsListener,
-									OnDrivingManagerEventsListener{
+									OnSerialPortEventsListener,OnVehicleEventsListener{
 
 	public static final String TAG = Controller.class.getSimpleName();
 	private static Controller mInstance;
@@ -202,7 +201,7 @@ public class Controller implements OnServerEventsListener,
 				case FORWARD:
 					PegasusVehicle.getInstance().driveForward();
 					break;
-				case REVERSE:
+				case BACKWARD:
 					PegasusVehicle.getInstance().driveBackward();
 					break;
 				}
@@ -286,7 +285,7 @@ public class Controller implements OnServerEventsListener,
 			switch(aControlType){
 			case AUTONOMOUS:
 				if(!DrivingManager.getInstance().isAlive()){
-					DrivingManager.getInstance().registerListener(this);
+					DrivingManager.getInstance().registerListener(PegasusVehicle.getInstance());
 					DrivingManager.getInstance().startThread();
 				}else if(DrivingManager.getInstance().isThreadSuspended()){
 					DrivingManager.getInstance().resumeThread();
@@ -310,7 +309,6 @@ public class Controller implements OnServerEventsListener,
 	 */
 	public void freeDrive(){
 		PegasusLogger.getInstance().i(TAG, "freeDrive", "free driving...");
-		PegasusVehicle.getInstance().setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
 		DrivingManager.getInstance().freeDrive();
 	}
 	
@@ -321,52 +319,13 @@ public class Controller implements OnServerEventsListener,
 	public void findParkingSpot(int aParkingType) {
 		if(PegausVehicleProperties.getInstance().isDataLoaded()){
 			PegasusLogger.getInstance().i(TAG, "findParkingSpot", "started looking for parking");
-			VehicleData vehicleData = PegasusVehicle.getInstance().getVehicleData();
-			double aMinSpace = vehicleData.getLength() + VehicleData.MIN_REQUIRED_DISTANCE_SAFE_FACTOR * vehicleData.getMinimumRequiredSpaceToPark();
-			DrivingManager.getInstance().findParkingSpot(aParkingType, aMinSpace);
-			PegasusVehicle.getInstance().setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING);
+			DrivingManager.getInstance().findParkingSpot(aParkingType);
 		}else{
 			//TODO - send callback parking cannot be performed
 		}
 	}
 	
 
-	
-	
-	////////////////////////////////////////Driving Manager events \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-
-	@Override
-	public void onStop() {
-		PegasusVehicle.getInstance().stop();
-	}
-	
-	@Override
-	public void onStartDriving(){
-		PegasusVehicle.getInstance().changeSpeed(PegasusVehicle.MIN_DIGITAL_SPEED);
-	}
-	@Override
-	public void onResumeDriving(int aSpeed) {
-		if(aSpeed >= PegasusVehicle.MIN_DIGITAL_SPEED && aSpeed <= PegasusVehicle.MAX_DIGITAL_SPEED){
-			PegasusVehicle.getInstance().changeSpeed(aSpeed);
-		}
-		
-	}
-	@Override
-	public void onTurnRight(double aAngle) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void onTurnLeft(double aAngle) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void onChangeDirection(DrivingDirection aDirection) {
-		// TODO Auto-generated method stub
-		
-	}
-	
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

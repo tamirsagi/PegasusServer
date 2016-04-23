@@ -1,14 +1,17 @@
 package managers.driving_manager;
 
+import vehicle.common.VehicleData;
 import vehicle.common.constants.VehicleParams;
 import vehicle.common.constants.VehicleParams.DrivingDirection;
 import vehicle.common.constants.VehicleAutonomousMode;
+import vehicle.interfaces.OnManagedVechile;
 import vehicle.pegasus.PegasusVehicle;
 import control.interfaces.OnDrivingManagerEventsListener;
 import control.interfaces.OnParkingEventsListener;
 import logs.logger.PegasusLogger;
 import managers.common.AbstractManager;
 import managers.finder.ParkingFinder;
+import managers.finder.constants.ParkingType;
 
 /**
  * class is responsible for obstacles avoidance and lane following
@@ -19,12 +22,10 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 
 	private static DrivingManager mInstance;
 	private LaneFollowingService mLaneFollowingService;
-	private OnDrivingManagerEventsListener mListener;
 	private int mCurrentSpeed;
 	private VehicleParams.DrivingDirection mCurrentDirection;
 	private int mCurrentMode;
-	
-	
+	private OnManagedVechile mManagedVehicle;
 	
 	public static DrivingManager getInstance(){
 		if(mInstance == null){
@@ -48,8 +49,8 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	 * register listener
 	 * @param aListener
 	 */
-	public void registerListener(OnDrivingManagerEventsListener aListener){
-			mListener = aListener;
+	public void registerListener(OnManagedVechile aManagedVehicle){
+			mManagedVehicle = aManagedVehicle;
 	}
 
 	@Override
@@ -141,7 +142,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 			mLaneFollowingService.resumeService();
 		}
 		if(mCurrentSpeed == 0 ){
-			mListener.onStartDriving();
+			mManagedVehicle.startNormalDriving();
 		}
 		
 	}
@@ -154,6 +155,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 			ParkingFinder.getInstance().suspendThread();
 		}
 		setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
 		
 	}
 	
@@ -162,10 +164,22 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	 * @param parkingType
 	 * @param aMinSpace
 	 */
-	public void findParkingSpot(int parkingType, double aMinSpace){
+	public void findParkingSpot(int parkingType){
 		setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING);
+		VehicleData vehicleData = mManagedVehicle.getVehicleData();
+		double aMinSpace = 0;
+		switch(parkingType){
+		case ParkingType.PARALLEL_RIGHT:
+		case ParkingType.PARALLEL_LEFT:
+			aMinSpace = vehicleData.getLength() + 
+						VehicleData.MIN_REQUIRED_DISTANCE_SAFE_FACTOR * vehicleData.getMinimumRequiredSpaceToPark();
+			break;
+		
+		}
 		ParkingFinder.getInstance().searchParking(parkingType, aMinSpace);
 		ParkingFinder.getInstance().resumeThread();
+		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING);
+		
 	}
 	
 	
@@ -261,7 +275,8 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		ParkingFinder.getInstance().suspendThread();
 		setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKING_FOUND);
 		PegasusLogger.getInstance().i(getName(), "Parking found stopping car....");
-		mListener.onStop();
+		mManagedVehicle.stop();
+		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKING_FOUND);
 		mLaneFollowingService.suspendService();
 		//TODO - handle parking manoeuvring
 		
@@ -270,6 +285,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	public void onParkingNoFound() {
 		ParkingFinder.getInstance().suspendThread();
 		setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
 	}
 
 	

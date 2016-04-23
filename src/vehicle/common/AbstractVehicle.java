@@ -86,6 +86,11 @@ public abstract class AbstractVehicle {
 	public abstract void registerAllSensorToDataProvider();
 	
 	/**
+	 * 
+	 */
+	public abstract void startNormalDriving();
+	
+	/**
 	 * Handle the vehicle speed
 	 * @param digitalSpeed
 	 */

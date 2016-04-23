@@ -14,6 +14,7 @@ import vehicle.common.constants.VehicleConfigKeys;
 import vehicle.common.constants.VehicleParams;
 import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.common.constants.VehicleAutonomousMode;
+import vehicle.interfaces.OnManagedVechile;
 import vehicle.interfaces.onInputReceived;
 import vehicle.pegasus.constants.SensorPositions;
 import vehicle.sensors.InfraRed;
@@ -23,7 +24,7 @@ import vehicle.sensors.UltraSonic;
 import communication.serialPorts.SerialPortHandler;
 import communication.serialPorts.messages.MessageVaribles;
 
-public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
+public class PegasusVehicle extends AbstractVehicle implements onInputReceived, OnManagedVechile{
 	
 	private static PegasusVehicle mInstance;
 	private static final String TAG = PegasusVehicle.class.getSimpleName();
@@ -218,6 +219,12 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	}
 	
 	@Override
+	public void startNormalDriving(){
+		driveForward();
+		changeSpeed(MIN_DIGITAL_SPEED);
+	}
+	
+	@Override
 	public void changeSpeed(int digitalSpeed) {
 		mDigitalSpeed = digitalSpeed;
 		if (SerialPortHandler.getInstance().isBoundToSerialPort()){
@@ -254,7 +261,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 
 	@Override
 	public void driveBackward() {
-		mCurrentDrivingDirection = VehicleParams.DrivingDirection.REVERSE;
+		mCurrentDrivingDirection = VehicleParams.DrivingDirection.BACKWARD;
 		if (SerialPortHandler.getInstance().isBoundToSerialPort())
 			SerialPortHandler.getInstance().changeDrivingDirection(
 					MessageVaribles.VALUE_DRIVING_REVERSE);
@@ -262,15 +269,15 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived{
 	}
 	
 	@Override
-	public String getTag() {
-		return TAG;
-	}
-
-	@Override
 	public void stop() {
 		changeSpeed(0);
 	}
 	
+	@Override
+	public String getTag() {
+		return TAG;
+	}
+
 	
 	@Override
 	public void onReceived(int sensorId,double value){
