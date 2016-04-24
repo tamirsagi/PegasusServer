@@ -50,6 +50,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	private SerialPortParser mSerialPortParser;
 	private InputStream mInputStream;
 	private OutputStreamHandler mOutputStreamHandler;
+	private boolean mIsWaiting;
 	
 	private OnSerialPortEventsListener mListener;		//keeps listeners
 	
@@ -141,7 +142,15 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		}
 		PegasusLogger.getInstance().i(TAG,"run", "Serial port thread is running...");
 		while(mIsBoundedToUsbPort){
-			
+			synchronized (this) {
+				try{
+					while(mIsWaiting){
+						wait();
+					}
+				}catch(Exception e){
+					
+				}
+			}
 		}
 		disconnect();
 	}
@@ -150,12 +159,14 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 * received message is being notified here
 	 */
 	public synchronized void serialEvent(SerialPortEvent event) {
+		
 		switch (event.getEventType()) {
 		case SerialPortEvent.DATA_AVAILABLE:
 			StringBuilder message = new StringBuilder();
 			int available = 0;
 			byte[] received = null;
 			try {
+				mOutputStreamHandler.suspendThread();
 				while ((available = mInputStream.available()) > 0) {
 					received = new byte[available + 1];
 					mInputStream.read(received);
@@ -166,6 +177,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				if(message.length() > 0 ){
 					pullMessages(message);
 				}
+				mOutputStreamHandler.resumeThread();
 				
 				}catch (Exception e) {
 					fireSerialPortErrors("Serial Event Listener Exception:" + e.getMessage());
@@ -234,6 +246,17 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	public void stopThread(){
 		PegasusLogger.getInstance().d(TAG, "stopThread", "Stopping Serial Port Thread");
 		mIsBoundedToUsbPort = false;
+	}
+	
+	public void serialPortSuspended(){
+		PegasusLogger.getInstance().i(Thread.currentThread().getName(), "suspedning...");
+		mIsWaiting = true;
+	}
+	
+	public synchronized void serialPortResumed(){
+		PegasusLogger.getInstance().i(Thread.currentThread().getName(), "resuming...");
+		mIsWaiting = false;
+		notify();
 	}
 	
 	/**
@@ -440,6 +463,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		private boolean mIsBoundToSerial;
 		private PrintWriter mOutputHandler;
 		private Queue<String> mMessagesToArduino;
+		private boolean mIsSuspended;
 		
 		public OutputStreamHandler(OutputStream aOutputStream){
 			setName(TAG);
@@ -461,8 +485,22 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		@Override
 		public void run() {
 			while(mIsBoundToSerial){
+				
+				synchronized (this) {
+					try{
+						while(mIsSuspended){
+							wait();
+						}
+					}catch(Exception e){
+						
+					}
+				}
 					if(mMessagesToArduino.size() > 0){
-						writeMessage(mMessagesToArduino.poll());
+						serialPortSuspended();
+						while(mMessagesToArduino.size() > 0){
+							writeMessage(mMessagesToArduino.poll());
+						}
+						serialPortResumed();
 					}
 				}
 				disconnect();
@@ -477,7 +515,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				try {
 					PegasusLogger.getInstance().d(Thread.currentThread().getName(), "writeMessage", "before sending to arduino: " + msg);
 					mOutputHandler.println(msg);
-					sleep(100);
+					Thread.sleep(100);
 				} catch (Exception e) {
 					fireSerialPortErrors("writeMessage(String msg) Exception " + e.getMessage());
 				}
@@ -500,6 +538,17 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				mOutputHandler.close();
 			}
 			mIsBoundToSerial = false;
+		}
+		
+		public void suspendThread(){
+			PegasusLogger.getInstance().i(getName(), "suspedning...");
+			mIsSuspended = true;
+		}
+		
+		public synchronized void resumeThread(){
+			PegasusLogger.getInstance().i(getName(), "resuming...");
+			mIsSuspended = false;
+			notify();
 		}
 	}
 	

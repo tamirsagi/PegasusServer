@@ -164,7 +164,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	 * set current autonomous mode;
 	 * @param aMode autonomouse mode (Free driving, parking spot searching , manoeuvring)
 	 */
-	private synchronized void setCurrentMode(int aMode){
+	public void setCurrentMode(int aMode){
 		mCurrentMode = aMode;
 		switch(mCurrentMode){
 		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
@@ -186,7 +186,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		}else if(mLaneFollowingService.mIsServiceSuspended){
 			mLaneFollowingService.resumeService();
 		}
-		if(mCurrentSpeed == 0 ){
+		if(mManagedVehicle.getSpeed() == 0 ){
 			mManagedVehicle.startNormalDriving();
 		}
 		if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING){
@@ -196,6 +196,9 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 				while(!ParkingFinder.getInstance().isAlive());
 				ParkingFinder.getInstance().suspendThread();
 			}
+		}else if(ParkingFinder.getInstance().isAlive() &&
+				!ParkingFinder.getInstance().isThreadSuspended()){
+			ParkingFinder.getInstance().suspendThread();
 		}
 		
 	}
@@ -205,9 +208,6 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	 */
 	public void freeDrive(){
 		
-		if(!ParkingFinder.getInstance().isThreadSuspended()){
-			ParkingFinder.getInstance().suspendThread();
-		}
 		setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
 		mManagedVehicle.startNormalDriving();
 		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
@@ -228,7 +228,6 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 			aMinSpace = vehicleData.getLength() + 
 						VehicleData.MIN_REQUIRED_DISTANCE_SAFE_FACTOR * vehicleData.getMinimumRequiredSpaceToPark();
 			break;
-		
 		}
 		ParkingFinder.getInstance().searchParking(parkingType, aMinSpace);
 		ParkingFinder.getInstance().resumeThread();

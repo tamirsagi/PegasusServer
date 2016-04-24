@@ -6,6 +6,7 @@ import managers.driving_manager.DrivingManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import vehicle.common.constants.VehicleAutonomousMode;
 import vehicle.common.constants.VehicleParams;
 import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.pegasus.PegasusVehicle;
@@ -91,6 +92,24 @@ public class Controller implements OnServerEventsListener,
 			mApplicationState = ApplicationStates.READY;
 		case ApplicationStates.READY:
 			SerialPortHandler.getInstance().updateSystemReady();
+			
+			new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+					Thread.currentThread().setName("Tamir sagi");
+					try{
+						System.out.println("!@#!@#!@#@!# Thread is here");
+						Thread.sleep(2000);
+						System.out.println("$$$$$$ BACK TO BUISENSEESSS");
+					}catch(Exception e){
+						
+					}
+					setCurrentControlMode(VehicleControlType.AUTONOMOUS);
+					//DrivingManager.getInstance().setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+					
+				}
+			}).start();
 			break;
 		}
 
