@@ -1,5 +1,6 @@
 package managers.driving_manager;
 
+import util.CameraManager;
 import vehicle.common.VehicleData;
 import vehicle.common.constants.VehicleParams;
 import vehicle.common.constants.VehicleParams.DrivingDirection;
@@ -248,12 +249,13 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		
 		public LaneFollowingService(){
 			setName(TAG);
-			
+			CameraManager.getInstance().turnCameraOff();
 		}
 		
 		@Override
 		public void run() {
 			PegasusLogger.getInstance().i(getName(),"run()", "lane following service has been started...");
+			CameraManager.getInstance().turnCameraOn();
 			while(mIsSerivceRunning){
 				
 				synchronized (this) {
@@ -269,7 +271,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 			}
 			PegasusLogger.getInstance().i(TAG, "Lane following Service finished..");
 		}
-
+		
 
 		/**
 		 * methods use roof camera to follow lane while in motion
@@ -303,6 +305,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		public void suspendService(){
 			PegasusLogger.getInstance().i(TAG, "Lane following Service is suspended");
 			mIsSuspended = true;
+			CameraManager.getInstance().turnCameraOff();
 		}
 		
 		/**
@@ -312,6 +315,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 			PegasusLogger.getInstance().i(TAG, "Lane following Service resumed");
 			mIsSuspended = false;
 			notify();
+			CameraManager.getInstance().turnCameraOn();
 		}
 		
 		public boolean isServiceSuspended(){
