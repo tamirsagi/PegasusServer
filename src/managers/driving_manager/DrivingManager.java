@@ -98,7 +98,9 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 			if(mLaneFollowingService != null && !mLaneFollowingService.mIsServiceSuspended){
 				mLaneFollowingService.suspendService();
 			}
-			ParkingFinder.getInstance().suspendThread();
+			if(!ParkingFinder.getInstance().isThreadSuspended()){
+				ParkingFinder.getInstance().suspendThread();
+			}
 			super.suspendThread();
 		}
 	}
@@ -125,7 +127,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	 * @param aValue
 	 */
 	public synchronized void handleFrontSensorData(double aValue){
-		if(aValue > 0){
+		if(aValue >= 0){
 			PegasusLogger.getInstance().i(getName(),"Front Sensor Data : " + aValue);
 			switch(mCurrentMode){
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
