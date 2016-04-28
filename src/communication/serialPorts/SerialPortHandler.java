@@ -264,9 +264,9 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 */
 	public void updateSystemReady(){
 		String msgToArduino = MessageVaribles.START_MESSAGE 
-				+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MessageType.INFO.getValue() + MessageVaribles.MESSAGE_SAPERATOR
+				+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MESSAGE_TYPE_INFO + MessageVaribles.MESSAGE_SAPERATOR
 				+ MessageVaribles.KEY_INFO_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.InfoType.STATUS.toString() + MessageVaribles.MESSAGE_SAPERATOR
-				+ MessageVaribles.KEY_STATUS + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.StatusCode.INFO_SERVER_STATUS_READY.getStatusCode() 
+				+ MessageVaribles.KEY_STATUS + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MESSAGE_TYPE_INFO_SERVER_READY 
 				+ MessageVaribles.END_MESSAGE;
 		mOutputStreamHandler.addMessageToQueue(msgToArduino);
 		PegasusLogger.getInstance().d(TAG, "updateSystemReady", "Update System Ready:" + msgToArduino);
@@ -364,8 +364,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 */
 	public void changeDrivingDirection(String direction){
 		String msgToArduino = MessageVaribles.START_MESSAGE 
-						+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MessageType.ACTION.getValue() + MessageVaribles.MESSAGE_SAPERATOR
-						+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VehicleActions.CHANGE_DIRECTION.getValue() + MessageVaribles.MESSAGE_SAPERATOR
+						+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MESSAGE_TYPE_ACTION + MessageVaribles.MESSAGE_SAPERATOR
+						+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VEHICLE_ACTION_CHANGE_DIRECTION + MessageVaribles.MESSAGE_SAPERATOR
 						+ MessageVaribles.KEY_DRIVING_DIRECTION + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + direction 
 						+ MessageVaribles.END_MESSAGE;
 		mOutputStreamHandler.addMessageToQueue(msgToArduino);
@@ -378,8 +378,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 */
 	public void changeSpeed(int digitalSpeed){
 		String msgToArduino = MessageVaribles.START_MESSAGE  
-							+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MessageType.ACTION.getValue() + MessageVaribles.MESSAGE_SAPERATOR
-							+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VehicleActions.CHANGE_SPEED.getValue() + MessageVaribles.MESSAGE_SAPERATOR
+							+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MESSAGE_TYPE_ACTION + MessageVaribles.MESSAGE_SAPERATOR
+							+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VEHICLE_ACTION_CHANGE_SPEED + MessageVaribles.MESSAGE_SAPERATOR
 							+ MessageVaribles.KEY_DIGITAL_SPEED + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + digitalSpeed 
 							+ MessageVaribles.END_MESSAGE;
 		mOutputStreamHandler.addMessageToQueue(msgToArduino);
@@ -393,8 +393,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 */
 	public void changeSteerMotor(String direction, double angle){
 		String msgToArduino = MessageVaribles.START_MESSAGE 
-							+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MessageType.ACTION.getValue() + MessageVaribles.MESSAGE_SAPERATOR
-							+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VehicleActions.STEERING.getValue() + MessageVaribles.MESSAGE_SAPERATOR 
+							+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MESSAGE_TYPE_ACTION + MessageVaribles.MESSAGE_SAPERATOR
+							+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VEHICLE_ACTION_CHANGE_STEERING + MessageVaribles.MESSAGE_SAPERATOR 
 							+ MessageVaribles.KEY_STEERING_DIRECTION + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + direction + MessageVaribles.MESSAGE_SAPERATOR
 							+ MessageVaribles.KEY_ROTATION_ANGLE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + angle
 							+ MessageVaribles.END_MESSAGE;
@@ -410,8 +410,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	 */
 	public void changeSensorState(int sensorID,int state){
 		String msgToArduino = MessageVaribles.START_MESSAGE 
-				+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MessageType.ACTION.getValue() + MessageVaribles.MESSAGE_SAPERATOR
-				+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VehicleActions.CHANGE_SENSOR_STATE.getValue() + MessageVaribles.MESSAGE_SAPERATOR 
+				+ MessageVaribles.KEY_MESSAGE_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + MessageVaribles.MESSAGE_TYPE_ACTION + MessageVaribles.MESSAGE_SAPERATOR
+				+ MessageVaribles.KEY_VEHICLE_ACTION_TYPE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + VehicleParams.VEHICLE_ACTION_CHANGE_SENSOR_STATE + MessageVaribles.MESSAGE_SAPERATOR 
 				+ MessageVaribles.KEY_SENSOR_ID + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + sensorID + MessageVaribles.MESSAGE_SAPERATOR
 				+ MessageVaribles.KEY_SENSOR_STATE + MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR + state
 				+ MessageVaribles.END_MESSAGE;
@@ -431,7 +431,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 			msgToSend.append(MessageVaribles.START_MESSAGE);
 			msgToSend.append(MessageVaribles.KEY_MESSAGE_TYPE);
 			msgToSend.append(MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR);
-			msgToSend.append(MessageVaribles.MessageType.SETTINGS.getValue());
+			msgToSend.append(MessageVaribles.MESSAGE_TYPE_SETTINGS);
 			msgToSend.append(MessageVaribles.MESSAGE_SAPERATOR);
 			msgToSend.append(MessageVaribles.KEY_SETTINGS_TYPE);
 			msgToSend.append(MessageVaribles.MESSAGE_KEY_VALUE_SAPERATOR);
@@ -609,12 +609,12 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				if (received.length() > 0) {
 					int messageType = received
 							.getInt(MessageVaribles.KEY_MESSAGE_TYPE);
-					switch (MessageVaribles.MessageType.getMessageType(messageType)) {
-					case ACTION:
+					switch (messageType) {
+					case MessageVaribles.MESSAGE_TYPE_ACTION:
 						break;
-					case ERROR:
+					case MessageVaribles.MESSAGE_TYPE_ERROR:
 						break;
-					case INFO:
+					case MessageVaribles.MESSAGE_TYPE_INFO:
 						handleInfoMessageFromHardwareUnit(received);
 						break;
 					default:

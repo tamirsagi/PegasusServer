@@ -5,6 +5,8 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import communication.bluetooth.Server.BluetoothServer;
+
 import util.CameraManager;
 import util.LinuxCommands;
 import logs.logger.PegasusLogger;
@@ -29,12 +31,18 @@ public class Main {
 //				Color color = new Color(array[i][j]);
 //				System.out.println(String.format("i=%s,j=%s,color=%s", i,j,color.toString()));
 //		}
+		
+//		if (LinuxCommands.getInstance().attachedArduinoToSerialPort()
+//				&& LinuxCommands.getInstance().enableBluetooth()) {
+//			BluetoothServer.getInstance().registerMessagesListener(TAG, Controller.getInstance());
+//			BluetoothServer.getInstance().startThread();
+//		}
 //		if(2>1)
 //			return ;
-		
+//		
 		if (LinuxCommands.getInstance().attachedArduinoToSerialPort()
 				&& LinuxCommands.getInstance().enableBluetooth()) {
-			Controller.getInstance().bootCompleted();
+				Controller.getInstance().bootCompleted();
 		}else{
 			PegasusLogger.getInstance().e(TAG, "main", "Program Could not start");
 			//TODO - Maybe reset linux

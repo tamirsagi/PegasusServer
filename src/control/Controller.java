@@ -6,12 +6,9 @@ import managers.driving_manager.DrivingManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import vehicle.common.constants.VehicleAutonomousMode;
 import vehicle.common.constants.VehicleParams;
-import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.pegasus.PegasusVehicle;
 import vehicle.pegasus.PegausVehicleProperties;
-import vehicle.pegasus.constants.SensorPositions;
 
 import communication.bluetooth.Constants.BluetoothServerStatus;
 import communication.bluetooth.Server.BluetoothServer;
@@ -90,8 +87,10 @@ public class Controller implements OnServerEventsListener,
 					BluetoothServer.getInstance().getLocalDevice()
 							.getFriendlyName());
 			mApplicationState = ApplicationStates.READY;
+			PegasusLogger.getInstance().i(TAG,"Both Hardware and server Are ready");
 		case ApplicationStates.READY:
 			SerialPortHandler.getInstance().updateSystemReady();
+			
 			
 			new Thread(new Runnable() {
 				
@@ -105,7 +104,7 @@ public class Controller implements OnServerEventsListener,
 					}catch(Exception e){
 						
 					}
-					setCurrentControlMode(VehicleControlType.AUTONOMOUS);
+					setCurrentVehicleMode(VehicleParams.VEHICLE_MODE_AUTONOMOUS);
 					//DrivingManager.getInstance().setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
 					
 				}
@@ -142,11 +141,12 @@ public class Controller implements OnServerEventsListener,
 		PegasusLogger.getInstance().d(TAG, "onMessageReceivedFromClient", msg);
 		try {
 			JSONObject receivedMsg = new JSONObject(msg);
-			String messageType = (String) receivedMsg
-					.get(MessageVaribles.KEY_MESSAGE_TYPE);
-			switch (MessageVaribles.MessageType.valueOf(messageType)) {
-			case ACTION:
-				handleActionFromClient(receivedMsg);
+			int messageType = receivedMsg.optInt(MessageVaribles.KEY_MESSAGE_TYPE);
+			switch (messageType) {
+			case MessageVaribles.MESSAGE_TYPE_ACTION:
+				handleVehicleAction(receivedMsg);
+				break;
+			case MessageVaribles.MESSAGE_TYPE_SETTINGS:
 				break;
 			default:
 				break;
@@ -158,58 +158,31 @@ public class Controller implements OnServerEventsListener,
 	}
 
 	/**
-	 * Method handle action type message from client
-	 * 
-	 * @param receivedMsg
-	 *            - JSON object
-	 */
-	private void handleActionFromClient(JSONObject receivedMsg) {
-		try {
-			String actionType = (String) receivedMsg
-					.get(MessageVaribles.MessageType.ACTION.toString());
-			switch (MessageVaribles.Action_Type.valueOf(actionType)) {
-			case SETTINGS:
-				break;
-			case VEHICLE_ACTION:
-				handleVehicleAction(receivedMsg);
-				break;
-			default:
-				break;
-			}
-		} catch (JSONException e) {
-			PegasusLogger.getInstance().e(TAG, "handleActionFromClient", e.getMessage());
-		}
-	}
-
-	/**
 	 * function handles message type of Action
 	 * 
 	 * @param msg
 	 */
-	private void handleVehicleAction(JSONObject msg) {
+	private void handleVehicleAction(JSONObject receivedMsg) {
 		try {
-			String vehicleActionType = (String) msg
-					.get(MessageVaribles.Action_Type.VEHICLE_ACTION.toString());
-			switch (VehicleParams.VehicleActions.valueOf(vehicleActionType)) {
-			case CHANGE_SPEED:
-				int digitalSpeed = (int) msg
-						.get(MessageVaribles.KEY_DIGITAL_SPEED);
+			PegasusLogger.getInstance().d(TAG, "handleVehicleAction", receivedMsg.toString());
+			int vehicleActionType = receivedMsg.optInt(MessageVaribles.KEY_VEHICLE_ACTION_TYPE);
+			switch (vehicleActionType) {
+			case VehicleParams.VEHICLE_ACTION_CHANGE_SPEED:
+				int digitalSpeed = receivedMsg.optInt(MessageVaribles.KEY_DIGITAL_SPEED);
 				PegasusVehicle.getInstance().changeSpeed(digitalSpeed);
 				break;
-			case STEERING:
+			case VehicleParams.VEHICLE_ACTION_CHANGE_STEERING:
 				String steeringDirection;
 				double rotationAngle = 0;
-				steeringDirection = msg
-						.getString(MessageVaribles.KEY_STEERING_DIRECTION);
-				rotationAngle = msg.getInt(MessageVaribles.KEY_ROTATION_ANGLE); // we send the angle as an int but might be double
+				steeringDirection = receivedMsg.getString(MessageVaribles.KEY_STEERING_DIRECTION);
+				rotationAngle = receivedMsg.getInt(MessageVaribles.KEY_ROTATION_ANGLE); // we send the angle as an int but might be double
 				if (steeringDirection.equals(MessageVaribles.VALUE_STEERING_RIGHT))
 					PegasusVehicle.getInstance().turnRight(rotationAngle);
 				else if (steeringDirection.equals(MessageVaribles.VALUE_STEERING_LEFT))
 					PegasusVehicle.getInstance().turnLeft(rotationAngle);
 				break;
-			case CHANGE_DIRECTION:
-				String drivingDirection = (String) msg
-						.get(MessageVaribles.KEY_DRIVING_DIRECTION);
+			case VehicleParams.VEHICLE_ACTION_CHANGE_DIRECTION:
+				String drivingDirection = receivedMsg.getString(MessageVaribles.KEY_DRIVING_DIRECTION);
 				switch (VehicleParams.DrivingDirection
 						.valueOf(drivingDirection)) {
 				case FORWARD:
@@ -260,8 +233,8 @@ public class Controller implements OnServerEventsListener,
 	 */
 	public void updateHardwareStatus(int statusCode) {
 		PegasusLogger.getInstance().d(TAG, "updateHardwareStatus", "Status code:" + statusCode);
-		switch (MessageVaribles.StatusCode.get(statusCode)) {
-		case INFO_HARDWARE_STATUS_READY:
+		switch (statusCode) {
+		case MessageVaribles.MESSAGE_TYPE_INFO_HARDWARE_READY:
 			if(!mIsHardwareReady){
 				mIsHardwareReady = true;
 				setState(ApplicationStates.HARDWARE_READY);
@@ -291,13 +264,13 @@ public class Controller implements OnServerEventsListener,
 	 * set current control mode 
 	 * @param aControlType either manual or autonomous
 	 */
-	public void setCurrentControlMode(VehicleControlType aControlType){
-		VehicleControlType lastControlType = PegasusVehicle.getInstance().getVehicleControlType();
-		if(lastControlType != aControlType){
-			PegasusLogger.getInstance().i(TAG,"Changing state from " +  lastControlType + " to " + aControlType);
-			PegasusVehicle.getInstance().setControlType(aControlType);
-			switch(aControlType){
-			case AUTONOMOUS:
+	public void setCurrentVehicleMode(int aVehicleMode){
+		int lastControlType = PegasusVehicle.getInstance().getVehicleControlType();
+		if(lastControlType != aVehicleMode){
+			PegasusLogger.getInstance().i(TAG,"Changing state from " +  lastControlType + " to " + aVehicleMode);
+			PegasusVehicle.getInstance().setControlType(aVehicleMode);
+			switch(aVehicleMode){
+			case VehicleParams.VEHICLE_MODE_AUTONOMOUS:
 				if(!DrivingManager.getInstance().isAlive()){
 					DrivingManager.getInstance().registerListener(PegasusVehicle.getInstance());
 					DrivingManager.getInstance().startThread();
@@ -306,7 +279,7 @@ public class Controller implements OnServerEventsListener,
 					DrivingManager.getInstance().resumeThread();
 				}
 				break;
-			case MANUAL:
+			case VehicleParams.VEHICLE_MODE_MANUAL:
 				if(DrivingManager.getInstance().isAlive()){
 					DrivingManager.getInstance().suspendThread();
 				}

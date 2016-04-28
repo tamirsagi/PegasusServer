@@ -68,10 +68,8 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 					PegasusLogger.getInstance().e(getTag(),e.getMessage());
 				}
 			}
-			
 		}
 	}
-	
 	
 	
 	@Override

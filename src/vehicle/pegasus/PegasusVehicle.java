@@ -12,7 +12,6 @@ import managers.finder.constants.ParkingType;
 import vehicle.common.AbstractVehicle;
 import vehicle.common.constants.VehicleConfigKeys;
 import vehicle.common.constants.VehicleParams;
-import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.common.constants.VehicleAutonomousMode;
 import vehicle.interfaces.OnManagedVechile;
 import vehicle.interfaces.onInputReceived;
@@ -164,13 +163,13 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived, 
 	}
 	
 	@Override
-	public void setControlType(VehicleControlType aVehicleControlType){
-		super.setControlType(aVehicleControlType);
-		switch (aVehicleControlType) {
-		case AUTONOMOUS:
+	public void setControlType(int aVehicleMode){
+		super.setControlType(aVehicleMode);
+		switch (aVehicleMode) {
+		case VehicleParams.VEHICLE_MODE_AUTONOMOUS:
 			changeFrontSensorState(true);
 			break;
-		case MANUAL:
+		case VehicleParams.VEHICLE_MODE_MANUAL:
 			disableAllSensors();
 			setCurrentState(VehicleAutonomousMode.VEHICLE_NONE);
 			break;

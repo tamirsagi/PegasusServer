@@ -5,40 +5,14 @@ import java.util.HashMap;
 
 
 public class MessageVaribles {
-
-	/*
-	 *  Message Entries
-	 */
 	
-	public enum MessageType{
-		 INFO(1000), ACTION(2000), SETTINGS(3000), ERROR(4000) ;
-		 
-		 private int value;
-		 
-		 public static HashMap<Integer,MessageType> types = new HashMap<Integer,MessageType>();
-		 static {
-			 for(MessageType m : EnumSet.allOf(MessageType.class))
-				 types.put(m.getValue(),m);
-		 }
-		 
-		 MessageType(int value){
-			 this.value = value;
-		 }
-		 
-		 public int getValue(){
-			 return value;
-		 }
-		 
-		 public static MessageType getMessageType(int type){
-			 return types.get(type);
-		 }
-		 
-	}
+	public static final int MESSAGE_TYPE_INFO = 1000;
+	public static final int MESSAGE_TYPE_ACTION = 2000;
+	public static final int MESSAGE_TYPE_SETTINGS = 3000;
+	public static final int MESSAGE_TYPE_ERROR = 4000;
 	
-	
-	public enum Action_Type{
-		VEHICLE_ACTION, SETTINGS;
-	}
+	public static final int MESSAGE_TYPE_INFO_HARDWARE_READY = 100;
+	public static final int MESSAGE_TYPE_INFO_SERVER_READY = 200;
 	
 	
 	/*
@@ -86,30 +60,5 @@ public class MessageVaribles {
 	
 	public static final int SETTINGS_SET_SENSORS = 3001;
 	
-	
-	/*  Status CODE */
-	 
-	public enum StatusCode{
-		INFO_HARDWARE_STATUS_READY(100), INFO_SERVER_STATUS_READY(200);
-		
-		public static HashMap<Integer,StatusCode> status_codes = new HashMap<Integer,StatusCode>();
-		 static {
-			 for(StatusCode m : EnumSet.allOf(StatusCode.class))
-				 status_codes.put(m.getStatusCode(),m);
-		 }
-		private int code;
-		
-		StatusCode(int code){
-			this.code = code;
-		}
-		
-		public int getStatusCode(){
-			return code;
-		}
-		
-		public static StatusCode get(int code){
-			return status_codes.get(code);
-		}
-	}
 	
 }

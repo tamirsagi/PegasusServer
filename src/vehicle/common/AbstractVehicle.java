@@ -2,7 +2,6 @@ package vehicle.common;
 
 import logs.logger.PegasusLogger;
 import vehicle.common.constants.VehicleParams.DrivingDirection;
-import vehicle.common.constants.VehicleParams.VehicleControlType;
 import vehicle.common.constants.VehicleAutonomousMode;
 import control.interfaces.OnVehicleEventsListener;
 
@@ -15,7 +14,7 @@ public abstract class AbstractVehicle {
 	protected String mID;
 	protected double mSteeringAngle;
 	protected DrivingDirection mCurrentDrivingDirection;
-	protected VehicleControlType mVehicleControlType;
+	protected int mVehicleMode;
 	protected double mCurrentSpeed;
 	protected double mDistance;
 	protected int mCurrentState = VehicleAutonomousMode.VEHICLE_NONE;
@@ -53,12 +52,12 @@ public abstract class AbstractVehicle {
 		this.mID = mID;
 	}
 	
-	public void setControlType(VehicleControlType aControlType){
-		mVehicleControlType = aControlType;
+	public void setControlType(int aVehicleMode){
+		mVehicleMode = aVehicleMode;
 	}
 	
-	public VehicleControlType getVehicleControlType(){
-		return mVehicleControlType;
+	public int getVehicleControlType(){
+		return mVehicleMode;
 	}
 	
 	/**

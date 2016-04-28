@@ -196,21 +196,43 @@ public class BluetoothServer extends Thread {
 	            while((available = client.getInputStream().available() ) > 0){
 	            	msg = new byte[available + 1];
 	            	client.getInputStream().read(msg);
-	            	String last = "" + (char)msg[available - 1];
-	            	if(last.equals(MessageVaribles.END_MESSAGE)){
-	            		PegasusLogger.getInstance().d(TAG, "handleClient", receivedMsg.toString());
-	            		FireMessagesFromClient(receivedMsg.toString());
-	            		receivedMsg = new StringBuilder();
-	            	}
-	            	else
-	            		receivedMsg.append(new String(msg));
+	            	receivedMsg.append(new String(msg).trim());
+	            	pullMessages(receivedMsg);
+	            	sleep(100);
 	            }
-	            sleep(100);
+	            if(receivedMsg.length() > 0 ){
+					pullMessages(receivedMsg);
+				}
+	            
         }//while
       }catch (IOException e){
-    	  PegasusLogger.getInstance().e(TAG, "handleClient", e.getMessage());
+    	  PegasusLogger.getInstance().e(getName(), "handleClient", e.getMessage());
        }
     }
+    
+    
+    /**
+	 * pull all messages from current buffer
+	 * if could not find either start or end symbol method will end.
+	 * @param buffer -Message that received from stream
+	 */
+	private synchronized void pullMessages(StringBuilder buffer){
+		int first = buffer.indexOf(MessageVaribles.START_MESSAGE);
+		int last = buffer.indexOf(MessageVaribles.END_MESSAGE);
+		String msgToSend  = "";
+		while (first >= 0 && last >= 0) {
+			if(first > last){ //in case half message received 
+				buffer.delete(0, last + 1);
+			}else{
+				msgToSend = buffer.substring(first + 1, last);
+				PegasusLogger.getInstance().d(getName(), "pullMessages", msgToSend);
+				FireMessagesFromClient(msgToSend);
+				buffer.delete(first, last + 1);
+			}
+			first = buffer.indexOf(MessageVaribles.START_MESSAGE);
+			last = buffer.indexOf(MessageVaribles.END_MESSAGE);
+		}
+	}
     
     
     /**
