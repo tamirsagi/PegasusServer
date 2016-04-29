@@ -147,6 +147,7 @@ public class Controller implements OnServerEventsListener,
 				handleVehicleAction(receivedMsg);
 				break;
 			case MessageVaribles.MESSAGE_TYPE_SETTINGS:
+				handleSettingMessage(receivedMsg);
 				break;
 			default:
 				break;
@@ -199,6 +200,26 @@ public class Controller implements OnServerEventsListener,
 		} catch (JSONException e) {
 			PegasusLogger.getInstance().e(TAG, "handleAction" ,e.getMessage());
 		}
+	}
+	
+	/**
+	 * handle setting message
+	 * @param aReceivedMsg
+	 * @throws JSONException
+	 */
+	private void handleSettingMessage(JSONObject aReceivedMsg) throws JSONException{
+		switch(aReceivedMsg.getString(MessageVaribles.KEY_SETTINGS_TYPE)){
+		
+		case MessageVaribles.KEY_VEHICLE_MODE:
+			int newMode = aReceivedMsg.optInt(MessageVaribles.KEY_VEHICLE_MODE);
+			int current = PegasusVehicle.getInstance().getVehicleControlType();
+			if(newMode != current && (newMode == VehicleParams.VEHICLE_MODE_AUTONOMOUS || 
+					newMode == VehicleParams.VEHICLE_MODE_MANUAL)){
+				setCurrentVehicleMode(newMode);
+			}
+			break;
+		}
+		
 	}
 
 	// ////////////////////////////////////// VEHICLE EVENTS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\

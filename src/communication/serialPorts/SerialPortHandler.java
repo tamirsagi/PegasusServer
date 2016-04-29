@@ -63,7 +63,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 	private SerialPortHandler(){
 		setName(TAG);
-		
 	}
 	
 	/**

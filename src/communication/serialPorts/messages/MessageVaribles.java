@@ -54,6 +54,8 @@ public class MessageVaribles {
 	public static final String KEY_SENSOR_DATA		 		= 		"SD";				//Sensor Data
 	
 	
+	public static final String KEY_VEHICLE_MODE				=		"VM"; 				//Vehicle Mode
+	
 	public enum InfoType{
 		STATUS, SENSOR_DATA
 	}
