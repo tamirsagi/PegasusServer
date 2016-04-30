@@ -165,6 +165,9 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived, 
 	@Override
 	public void setControlType(int aVehicleMode){
 		super.setControlType(aVehicleMode);
+		if(mDigitalSpeed != 0){
+			stop();
+		}
 		switch (aVehicleMode) {
 		case VehicleParams.VEHICLE_MODE_AUTONOMOUS:
 			changeFrontSensorState(true);
