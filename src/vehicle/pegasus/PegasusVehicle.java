@@ -20,8 +20,8 @@ import vehicle.sensors.InfraRed;
 import vehicle.sensors.SensorConstants;
 import vehicle.sensors.UltraSonic;
 
+import communication.messages.MessageVaribles;
 import communication.serialPorts.SerialPortHandler;
-import communication.serialPorts.messages.MessageVaribles;
 
 public class PegasusVehicle extends AbstractVehicle implements onInputReceived, OnManagedVechile{
 	
@@ -305,6 +305,8 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived, 
 			if(getCurrentState() == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING){
 				ParkingFinder.getInstance().updateInput(SensorPositions.INFRA_RED_TACHOMETER_ID,travelledDsitanceInSec);
 			}
+			mListener.onSendVehicleSpeed(getCurrentSpeed());
+			mListener.onSendVehicleDistance(getTravelledDistance());
 		}
 	}
 

@@ -12,8 +12,9 @@ import vehicle.pegasus.PegausVehicleProperties;
 
 import communication.bluetooth.Constants.BluetoothServerStatus;
 import communication.bluetooth.Server.BluetoothServer;
+import communication.messages.AppMessageKeys;
+import communication.messages.MessageVaribles;
 import communication.serialPorts.SerialPortHandler;
-import communication.serialPorts.messages.MessageVaribles;
 
 import control.constants.ApplicationStates;
 import control.interfaces.OnSerialPortEventsListener;
@@ -210,8 +211,8 @@ public class Controller implements OnServerEventsListener,
 	private void handleSettingMessage(JSONObject aReceivedMsg) throws JSONException{
 		switch(aReceivedMsg.getString(MessageVaribles.KEY_SETTINGS_TYPE)){
 		
-		case MessageVaribles.KEY_VEHICLE_MODE:
-			int newMode = aReceivedMsg.optInt(MessageVaribles.KEY_VEHICLE_MODE);
+		case AppMessageKeys.KEY_VEHICLE_MODE:
+			int newMode = aReceivedMsg.optInt(AppMessageKeys.KEY_VEHICLE_MODE);
 			int current = PegasusVehicle.getInstance().getVehicleControlType();
 			if(newMode != current && (newMode == VehicleParams.VEHICLE_MODE_AUTONOMOUS || 
 					newMode == VehicleParams.VEHICLE_MODE_MANUAL)){
@@ -232,6 +233,33 @@ public class Controller implements OnServerEventsListener,
 			setState(ApplicationStates.INITIALIZE_SERIAL_PORT);
 		}
 	}
+	@Override
+	public void onSendVehicleSpeed(double aSpeed){
+		JSONObject msg = new JSONObject();
+		try {
+			msg.put(MessageVaribles.KEY_MESSAGE_TYPE, AppMessageKeys.KEY_MESSAGE_TYPE_REAL_TIME_DATA);
+			msg.put(AppMessageKeys.JSON_KEY_REAL_TIME_DATA_TYPE, AppMessageKeys.JSON_KEY_SPEED);
+			msg.put(AppMessageKeys.JSON_KEY_SPEED,aSpeed);
+			BluetoothServer.getInstance().sendMessageToClients(msg.toString());
+		} catch (JSONException e) {
+			PegasusLogger.getInstance().e(TAG,"onSendVehicleSpeed",e.getMessage());
+		}
+	}
+	
+	@Override
+	public void onSendVehicleDistance(double aDistance){
+		JSONObject msg = new JSONObject();
+		try {
+			msg.put(MessageVaribles.KEY_MESSAGE_TYPE, AppMessageKeys.KEY_MESSAGE_TYPE_REAL_TIME_DATA);
+			msg.put(AppMessageKeys.JSON_KEY_REAL_TIME_DATA_TYPE, AppMessageKeys.JSON_KEY_DISTANCE);
+			msg.put(AppMessageKeys.JSON_KEY_DISTANCE,aDistance);
+			BluetoothServer.getInstance().sendMessageToClients(msg.toString());
+		} catch (JSONException e) {
+			PegasusLogger.getInstance().e(TAG,"onSendVehicleSpeed",e.getMessage());
+		}
+	}
+	
+	
 	
 	// ////////////////////////////////////// SERIAL PORT EVENTS & Relevant Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 

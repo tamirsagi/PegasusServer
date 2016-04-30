@@ -3,7 +3,7 @@ package util;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import communication.serialPorts.messages.MessageVaribles;
+import communication.messages.MessageVaribles;
 
 
 

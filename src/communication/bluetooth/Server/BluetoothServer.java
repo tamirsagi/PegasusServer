@@ -10,7 +10,7 @@ import javax.microedition.io.StreamConnectionNotifier;
 
 
 import communication.bluetooth.Constants.BluetoothServerStatus;
-import communication.serialPorts.messages.MessageVaribles;
+import communication.messages.MessageVaribles;
 
 import control.interfaces.OnServerEventsListener;
 
@@ -268,6 +268,20 @@ public class BluetoothServer extends Thread {
     public void updateServerStatusChanged(int aStatusCode){
     	for(String key : listeners.keySet()){
     		listeners.get(key).onUpdateServerStatusChanged(aStatusCode);
+    	}
+    }
+    
+    /**
+     * send message to clients
+     * @param msg
+     */
+    public void sendMessageToClients(String msg){
+    	for(String client : clients.keySet()){
+    		try {
+				clients.get(client).getOutputStream().write(msg.getBytes());
+			} catch (IOException e) {
+				PegasusLogger.getInstance().e(getName(),"sendMessageToClients",e.getMessage());
+			}
     	}
     }
     

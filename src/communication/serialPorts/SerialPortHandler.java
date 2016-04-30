@@ -14,7 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
-import communication.serialPorts.messages.MessageVaribles;
+import communication.messages.MessageVaribles;
 
 
 import logs.logger.PegasusLogger;
