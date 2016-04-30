@@ -37,9 +37,10 @@ public class Main {
 //			BluetoothServer.getInstance().registerMessagesListener(TAG, Controller.getInstance());
 //			BluetoothServer.getInstance().startThread();
 //		}
+//		
 //		if(2>1)
 //			return ;
-//		
+		
 		if (LinuxCommands.getInstance().attachedArduinoToSerialPort()
 				&& LinuxCommands.getInstance().enableBluetooth()) {
 				Controller.getInstance().bootCompleted();
