@@ -210,17 +210,30 @@ public class Controller implements OnServerEventsListener,
 	 */
 	private void handleSettingMessage(JSONObject aReceivedMsg) throws JSONException{
 		switch(aReceivedMsg.getString(MessageVaribles.KEY_SETTINGS_TYPE)){
-		
-		case AppMessageKeys.KEY_VEHICLE_MODE:
-			int newMode = aReceivedMsg.optInt(AppMessageKeys.KEY_VEHICLE_MODE);
-			int current = PegasusVehicle.getInstance().getVehicleControlType();
-			if(newMode != current && (newMode == VehicleParams.VEHICLE_MODE_AUTONOMOUS || 
-					newMode == VehicleParams.VEHICLE_MODE_MANUAL)){
-				setCurrentVehicleMode(newMode);
-			}
-			break;
+			case AppMessageKeys.KEY_VEHICLE_MODE:
+				int newMode = aReceivedMsg.optInt(AppMessageKeys.KEY_VEHICLE_MODE);
+				int current = PegasusVehicle.getInstance().getVehicleControlType();
+				if(newMode != current && (newMode == VehicleParams.VEHICLE_MODE_AUTONOMOUS || 
+						newMode == VehicleParams.VEHICLE_MODE_MANUAL)){
+					setCurrentVehicleMode(newMode);
+				}
+				break;
+			
+			case AppMessageKeys.KEY_AUTONOMOUS_MODE:
+				int autonomousMode = aReceivedMsg.optInt(AppMessageKeys.KEY_AUTONOMOUS_MODE);
+				if(autonomousMode != PegasusVehicle.getInstance().getCurrentState()){
+					switch(autonomousMode){
+					case AppMessageKeys.AUTONOMOUS_MODE_AUTO_DRIVE:
+						freeDrive();
+						break;
+					case AppMessageKeys.AUTONOMOUS_MODE_FIND_PARKING:
+						int paring_type = aReceivedMsg.optInt(AppMessageKeys.JSON_KEY_PARKING_TYPE);
+						findParkingSpot(paring_type);
+						break;
+					}
+				}
+				break;
 		}
-		
 	}
 
 	// ////////////////////////////////////// VEHICLE EVENTS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\

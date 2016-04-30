@@ -23,6 +23,6 @@ public class AppMessageKeys {
 	public static final String KEY_MESSAGE_TYPE_LOG = "log";
 	public static final String KEY_MESSAGE_TYPE_REAL_TIME_DATA = "real_time_data";
 	
-	
+	public static final String JSON_KEY_PARKING_TYPE = " parking_Type";
 
 }

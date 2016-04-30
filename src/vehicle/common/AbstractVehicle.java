@@ -17,7 +17,7 @@ public abstract class AbstractVehicle {
 	protected int mVehicleMode;
 	protected double mCurrentSpeed;
 	protected double mDistance;
-	protected int mCurrentState = VehicleAutonomousMode.VEHICLE_NONE;
+	protected int mAutonomousMode = VehicleAutonomousMode.VEHICLE_NONE;
 	protected OnVehicleEventsListener mListener; 
 	private boolean mIsReady;
 	private VehicleData mVehicleData;
@@ -137,15 +137,15 @@ public abstract class AbstractVehicle {
 	}
 	
 	public int getCurrentState(){
-		return mCurrentState;
+		return mAutonomousMode;
 	}
 	
 	public void setCurrentState(int aState){
-		if(aState != mCurrentState){
+		if(aState != mAutonomousMode){
 			PegasusLogger.getInstance().d(TAG,"setCurrentState", "State was "
-					+ VehicleAutonomousMode.getVehicleStateName(mCurrentState)
+					+ VehicleAutonomousMode.getVehicleStateName(mAutonomousMode)
 					+ " and changed to:" + VehicleAutonomousMode.getVehicleStateName(aState));
-			mCurrentState = aState;
+			mAutonomousMode = aState;
 			changeUltraSonicSensorState();
 		}
 	}
