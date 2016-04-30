@@ -16,6 +16,8 @@ import control.interfaces.OnServerEventsListener;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import logs.logger.PegasusLogger;
 
@@ -31,8 +33,9 @@ public class BluetoothServer extends Thread {
     private LocalDevice mLocalDevice;
     private StreamConnectionNotifier mNotifier;
     private boolean isOnline;
-    private HashMap<String,OnServerEventsListener> listeners;
-    private HashMap<String,SocketData> clients;
+    private HashMap<String,OnServerEventsListener> mListeners;
+    private HashMap<String,SocketData> mClients;
+    private Queue<String> mMessagesToClients;
    
     /**
      * Get bluetooth server instance. (Singleton pattern)
@@ -49,8 +52,9 @@ public class BluetoothServer extends Thread {
     private BluetoothServer() {
         setName(TAG);
         mServerStatus = BluetoothServerStatus.DISCONNECTED;
-        clients = new HashMap<>();
-        listeners = new HashMap<String, OnServerEventsListener>();
+        mClients = new HashMap<>();
+        mListeners = new HashMap<String, OnServerEventsListener>();
+        mMessagesToClients = new LinkedList<String>();
     }
     
 	/**
@@ -60,7 +64,7 @@ public class BluetoothServer extends Thread {
 	 */
 	public void registerMessagesListener(String name,OnServerEventsListener listener){
 		PegasusLogger.getInstance().d(TAG,"registerMessagesListener", "Listener : " + name + " has registered");
-		listeners.put(name,listener);
+		mListeners.put(name,listener);
 	}
 	
 	/**
@@ -68,8 +72,8 @@ public class BluetoothServer extends Thread {
 	 * @param name
 	 */
 	public void unRegisterMessagesListener(String name){
-		if(listeners.containsKey(name))
-			listeners.remove(name);
+		if(mListeners.containsKey(name))
+			mListeners.remove(name);
 	}
 	
 	/**
@@ -185,29 +189,34 @@ public class BluetoothServer extends Thread {
      */
     private void handleClient(StreamConnection clientSocket,RemoteDevice remoteDevice) throws InterruptedException{
         SocketData client = new SocketData(clientSocket,remoteDevice);
-        clients.put(client.getClientAddress(),client);
+        mClients.put(client.getClientAddress(),client);
         PegasusLogger.getInstance().d(TAG, "handleClient", "client:" + client.getDeviceName() + " Address: " + client.getClientAddress());
         client.setConnected(true);
      try { 
-        int available = 0;
-        byte[] msg = null;
-        StringBuilder receivedMsg = new StringBuilder();
         while(client.isConnected()){
-	            while((available = client.getInputStream().available() ) > 0){
-	            	msg = new byte[available + 1];
-	            	client.getInputStream().read(msg);
-	            	receivedMsg.append(new String(msg).trim());
-	            	pullMessages(receivedMsg);
-	            	sleep(100);
-	            }
-	            if(receivedMsg.length() > 0 ){
-					pullMessages(receivedMsg);
-				}
-	            
+	           readFromSerial(client);
+	           sendMessageToClients();
         }//while
       }catch (IOException e){
     	  PegasusLogger.getInstance().e(getName(), "handleClient", e.getMessage());
+    	  mClients.remove(client).getClientAddress();
        }
+    }
+    
+    private void readFromSerial(SocketData aClient) throws IOException{
+    	
+    	 int available = 0;
+         byte[] msg = null;
+         StringBuilder receivedMsg = new StringBuilder();
+         while((available = aClient.getInputStream().available() ) > 0){
+         	msg = new byte[available + 1];
+         	aClient.getInputStream().read(msg);
+         	receivedMsg.append(new String(msg).trim());
+         	pullMessages(receivedMsg);
+         }
+         if(receivedMsg.length() > 0 ){
+				pullMessages(receivedMsg);
+			}
     }
     
     
@@ -240,8 +249,8 @@ public class BluetoothServer extends Thread {
      */
     public void shutDownServer(){
     	try {
-    	for(String clientAddress : clients.keySet()){
-    		clients.get(clientAddress).getSocket().close();
+    	for(String clientAddress : mClients.keySet()){
+    		mClients.get(clientAddress).getSocket().close();
     	}
     	isOnline = false;
 		mNotifier.close();
@@ -258,16 +267,26 @@ public class BluetoothServer extends Thread {
      * @param msg
      */
     private void FireMessagesFromClient(String msg){
-    	for(String key : listeners.keySet())
-    		listeners.get(key).onMessageReceivedFromClient(msg);
+    	for(String key : mListeners.keySet())
+    		mListeners.get(key).onMessageReceivedFromClient(msg);
     }
     
     /**
      * update listeners when server is running
      */
     public void updateServerStatusChanged(int aStatusCode){
-    	for(String key : listeners.keySet()){
-    		listeners.get(key).onUpdateServerStatusChanged(aStatusCode);
+    	for(String key : mListeners.keySet()){
+    		mListeners.get(key).onUpdateServerStatusChanged(aStatusCode);
+    	}
+    }
+    
+    /**
+     * add message to send to clients
+     * @param msg
+     */
+    public void addMessageToQueue(String msg){
+    	if(msg!= null && !msg.isEmpty()){
+    		mMessagesToClients.add(msg);
     	}
     }
     
@@ -275,13 +294,15 @@ public class BluetoothServer extends Thread {
      * send message to clients
      * @param msg
      */
-    public void sendMessageToClients(String msg){
-    	for(String client : clients.keySet()){
-    		try {
-				clients.get(client).getOutputStream().write(msg.getBytes());
-			} catch (IOException e) {
-				PegasusLogger.getInstance().e(getName(),"sendMessageToClients",e.getMessage());
-			}
+    private void sendMessageToClients(){
+    	while(!mMessagesToClients.isEmpty()){
+	    	for(String client : mClients.keySet()){
+	    		try {
+					mClients.get(client).getOutputStream().write(mMessagesToClients.poll().getBytes());
+				} catch (IOException e) {
+					PegasusLogger.getInstance().e(getName(),"sendMessageToClients",e.getMessage());
+				}
+	    	}
     	}
     }
     

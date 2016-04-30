@@ -6,6 +6,7 @@ import managers.driving_manager.DrivingManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import vehicle.common.constants.VehicleAutonomousMode;
 import vehicle.common.constants.VehicleParams;
 import vehicle.pegasus.PegasusVehicle;
 import vehicle.pegasus.PegausVehicleProperties;
@@ -91,26 +92,6 @@ public class Controller implements OnServerEventsListener,
 			PegasusLogger.getInstance().i(TAG,"Both Hardware and server Are ready");
 		case ApplicationStates.READY:
 			SerialPortHandler.getInstance().updateSystemReady();
-			
-			
-			new Thread(new Runnable() {
-				
-				@Override
-				public void run() {
-					Thread.currentThread().setName("Tamir sagi");
-					try{
-						System.out.println("!@#!@#!@#@!# Thread is here");
-						Thread.sleep(2000);
-						System.out.println("$$$$$$ BACK TO BUISENSEESSS");
-					}catch(Exception e){
-						
-					}
-					setCurrentVehicleMode(VehicleParams.VEHICLE_MODE_AUTONOMOUS);
-					//DrivingManager.getInstance().setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
-					
-				}
-			}).start();
-			break;
 		}
 
 	}
@@ -209,6 +190,7 @@ public class Controller implements OnServerEventsListener,
 	 * @throws JSONException
 	 */
 	private void handleSettingMessage(JSONObject aReceivedMsg) throws JSONException{
+		PegasusLogger.getInstance().d(TAG,"handleSettingMessage", aReceivedMsg.toString());
 		switch(aReceivedMsg.getString(MessageVaribles.KEY_SETTINGS_TYPE)){
 			case AppMessageKeys.KEY_VEHICLE_MODE:
 				int newMode = aReceivedMsg.optInt(AppMessageKeys.KEY_VEHICLE_MODE);
@@ -218,7 +200,6 @@ public class Controller implements OnServerEventsListener,
 					setCurrentVehicleMode(newMode);
 				}
 				break;
-			
 			case AppMessageKeys.KEY_AUTONOMOUS_MODE:
 				int autonomousMode = aReceivedMsg.optInt(AppMessageKeys.KEY_AUTONOMOUS_MODE);
 				if(autonomousMode != PegasusVehicle.getInstance().getCurrentState()){
@@ -253,7 +234,7 @@ public class Controller implements OnServerEventsListener,
 			msg.put(MessageVaribles.KEY_MESSAGE_TYPE, AppMessageKeys.KEY_MESSAGE_TYPE_REAL_TIME_DATA);
 			msg.put(AppMessageKeys.JSON_KEY_REAL_TIME_DATA_TYPE, AppMessageKeys.REAL_TIME_DATA_TYPE_SPEED);
 			msg.put(AppMessageKeys.JSON_KEY_SPEED,aSpeed);
-			BluetoothServer.getInstance().sendMessageToClients(msg.toString());
+			BluetoothServer.getInstance().addMessageToQueue(msg.toString());
 		} catch (JSONException e) {
 			PegasusLogger.getInstance().e(TAG,"onSendVehicleSpeed",e.getMessage());
 		}
@@ -266,7 +247,7 @@ public class Controller implements OnServerEventsListener,
 			msg.put(MessageVaribles.KEY_MESSAGE_TYPE, AppMessageKeys.KEY_MESSAGE_TYPE_REAL_TIME_DATA);
 			msg.put(AppMessageKeys.JSON_KEY_REAL_TIME_DATA_TYPE, AppMessageKeys.REAL_TIME_DATA_TYPE_DISTANCE);
 			msg.put(AppMessageKeys.JSON_KEY_DISTANCE,aDistance);
-			BluetoothServer.getInstance().sendMessageToClients(msg.toString());
+			BluetoothServer.getInstance().addMessageToQueue(msg.toString());
 		} catch (JSONException e) {
 			PegasusLogger.getInstance().e(TAG,"onSendVehicleSpeed",e.getMessage());
 		}
@@ -302,7 +283,6 @@ public class Controller implements OnServerEventsListener,
 				setState(ApplicationStates.HARDWARE_READY);
 			}else{
 				if (!mIsServerReady && !BluetoothServer.getInstance().isServerOnline()) {
-					mIsHardwareReady = true;
 					setState(ApplicationStates.WAITING_FOR_SERVER);
 
 				} else{

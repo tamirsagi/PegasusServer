@@ -40,7 +40,7 @@ public class Main {
 //		
 //		if(2>1)
 //			return ;
-		
+		Thread.currentThread().setName("Main Program");
 		if (LinuxCommands.getInstance().attachedArduinoToSerialPort()
 				&& LinuxCommands.getInstance().enableBluetooth()) {
 				Controller.getInstance().bootCompleted();

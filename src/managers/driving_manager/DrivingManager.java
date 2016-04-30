@@ -28,7 +28,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	
 	private int mCurrentSpeed;
 	private VehicleParams.DrivingDirection mCurrentDirection;
-	private int mCurrentMode;
+	private int mCurrentMode = VehicleAutonomousMode.VEHICLE_NONE;
 	private OnManagedVechile mManagedVehicle;
 	
 	public static DrivingManager getInstance(){
@@ -166,12 +166,15 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	 * @param aMode autonomouse mode (Free driving, parking spot searching , manoeuvring)
 	 */
 	public void setCurrentMode(int aMode){
-		mCurrentMode = aMode;
-		switch(mCurrentMode){
-		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
-		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
-			initialization();
-			break;
+		if(aMode != mCurrentMode){
+			PegasusLogger.getInstance().i(getName(), "Changing autonomous Mode From " + mCurrentMode + " to:" + aMode);
+			mCurrentMode = aMode;
+			switch(mCurrentMode){
+			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
+			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
+				initialization();
+				break;
+			}
 		}
 	}
 	
@@ -255,7 +258,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		@Override
 		public void run() {
 			PegasusLogger.getInstance().i(getName(),"run()", "lane following service has been started...");
-			CameraManager.getInstance().turnCameraOn();
+			//CameraManager.getInstance().turnCameraOn();
 			while(mIsSerivceRunning){
 				
 				synchronized (this) {
@@ -269,7 +272,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 					}
 				}
 			}
-			PegasusLogger.getInstance().i(TAG, "Lane following Service finished..");
+			PegasusLogger.getInstance().i(getName(), "Lane following Service finished..");
 		}
 		
 
@@ -286,7 +289,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		 * start lane following service
 		 */
 		public void startService(){
-			PegasusLogger.getInstance().i(TAG, "Lane following Service starting..");
+			PegasusLogger.getInstance().i(getName(), "Lane following Service starting..");
 			mIsSerivceRunning = true;
 			start();
 		}
@@ -295,7 +298,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		 * stop serivce
 		 */
 		public void stopService(){
-			PegasusLogger.getInstance().i(TAG, "Lane following Service stopping..");
+			PegasusLogger.getInstance().i(getName(), "Lane following Service stopping..");
 			mIsSerivceRunning = false;
 		}
 		
@@ -303,7 +306,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		 * suspend service
 		 */
 		public void suspendService(){
-			PegasusLogger.getInstance().i(TAG, "Lane following Service is suspended");
+			PegasusLogger.getInstance().i(getName(), "Lane following Service is suspended");
 			mIsSuspended = true;
 			CameraManager.getInstance().turnCameraOff();
 		}
@@ -312,7 +315,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		 * resume service
 		 */
 		public void resumeService(){
-			PegasusLogger.getInstance().i(TAG, "Lane following Service resumed");
+			PegasusLogger.getInstance().i(getName(), "Lane following Service resumed");
 			mIsSuspended = false;
 			notify();
 			CameraManager.getInstance().turnCameraOn();
