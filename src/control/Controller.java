@@ -238,7 +238,7 @@ public class Controller implements OnServerEventsListener,
 		JSONObject msg = new JSONObject();
 		try {
 			msg.put(MessageVaribles.KEY_MESSAGE_TYPE, AppMessageKeys.KEY_MESSAGE_TYPE_REAL_TIME_DATA);
-			msg.put(AppMessageKeys.JSON_KEY_REAL_TIME_DATA_TYPE, AppMessageKeys.JSON_KEY_SPEED);
+			msg.put(AppMessageKeys.JSON_KEY_REAL_TIME_DATA_TYPE, AppMessageKeys.REAL_TIME_DATA_TYPE_SPEED);
 			msg.put(AppMessageKeys.JSON_KEY_SPEED,aSpeed);
 			BluetoothServer.getInstance().sendMessageToClients(msg.toString());
 		} catch (JSONException e) {
@@ -251,7 +251,7 @@ public class Controller implements OnServerEventsListener,
 		JSONObject msg = new JSONObject();
 		try {
 			msg.put(MessageVaribles.KEY_MESSAGE_TYPE, AppMessageKeys.KEY_MESSAGE_TYPE_REAL_TIME_DATA);
-			msg.put(AppMessageKeys.JSON_KEY_REAL_TIME_DATA_TYPE, AppMessageKeys.JSON_KEY_DISTANCE);
+			msg.put(AppMessageKeys.JSON_KEY_REAL_TIME_DATA_TYPE, AppMessageKeys.REAL_TIME_DATA_TYPE_DISTANCE);
 			msg.put(AppMessageKeys.JSON_KEY_DISTANCE,aDistance);
 			BluetoothServer.getInstance().sendMessageToClients(msg.toString());
 		} catch (JSONException e) {
