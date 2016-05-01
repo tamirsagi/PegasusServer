@@ -11,15 +11,9 @@ public interface OnVehicleEventsListener {
 	void onVehicleStateChanged(boolean aIsVehicleReady);
 	
 	/**
-	 * send vehicle speed to application
-	 * @param aSpeed
-	 */
-	void onSendVehicleSpeed(double aSpeed);
-	
-	/**
 	 * send vehicle distance to application
 	 * @param aDistance
 	 */
-	void onSendVehicleDistance(double aDistance);
+	void onSendVehicleRealTimeData(double aSpeed, double aDistance);
 
 }

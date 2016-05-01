@@ -1,18 +1,21 @@
 package managers.driving_manager;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import util.CameraManager;
+import vehicle.common.ActionTimer;
 import vehicle.common.VehicleData;
 import vehicle.common.constants.VehicleParams;
 import vehicle.common.constants.VehicleParams.DrivingDirection;
 import vehicle.common.constants.VehicleAutonomousMode;
 import vehicle.interfaces.OnManagedVechile;
-import vehicle.pegasus.PegasusVehicle;
+import vehicle.interfaces.OnTimerListener;
+import vehicle.pegasus.PegasusVehicleData;
 import vehicle.pegasus.constants.SensorPositions;
-import control.interfaces.OnDrivingManagerEventsListener;
 import control.interfaces.OnParkingEventsListener;
 import logs.logger.PegasusLogger;
 import managers.common.AbstractManager;
-import managers.finder.ParkingFinder;
 import managers.finder.constants.ParkingType;
 
 /**
@@ -20,16 +23,32 @@ import managers.finder.constants.ParkingType;
  * @author Tamir Sagi
  *
  */
-public class DrivingManager extends AbstractManager  implements OnParkingEventsListener{
+public class DrivingManager extends AbstractManager  implements OnTimerListener{
 
 	private static DrivingManager mInstance;
-	private LaneFollowingService mLaneFollowingService;
 	private static final int MAX_DISTANCE_TO_STOP = 6; // 6 cm is the max distance to stop when detecting an obstacles
 	
 	private int mCurrentSpeed;
 	private VehicleParams.DrivingDirection mCurrentDirection;
 	private int mCurrentMode = VehicleAutonomousMode.VEHICLE_NONE;
 	private OnManagedVechile mManagedVehicle;
+	
+	//Parking Search Params
+	private static final long FINDING_PARKING_SPOT_TIMEOUT = 60 * 1000 * 2; // 2 minutes for searching
+	
+	private static final int DEFAULT_VALUE = -1;
+	
+	private static final String KEY_SHOULD_ADD_TRAVELLED_DISTANCE = "should_add_travelled_distance";
+	private static final String KEY_LAST_SENSOR_DATA = "last_Sensor_data";
+	private static final String KEY_DISTANCE_SINCE_STARTED = "distance_since_started";
+	
+	private int mParkingType;
+	private boolean mFound;
+	private double mRelevantSpace = DEFAULT_VALUE;
+	private OnParkingEventsListener mListener;
+	private ActionTimer mTimer;
+	private double mMinSpace;
+	private JSONObject mCurrentParkingProcessParams;
 	
 	public static DrivingManager getInstance(){
 		if(mInstance == null){
@@ -41,7 +60,6 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	private DrivingManager(String aTag){
 		super(aTag);
 		mCurrentDirection = DrivingDirection.FORWARD;
-		mLaneFollowingService = new LaneFollowingService();
 	}
 	
 	/**
@@ -74,18 +92,11 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	public void startThread() {
 		PegasusLogger.getInstance().i(getName(),"starting driving manager thread...");
 		super.startThread();
-		if(mLaneFollowingService != null){
-			mLaneFollowingService.startService();
-		}
 	}
 
 	@Override
 	public void stopThread() {
 		super.stopThread();
-		if(mLaneFollowingService != null){
-			mLaneFollowingService.stopService();
-		}
-		ParkingFinder.getInstance().stopThread();
 	}
 
 	@Override
@@ -93,12 +104,6 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		if(!mIsSuspended){
 			PegasusLogger.getInstance().i(getName(),"suspended...");
 			super.suspendThread();
-			if(mLaneFollowingService != null && !mLaneFollowingService.mIsServiceSuspended){
-				mLaneFollowingService.suspendService();
-			}
-			if(!ParkingFinder.getInstance().isThreadSuspended()){
-				ParkingFinder.getInstance().suspendThread();
-			}
 			
 		}
 	}
@@ -108,20 +113,18 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 		if(mIsSuspended){
 			PegasusLogger.getInstance().i(getName(),"resumed...");
 			super.resumeThread();
-			if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING){
-				ParkingFinder.getInstance().resumeThread();
-			}
 		}
 	}
 
 	@Override
 	public void updateInput(int sensorId, double value){
+		resumeThread();
 		switch(SensorPositions.getSensorPosition(sensorId)){
 		case SensorPositions.FRONT_ULTRA_SONIC_SENSOR:
 			handleFrontSensorData(value);
 			break;
-			
 		}
+		suspendThread();
 	}
 	
 	/**
@@ -134,22 +137,14 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 			switch(mCurrentMode){
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
-				if(aValue != 0 && aValue <= MAX_DISTANCE_TO_STOP){
+				if(0 < aValue && aValue <= MAX_DISTANCE_TO_STOP){
 					if(mManagedVehicle.getSpeed() != 0){
 						mManagedVehicle.stop();
 					}
-					suspendThread();
 				}else{
-					resumeThread();
+					follow();
 					if(mManagedVehicle.getSpeed() == 0){
 						mManagedVehicle.startNormalDriving();
-					}
-					if(mLaneFollowingService.isServiceSuspended()){
-						mLaneFollowingService.resumeService();
-					}
-					if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING &&
-							ParkingFinder.getInstance().isThreadSuspended()	){
-						ParkingFinder.getInstance().resumeThread();
 					}
 				}
 				
@@ -158,6 +153,17 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKING:
 				break;
 			}
+		}
+	}
+	
+	
+	/**
+	 * handles data from infra red sensor
+	 * @param value - round of wheel per second
+	 */
+	public void handleTachometerData(double aValue){
+		if(aValue >= 0){
+			
 		}
 	}
 	
@@ -172,39 +178,12 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 			switch(mCurrentMode){
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
-				initialization();
+				if(mManagedVehicle.getSpeed() == 0 ){
+					mManagedVehicle.startNormalDriving();
+				}
 				break;
 			}
 		}
-	}
-	
-	/**
-	 * start relevant functionalities 
-	 */
-	private void initialization(){
-		if(mLaneFollowingService == null){
-			mLaneFollowingService = new LaneFollowingService();
-			mLaneFollowingService.startService();
-		}else if(!mLaneFollowingService.isAlive()){
-			mLaneFollowingService.startService();
-		}else if(mLaneFollowingService.mIsServiceSuspended){
-			mLaneFollowingService.resumeService();
-		}
-		if(mManagedVehicle.getSpeed() == 0 ){
-			mManagedVehicle.startNormalDriving();
-		}
-		if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING){
-			if(!ParkingFinder.getInstance().isAlive()){
-				ParkingFinder.getInstance().registerParkingEventsListner(this);
-				ParkingFinder.getInstance().startThread();
-				while(!ParkingFinder.getInstance().isAlive());
-				ParkingFinder.getInstance().suspendThread();
-			}
-		}else if(ParkingFinder.getInstance().isAlive() &&
-				!ParkingFinder.getInstance().isThreadSuspended()){
-			ParkingFinder.getInstance().suspendThread();
-		}
-		
 	}
 	
 	/**
@@ -223,6 +202,7 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	 * @param aMinSpace
 	 */
 	public void findParkingSpot(int parkingType){
+		mCurrentParkingProcessParams = new JSONObject();
 		setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING);
 		VehicleData vehicleData = mManagedVehicle.getVehicleData();
 		double aMinSpace = 0;
@@ -233,123 +213,91 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 						VehicleData.MIN_REQUIRED_DISTANCE_SAFE_FACTOR * vehicleData.getMinimumRequiredSpaceToPark();
 			break;
 		}
-		ParkingFinder.getInstance().searchParking(parkingType, aMinSpace);
-		ParkingFinder.getInstance().resumeThread();
-		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING);
-		
+		if(aMinSpace > 0){
+			PegasusLogger.getInstance().i(getTag(), "findParking", "started looking for parking with min space of: " + aMinSpace);
+			mMinSpace = aMinSpace;
+			mParkingType = parkingType;
+			mFound = false;
+			mRelevantSpace = 0;
+			if(mTimer != null){
+				mTimer.killThread();
+			}
+			mTimer = new ActionTimer(FINDING_PARKING_SPOT_TIMEOUT, this);
+			mTimer.startTimer();
+		}else{
+			PegasusLogger.getInstance().i(getName(),"findParkingSpot", "Could not start looking min space is 0");
+			setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+			mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+		}
 	}
-	
 	
 	/**
-	 * class handles lane following
-	 * @author Tamir
-	 *
+	 * Methods handles incoming data for right parallel parking searching
+	 * @param incomingData
 	 */
-	private class LaneFollowingService extends Thread{
-		private final String TAG = LaneFollowingService.class.getSimpleName();
-		private boolean mIsServiceSuspended;
-		private boolean mIsSerivceRunning;
-		
-		public LaneFollowingService(){
-			setName(TAG);
-			CameraManager.getInstance().turnCameraOff();
-		}
-		
-		@Override
-		public void run() {
-			PegasusLogger.getInstance().i(getName(),"run()", "lane following service has been started...");
-			//CameraManager.getInstance().turnCameraOn();
-			while(mIsSerivceRunning){
-				
-				synchronized (this) {
-					try{
-						while(mIsServiceSuspended){
-							wait();
-						}
-						follow();	
-					}catch(InterruptedException e){
-						PegasusLogger.getInstance().e(getTag(),e.getMessage());
+	private void handleIncomingDataOnParallelParking(int aSensorId, double aValue){
+		try {
+			if(!mFound){
+				if(aSensorId == SensorPositions.INFRA_RED_TACHOMETER_ID){
+					boolean relevantDistance = mCurrentParkingProcessParams.optBoolean(KEY_SHOULD_ADD_TRAVELLED_DISTANCE,true);
+					if(relevantDistance){
+						mRelevantSpace += aValue;
+					}
+				}else{
+					mCurrentParkingProcessParams.put(KEY_LAST_SENSOR_DATA,aValue);
+					if(aValue != 0){
+						mRelevantSpace = 0;
+						mCurrentParkingProcessParams.put(KEY_SHOULD_ADD_TRAVELLED_DISTANCE,false);
+						
+					}else{
+						mCurrentParkingProcessParams.put(KEY_SHOULD_ADD_TRAVELLED_DISTANCE,true);
 					}
 				}
+				mCurrentParkingProcessParams.put(KEY_DISTANCE_SINCE_STARTED, mRelevantSpace);
+				if(mRelevantSpace >= mMinSpace){
+					mFound = true;
+					if(mTimer != null){
+						mTimer.killThread();
+					}
+					onParkingFound();
+				}
 			}
-			PegasusLogger.getInstance().i(getName(), "Lane following Service finished..");
-		}
+		}catch (JSONException e) {
+					e.printStackTrace();
+				}
 		
-
-		/**
-		 * methods use roof camera to follow lane while in motion
-		 */
-		public void follow(){
-			
-			
-		}
-		
-		
-		/**
-		 * start lane following service
-		 */
-		public void startService(){
-			PegasusLogger.getInstance().i(getName(), "Lane following Service starting..");
-			mIsSerivceRunning = true;
-			start();
-		}
-		
-		/**
-		 * stop serivce
-		 */
-		public void stopService(){
-			PegasusLogger.getInstance().i(getName(), "Lane following Service stopping..");
-			mIsSerivceRunning = false;
-		}
-		
-		/**
-		 * suspend service
-		 */
-		public void suspendService(){
-			PegasusLogger.getInstance().i(getName(), "Lane following Service is suspended");
-			mIsSuspended = true;
-			CameraManager.getInstance().turnCameraOff();
-		}
-		
-		/**
-		 * resume service
-		 */
-		public void resumeService(){
-			PegasusLogger.getInstance().i(getName(), "Lane following Service resumed");
-			mIsSuspended = false;
-			notify();
-			CameraManager.getInstance().turnCameraOn();
-		}
-		
-		public boolean isServiceSuspended(){
-			return mIsSuspended;
-		}
 	}
 	
-	
+	/**
+	 * methods use roof camera to follow lane while in motion
+	 */
+	public void follow(){
+		
+		
+	}
 	
 
 	////////////////////////////////////////Parking Finder events \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	
 	
-	@Override
-	public void onParkingFound() {
-		ParkingFinder.getInstance().suspendThread();
+	private void onParkingFound() {
 		setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKING_FOUND);
 		PegasusLogger.getInstance().i(getName(), "Parking found stopping car....");
 		mManagedVehicle.stop();
 		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKING_FOUND);
-		mLaneFollowingService.suspendService();
 		//TODO - handle parking manoeuvring
-		
 	}
+	
+	public int getParkingType(){
+		return mParkingType;
+	}
+	
 	@Override
-	public void onParkingNoFound() {
-		ParkingFinder.getInstance().suspendThread();
+	public void onTimerIsOver() {
+		mFound = false;
 		setCurrentMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
 		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
 	}
-
 	
 
 }

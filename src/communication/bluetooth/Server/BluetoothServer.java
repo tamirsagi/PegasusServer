@@ -17,7 +17,9 @@ import control.interfaces.OnServerEventsListener;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
+import java.util.Vector;
 
 import logs.logger.PegasusLogger;
 
@@ -214,9 +216,11 @@ public class BluetoothServer extends Thread {
         while(client.isConnected()){
 	           readFromSerial(client);
 	           sendMessageToClients();
-	           sleep(1000);
+	           sleep(1500);
         }//while
       }catch (IOException e){
+    	  client.setConnected(false);
+    	  mMessagesToClients.clear(); //now we have only one client
     	  PegasusLogger.getInstance().e(getName(), "handleClient", e.getMessage());
     	  mClients.remove(client).getClientAddress();
     	  resumeThread();
@@ -224,7 +228,6 @@ public class BluetoothServer extends Thread {
     }
     
     private void readFromSerial(SocketData aClient) throws IOException{
-    	
     	 int available = 0;
          byte[] msg = null;
          StringBuilder receivedMsg = new StringBuilder();
@@ -318,7 +321,9 @@ public class BluetoothServer extends Thread {
     	while(!mMessagesToClients.isEmpty()){
 	    	for(String client : mClients.keySet()){
 	    		try {
-					mClients.get(client).getOutputStream().write(mMessagesToClients.poll().getBytes());
+	    			String msg = mMessagesToClients.poll();
+	    			PegasusLogger.getInstance().i(getName(),"sendMessageToClients",msg);
+					mClients.get(client).getOutputStream().write(msg.getBytes());
 				} catch (IOException e) {
 					PegasusLogger.getInstance().e(getName(),"sendMessageToClients",e.getMessage());
 				}

@@ -7,7 +7,6 @@ import org.json.JSONObject;
 
 import logs.logger.PegasusLogger;
 import managers.driving_manager.DrivingManager;
-import managers.finder.ParkingFinder;
 import managers.finder.constants.ParkingType;
 import vehicle.common.AbstractVehicle;
 import vehicle.common.constants.VehicleConfigKeys;
@@ -23,7 +22,7 @@ import vehicle.sensors.UltraSonic;
 import communication.messages.MessageVaribles;
 import communication.serialPorts.SerialPortHandler;
 
-public class PegasusVehicle extends AbstractVehicle implements onInputReceived, OnManagedVechile{
+public class PegasusVehicle extends AbstractVehicle implements onInputReceived , OnManagedVechile{
 	
 	private static PegasusVehicle mInstance;
 	private static final String TAG = PegasusVehicle.class.getSimpleName();
@@ -276,68 +275,33 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived, 
 	}
 	
 	@Override
-	public int getSpeed(){
-		return mDigitalSpeed;
+	public String getTag() {
+		return TAG;
 	}
 	
 	@Override
-	public String getTag() {
-		return TAG;
+	public int getSpeed(){
+		return mDigitalSpeed;
 	}
 
 	
 	@Override
 	public void onReceived(int sensorId,double value){
-		PegasusLogger.getInstance().i(TAG, "onReceived", "Sensor id:" + sensorId +" value:" + value);
-		if(sensorId == SensorPositions.INFRA_RED_TACHOMETER_ID){
-			handleTachometerData(value);
-		}else{
-			handleDistanceSensorData(sensorId,value);
+		if(value >= 0){
+			PegasusLogger.getInstance().i(TAG, "onReceived", "Sensor id:" + sensorId +" value:" + value);
+			if(sensorId == SensorPositions.INFRA_RED_TACHOMETER_ID){
+				double travelledDsitanceInSec = value * PegasusVehicleData.getInstance().getWheelPerimeter();
+				setCurrentspeed(travelledDsitanceInSec);
+				setTravelledDistance(getTravelledDistance() + travelledDsitanceInSec);
+				DrivingManager.getInstance().handleTachometerData(travelledDsitanceInSec);
+				mListener.onSendVehicleRealTimeData(travelledDsitanceInSec, getTravelledDistance());
+			}else{
+				DrivingManager.getInstance().updateInput(sensorId,value);
+			}
 		}
 	}
 	
-	/**
-	 * handles data from infra red sensor
-	 * @param value - round of wheel per second
-	 */
-	private void handleTachometerData(double aValue){
-		if(aValue >= 0){
-			double travelledDsitanceInSec = aValue * PegasusVehicleData.getInstance().getWheelPerimeter();
-			setCurrentspeed(travelledDsitanceInSec);
-			setTravelledDistance(getTravelledDistance() + travelledDsitanceInSec);
-			if(getCurrentState() == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING){
-				ParkingFinder.getInstance().updateInput(SensorPositions.INFRA_RED_TACHOMETER_ID,travelledDsitanceInSec);
-			}
-			mListener.onSendVehicleSpeed(getCurrentSpeed());
-			mListener.onSendVehicleDistance(getTravelledDistance());
-		}
-	}
 
-	/**
-	 * handle incoming data from distance sensor(ultra sonic)
-	 * @param sensorId source
-	 * @param value its reading
-	 */
-	private void handleDistanceSensorData(int sensorId, double value){
-		String sensorPosition = SensorPositions.getSensorPosition(sensorId);
-		if(sensorPosition.equals(SensorPositions.FRONT_ULTRA_SONIC_SENSOR)){
-			DrivingManager.getInstance().updateInput(sensorId,value);
-		}
-		switch(getCurrentState()){
-		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
-			
-			break;
-		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
-			if(!sensorPosition.equals(SensorPositions.FRONT_ULTRA_SONIC_SENSOR)){
-				ParkingFinder.getInstance().updateInput(sensorId,value);
-			}
-			break;
-		case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKING:
-			
-			break;
-		}
-		
-	}
 	
 	/**
 	 * handle findParkingState
@@ -352,7 +316,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived, 
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
 				break;
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
-				switch(ParkingFinder.getInstance().getParkingType()){
+				switch(DrivingManager.getInstance().getParkingType()){
 				case ParkingType.PARALLEL_RIGHT:
 					changeUpperRightSensorsState(true);
 					break;

@@ -229,33 +229,20 @@ public class Controller implements OnServerEventsListener,
 		}
 	}
 	@Override
-	public void onSendVehicleSpeed(double aSpeed){
+	public void onSendVehicleRealTimeData(double aSpeed, double aDistance){
 		JSONObject msg = new JSONObject();
 		try {
 			msg.put(MessageVaribles.KEY_MESSAGE_TYPE, AppMessageKeys.KEY_MESSAGE_TYPE_REAL_TIME_DATA);
-			msg.put(AppMessageKeys.JSON_KEY_REAL_TIME_DATA_TYPE, AppMessageKeys.REAL_TIME_DATA_TYPE_SPEED);
 			msg.put(AppMessageKeys.JSON_KEY_SPEED,aSpeed);
+			msg.put(AppMessageKeys.JSON_KEY_DISTANCE,aDistance);
 			BluetoothServer.getInstance().addMessageToQueue(msg.toString());
 		} catch (JSONException e) {
 			PegasusLogger.getInstance().e(TAG,"onSendVehicleSpeed",e.getMessage());
 		}
 	}
 	
-	@Override
-	public void onSendVehicleDistance(double aDistance){
-		JSONObject msg = new JSONObject();
-		try {
-			msg.put(MessageVaribles.KEY_MESSAGE_TYPE, AppMessageKeys.KEY_MESSAGE_TYPE_REAL_TIME_DATA);
-			msg.put(AppMessageKeys.JSON_KEY_REAL_TIME_DATA_TYPE, AppMessageKeys.REAL_TIME_DATA_TYPE_DISTANCE);
-			msg.put(AppMessageKeys.JSON_KEY_DISTANCE,aDistance);
-			//BluetoothServer.getInstance().addMessageToQueue(msg.toString());
-		} catch (JSONException e) {
-			PegasusLogger.getInstance().e(TAG,"onSendVehicleSpeed",e.getMessage());
-		}
-	}
 	
-	
-	
+		
 	// ////////////////////////////////////// SERIAL PORT EVENTS & Relevant Methods \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 	@Override
@@ -320,9 +307,6 @@ public class Controller implements OnServerEventsListener,
 					while(!DrivingManager.getInstance().isAlive());
 					DrivingManager.getInstance().suspendThread();
 				}
-//				}else if(DrivingManager.getInstance().isThreadSuspended()){
-//					DrivingManager.getInstance().resumeThread();
-//				}
 				break;
 			case VehicleParams.VEHICLE_MODE_MANUAL:
 				if(DrivingManager.getInstance().isAlive()){
