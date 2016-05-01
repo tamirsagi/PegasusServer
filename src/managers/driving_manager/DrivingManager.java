@@ -56,13 +56,11 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	public void run() {
 		PegasusLogger.getInstance().i(getName(),"Driving Manager has been started...");
 		while(mIsworking){
-			
 			synchronized (this) {
 				try{
 					while(mIsSuspended){
 						wait();
 					}
-					
 					
 				}catch(InterruptedException e){
 					PegasusLogger.getInstance().e(getTag(),e.getMessage());
@@ -93,20 +91,26 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 	@Override
 	public void suspendThread() {
 		if(!mIsSuspended){
+			PegasusLogger.getInstance().i(getName(),"suspended...");
+			super.suspendThread();
 			if(mLaneFollowingService != null && !mLaneFollowingService.mIsServiceSuspended){
 				mLaneFollowingService.suspendService();
 			}
 			if(!ParkingFinder.getInstance().isThreadSuspended()){
 				ParkingFinder.getInstance().suspendThread();
 			}
-			super.suspendThread();
+			
 		}
 	}
 	
 	@Override
 	public synchronized void resumeThread() {
 		if(mIsSuspended){
+			PegasusLogger.getInstance().i(getName(),"resumed...");
 			super.resumeThread();
+			if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING){
+				ParkingFinder.getInstance().resumeThread();
+			}
 		}
 	}
 
@@ -130,17 +134,13 @@ public class DrivingManager extends AbstractManager  implements OnParkingEventsL
 			switch(mCurrentMode){
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
-				if(aValue <= MAX_DISTANCE_TO_STOP){
+				if(aValue != 0 && aValue <= MAX_DISTANCE_TO_STOP){
 					if(mManagedVehicle.getSpeed() != 0){
 						mManagedVehicle.stop();
 					}
-					if(!mLaneFollowingService.isServiceSuspended()){
-						mLaneFollowingService.suspendService();
-					}
-					if(!ParkingFinder.getInstance().isThreadSuspended()){
-						ParkingFinder.getInstance().suspendThread();
-					}
+					suspendThread();
 				}else{
+					resumeThread();
 					if(mManagedVehicle.getSpeed() == 0){
 						mManagedVehicle.startNormalDriving();
 					}

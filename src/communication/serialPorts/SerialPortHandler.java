@@ -23,7 +23,9 @@ import logs.logger.PegasusLogger;
 import util.MessagesMethods;
 import vehicle.common.constants.VehicleParams;
 import vehicle.interfaces.onSensorDataRecieved;
+import vehicle.sensors.AbstractSensor;
 
+import control.Controller;
 import control.interfaces.OnSerialPortEventsListener;
 
 import gnu.io.CommPort;
@@ -47,12 +49,12 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	private boolean mIsBoundedToUsbPort;
 	private int mTimeout;
 	private SerialPort mSerialPort;
-	private SerialPortParser mSerialPortParser;
 	private InputStream mInputStream;
 	private OutputStream mOutput;
 	private PrintWriter mOutputStream;
 	private Queue<String> mMessagesToArduino;
 	private boolean mIsWaiting;
+	private HashMap<Integer,onSensorDataRecieved> mSensors;
 	
 	private OnSerialPortEventsListener mListener;		//keeps listeners
 	
@@ -65,6 +67,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 	private SerialPortHandler(){
 		setName(TAG);
+		mSensors = new HashMap<Integer, onSensorDataRecieved>();
 		mMessagesToArduino = new LinkedList<String>();
 	}
 	
@@ -87,7 +90,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 	
 	public void registerSensor(int sensorID, onSensorDataRecieved listener){
-		mSerialPortParser.registerSensor(sensorID, listener);
+		mSensors.put(sensorID, listener);
 	}
 	
 	/**
@@ -119,14 +122,12 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 							SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
 					
 					
-					mSerialPortParser = new SerialPortParser();
-					mSerialPortParser.startThread();
 					mInputStream = mSerialPort.getInputStream();
 					mOutput = mSerialPort.getOutputStream();
 					mOutputStream = new PrintWriter(mSerialPort.getOutputStream(),true);
 
-//					mSerialPort.addEventListener(this);
-//					mSerialPort.notifyOnDataAvailable(true);
+					mSerialPort.addEventListener(this);
+					mSerialPort.notifyOnDataAvailable(true);
 					mSerialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE); //disable flow control
 					fireStatusFromSerialPort(true);
 				}
@@ -149,8 +150,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 					while(mIsWaiting){
 						wait();
 					}
-					readFromSerial();
-					writeToSerial();
 				}catch(Exception e){
 					
 				}
@@ -161,6 +160,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	
 	private synchronized void readFromSerial() throws IOException{
 		if(mInputStream.available() > 0){
+			resumeThread();
 			StringBuilder message = new StringBuilder();
 			int available = 0;
 			byte[] received = null;
@@ -174,6 +174,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				if(message.length() > 0 ){
 					pullMessages(message);
 				}
+				suspendThread();
 				}catch (Exception e) {
 					fireSerialPortErrors("Serial Event Listener Exception:" + e.getMessage());
 				}
@@ -188,44 +189,40 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		if(msg != null && !msg.isEmpty()){
 			mMessagesToArduino.add(msg);
 		}
+		try {
+			resumeThread();
+			writeToSerial();
+		} catch (InterruptedException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
-	private synchronized void writeToSerial() throws InterruptedException, IOException{
+	private void writeToSerial() throws InterruptedException, IOException{
 		while(!mMessagesToArduino.isEmpty()){
 				String msg = mMessagesToArduino.poll();
 				PegasusLogger.getInstance().d(Thread.currentThread().getName(), "writeMessage", "before sending to arduino: " + msg);
 				//mOutputStream.println(msg);
 				mOutput.write(msg.getBytes());
+				mOutput.flush();
 				sleep(20);
 		}
+		suspendThread();
 	}
 	
 	/**
 	 * received message is being notified here
 	 */
-	public synchronized void serialEvent(SerialPortEvent event) {
+	public void serialEvent(SerialPortEvent event) {
 		
 		switch (event.getEventType()) {
 		case SerialPortEvent.DATA_AVAILABLE:
-//			StringBuilder message = new StringBuilder();
-//			int available = 0;
-//			byte[] received = null;
-//			try {
-//				mOutputStreamHandler.suspendThread();
-//				while ((available = mInputStream.available()) > 0) {
-//					received = new byte[available + 1];
-//					mInputStream.read(received);
-//					message.append(new String(received).trim());
-//					pullMessages(message);
-//				}
-//				if(message.length() > 0 ){
-//					pullMessages(message);
-//				}
-//				mOutputStreamHandler.resumeThread();
-//				
-//				}catch (Exception e) {
-//					fireSerialPortErrors("Serial Event Listener Exception:" + e.getMessage());
-//				}
+			try {
+				readFromSerial();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 				break;
 		}
 	}
@@ -245,7 +242,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 			}else{
 				msgToSend = buffer.substring(first + 1, last);
 				PegasusLogger.getInstance().d(getName(), "pullMessages", msgToSend);
-				handleIncomingMessageFromSerial(msgToSend);
+				handleIncomingMessageFromHardwareUnit(msgToSend);
 				buffer.delete(first, last + 1);
 				
 			}
@@ -253,6 +250,91 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 			last = buffer.indexOf(MessageVaribles.END_MESSAGE);
 		}
 	}
+	
+	/**
+	 * handle message from Hardware
+	 * parse the message into JSON object and fetch the relevant data
+	 * @param msg
+	 */
+	private void handleIncomingMessageFromHardwareUnit(String msg) {
+		try {
+			JSONObject received = MessagesMethods
+					.convertSerialPortMessageToMap(msg);
+			if (received.length() > 0) {
+				int messageType = received
+						.getInt(MessageVaribles.KEY_MESSAGE_TYPE);
+				switch (messageType) {
+				case MessageVaribles.MESSAGE_TYPE_ACTION:
+					break;
+				case MessageVaribles.MESSAGE_TYPE_ERROR:
+					break;
+				case MessageVaribles.MESSAGE_TYPE_INFO:
+					handleInfoMessageFromHardwareUnit(received);
+					break;
+				default:
+					break;
+				}
+			}
+
+		}catch (Exception e) {
+			PegasusLogger.getInstance().e(getName(), "onMessageReceivedFromHardwareUnit", "msg : " + msg 
+					+ " exception:" + e.getMessage());
+		}
+	}
+	
+	
+	/**
+	 * Method handles info message from Serial Port
+	 * 
+	 * @param receivedMsg
+	 */
+	private void handleInfoMessageFromHardwareUnit(JSONObject receivedMsg) {
+		PegasusLogger.getInstance().d(getName(), "handleInfoMessageFromHardwareUnit", receivedMsg.toString());
+		try {
+			String info_type = (String) receivedMsg
+					.get(MessageVaribles.KEY_INFO_TYPE);
+			switch (MessageVaribles.InfoType.valueOf(info_type)) {
+			case STATUS:
+				int status_code = receivedMsg
+						.getInt(MessageVaribles.KEY_STATUS);
+				mListener.updateHardwareStatus(status_code);
+				break;
+			case SENSOR_DATA:
+				String sensorIdKey = "";
+				for(int i = 1; i <= Controller.getInstance().getNumberOfUltraSonicSensor(); i++){
+					sensorIdKey = MessageVaribles.KEY_SENSOR_ID + i;
+					if(receivedMsg.has(sensorIdKey)){
+						double sensorData = receivedMsg.getDouble(sensorIdKey);
+						notifySensorForIncomingData(i,sensorData);
+					}
+					int tachometerId = Controller.getInstance().getTachometerId();
+					sensorIdKey = MessageVaribles.KEY_SENSOR_ID + tachometerId;
+					if(receivedMsg.has(sensorIdKey)){
+						double sensorData = receivedMsg.getDouble(sensorIdKey);
+						notifySensorForIncomingData(tachometerId,sensorData);
+					}
+				}
+			default:
+				break;
+
+			}
+
+		} catch (JSONException e) {
+			PegasusLogger.getInstance().e(getName(), "handleInfoMessageFromSerialPort", e.getMessage());
+		}
+	}
+	
+	/**
+	 * notify relevant sensor for new data
+	 * @param sensorID
+	 * @param value
+	 */
+	private void notifySensorForIncomingData(int sensorID,double value){
+		if(sensorID > 0 && value >= 0){
+			mSensors.get(sensorID).onRecievedSensorData(value);
+		}
+	}
+		
 			
 	
 	/**
@@ -264,9 +346,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				mInputStream.close();
 			if(mOutputStream != null)
 				mOutputStream.close();
-			if(mSerialPortParser != null){
-				mSerialPortParser.stopThread();
-			}
 			if(mSerialPort != null){
 				mSerialPort.removeEventListener();
 				mSerialPort.close();	//close serial port
@@ -293,13 +372,13 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		mIsBoundedToUsbPort = false;
 	}
 	
-	public void serialPortSuspended(){
-		PegasusLogger.getInstance().i(Thread.currentThread().getName(), "suspedning...");
+	public void suspendThread(){
+		PegasusLogger.getInstance().i(getName(), "suspedning...");
 		mIsWaiting = true;
 	}
 	
-	public synchronized void serialPortResumed(){
-		PegasusLogger.getInstance().i(Thread.currentThread().getName(), "resuming...");
+	public synchronized void resumeThread(){
+		PegasusLogger.getInstance().i(getName(), "resuming...");
 		mIsWaiting = false;
 		notify();
 	}
@@ -375,15 +454,6 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		return mIsBoundedToUsbPort;
 	}
 
-	/**
-	 * handle incoming message from Serial Port
-	 * @param msg
-	 */
-	private void handleIncomingMessageFromSerial(String aMsg){
-		PegasusLogger.getInstance().d(getName(), "fireMessageFromHardwareUnit", aMsg);
-		mSerialPortParser.addMessageToQueue(aMsg);
-	}
-	
 	
 	/**
 	 * Method fire status to listeners
@@ -498,138 +568,5 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	}
 	
 	
-	/**
-	 * class parse messages from serial port
-	 * @author Tamir
-	 *
-	 */
-	private class SerialPortParser extends Thread{
-		
-		private final String TAG = SerialPortParser.class.getSimpleName();
-		private Queue<String> mMessageToHandle;
-		private boolean mIsAlive;
-		private HashMap<Integer,onSensorDataRecieved> mSensorLisenters;
-		public SerialPortParser(){
-			setName(TAG);
-			mMessageToHandle = new LinkedList<String>();
-			mSensorLisenters = new HashMap<Integer, onSensorDataRecieved>();
-		}
-		
-		/**
-		 * register sensors to get incoming data
-		 * @param sensorID
-		 * @param listener - sensor who listens for a new input
-		 */
-		public void registerSensor(int sensorID, onSensorDataRecieved listener){
-			if(sensorID > 0 && listener != null){
-				mSensorLisenters.put(sensorID, listener);
-			}
-		}
-		
-		/**
-		 * add message to queue
-		 * @param aMsg incoming message from Hardware Unit
-		 */
-		public synchronized void addMessageToQueue(String aMsg){
-			mMessageToHandle.add(aMsg);
-		}
-		
-		@Override
-		public void run() {
-			while(mIsAlive){
-				if(mMessageToHandle.size() > 0){
-					handleIncomingMessageFromHardwareUnit(mMessageToHandle.poll());
-				}
-			}
-		}
-
-		/**
-		 * handle message from Hardware
-		 * parse the message into JSON object and fetch the relevant data
-		 * @param msg
-		 */
-		private void handleIncomingMessageFromHardwareUnit(String msg) {
-			try {
-				JSONObject received = MessagesMethods
-						.convertSerialPortMessageToMap(msg);
-				if (received.length() > 0) {
-					int messageType = received
-							.getInt(MessageVaribles.KEY_MESSAGE_TYPE);
-					switch (messageType) {
-					case MessageVaribles.MESSAGE_TYPE_ACTION:
-						break;
-					case MessageVaribles.MESSAGE_TYPE_ERROR:
-						break;
-					case MessageVaribles.MESSAGE_TYPE_INFO:
-						handleInfoMessageFromHardwareUnit(received);
-						break;
-					default:
-						break;
-					}
-				}
-
-			}catch (Exception e) {
-				PegasusLogger.getInstance().e(getName(), "onMessageReceivedFromHardwareUnit", "msg : " + msg 
-						+ " exception:" + e.getMessage());
-			}
-		}
-		
-		
-		/**
-		 * Method handles info message from Serial Port
-		 * 
-		 * @param receivedMsg
-		 */
-		private void handleInfoMessageFromHardwareUnit(JSONObject receivedMsg) {
-			PegasusLogger.getInstance().d(getName(), "handleInfoMessageFromHardwareUnit", receivedMsg.toString());
-			try {
-				String info_type = (String) receivedMsg
-						.get(MessageVaribles.KEY_INFO_TYPE);
-				switch (MessageVaribles.InfoType.valueOf(info_type)) {
-				case STATUS:
-					int status_code = receivedMsg
-							.getInt(MessageVaribles.KEY_STATUS);
-					mListener.updateHardwareStatus(status_code);
-					break;
-				case SENSOR_DATA:
-					int sensorID = receivedMsg.getInt(MessageVaribles.KEY_SENSOR_ID);
-					double sensorData = receivedMsg.getDouble(MessageVaribles.KEY_SENSOR_DATA);
-					notifySensorForIncomingData(sensorID,sensorData);
-				default:
-					break;
-
-				}
-
-			} catch (JSONException e) {
-				PegasusLogger.getInstance().e(getName(), "handleInfoMessageFromSerialPort", e.getMessage());
-			}
-		}
-		
-		/**
-		 * notify relevant sensor for new data
-		 * @param sensorID
-		 * @param value
-		 */
-		private void notifySensorForIncomingData(int sensorID,double value){
-			if(sensorID > 0 && value >= 0){
-				mSensorLisenters.get(sensorID).onRecievedSensorData(value);
-			}
-		}
-		
-		/**
-		 * start Serial Port PArser Thread
-		 */
-		public void startThread(){
-			mIsAlive = true;
-			start();
-		}
-		
-		/**
-		 * stop thread
-		 */
-		public void stopThread(){
-			mIsAlive = false;
-		}
-	}
 	
 }

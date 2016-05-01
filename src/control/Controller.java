@@ -73,6 +73,7 @@ public class Controller implements OnServerEventsListener,
 			SerialPortHandler.getInstance().startThread();
 			break;
 		case ApplicationStates.SERIAL_PORT_READY:
+			SerialPortHandler.getInstance().suspendThread();
 			break;
 		case ApplicationStates.WAITING_FOR_HARDWARE:
 			break;
@@ -247,7 +248,7 @@ public class Controller implements OnServerEventsListener,
 			msg.put(MessageVaribles.KEY_MESSAGE_TYPE, AppMessageKeys.KEY_MESSAGE_TYPE_REAL_TIME_DATA);
 			msg.put(AppMessageKeys.JSON_KEY_REAL_TIME_DATA_TYPE, AppMessageKeys.REAL_TIME_DATA_TYPE_DISTANCE);
 			msg.put(AppMessageKeys.JSON_KEY_DISTANCE,aDistance);
-			BluetoothServer.getInstance().addMessageToQueue(msg.toString());
+			//BluetoothServer.getInstance().addMessageToQueue(msg.toString());
 		} catch (JSONException e) {
 			PegasusLogger.getInstance().e(TAG,"onSendVehicleSpeed",e.getMessage());
 		}
@@ -317,9 +318,11 @@ public class Controller implements OnServerEventsListener,
 					DrivingManager.getInstance().registerListener(PegasusVehicle.getInstance());
 					DrivingManager.getInstance().startThread();
 					while(!DrivingManager.getInstance().isAlive());
-				}else if(DrivingManager.getInstance().isThreadSuspended()){
-					DrivingManager.getInstance().resumeThread();
+					DrivingManager.getInstance().suspendThread();
 				}
+//				}else if(DrivingManager.getInstance().isThreadSuspended()){
+//					DrivingManager.getInstance().resumeThread();
+//				}
 				break;
 			case VehicleParams.VEHICLE_MODE_MANUAL:
 				if(DrivingManager.getInstance().isAlive()){
@@ -339,6 +342,9 @@ public class Controller implements OnServerEventsListener,
 	 */
 	public void freeDrive(){
 		PegasusLogger.getInstance().i(TAG, "freeDrive", "free driving...");
+		if(DrivingManager.getInstance().isThreadSuspended()){
+			DrivingManager.getInstance().resumeThread();
+		}
 		DrivingManager.getInstance().freeDrive();
 	}
 	
@@ -349,6 +355,9 @@ public class Controller implements OnServerEventsListener,
 	public void findParkingSpot(int aParkingType) {
 		if(PegausVehicleProperties.getInstance().isDataLoaded()){
 			PegasusLogger.getInstance().i(TAG, "findParkingSpot", "started looking for parking");
+			if(DrivingManager.getInstance().isThreadSuspended()){
+				DrivingManager.getInstance().resumeThread();
+			}
 			DrivingManager.getInstance().findParkingSpot(aParkingType);
 		}else{
 			//TODO - send callback parking cannot be performed
@@ -359,4 +368,11 @@ public class Controller implements OnServerEventsListener,
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+	public int getNumberOfUltraSonicSensor(){
+		return PegasusVehicle.getInstance().getVehicleData().getNumberOfUltraSonicSensors();
+	}
+	
+	public int getTachometerId(){
+		return PegasusVehicle.getInstance().getTachometer().getId();
+	}
 }

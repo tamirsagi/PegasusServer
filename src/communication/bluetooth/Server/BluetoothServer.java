@@ -36,6 +36,7 @@ public class BluetoothServer extends Thread {
     private HashMap<String,OnServerEventsListener> mListeners;
     private HashMap<String,SocketData> mClients;
     private Queue<String> mMessagesToClients;
+    private boolean mIsSuspended;
    
     /**
      * Get bluetooth server instance. (Singleton pattern)
@@ -154,15 +155,21 @@ public class BluetoothServer extends Thread {
 
     private void waitForConnection() {
         while (isOnline) {
-            try {
-            	PegasusLogger.getInstance().d(TAG, "waitForConnection", "Waiting for connections...");
-                //wait for connection
-                final StreamConnection connection = mNotifier.acceptAndOpen();
-                final RemoteDevice remoteDevice = RemoteDevice.getRemoteDevice(connection);
-                new Thread(new Runnable() {
+        	try {
+        	synchronized (this) {
+				while(mIsSuspended){
+					wait();
+				}
+			}
+            PegasusLogger.getInstance().d(TAG, "waitForConnection", "Waiting for connections...");
+            //wait for connection
+            final StreamConnection connection = mNotifier.acceptAndOpen();
+            final RemoteDevice remoteDevice = RemoteDevice.getRemoteDevice(connection);
+            new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {
+                        	suspendThread();
                             handleClient(connection,remoteDevice);
                         } catch (Exception e) {
                         	PegasusLogger.getInstance().e(TAG ,"waitForConnection", e.getMessage());
@@ -178,6 +185,17 @@ public class BluetoothServer extends Thread {
             }
         }//while
         
+    }
+    
+    public void suspendThread(){
+    	PegasusLogger.getInstance().i(getName(), "suspended...");
+    	mIsSuspended = true;
+    }
+    
+    public synchronized void resumeThread(){
+    	PegasusLogger.getInstance().i(getName(), "resuming...");
+    	mIsSuspended = false;
+    	notifyAll();
     }
 
 
@@ -196,10 +214,12 @@ public class BluetoothServer extends Thread {
         while(client.isConnected()){
 	           readFromSerial(client);
 	           sendMessageToClients();
+	           sleep(1000);
         }//while
       }catch (IOException e){
     	  PegasusLogger.getInstance().e(getName(), "handleClient", e.getMessage());
     	  mClients.remove(client).getClientAddress();
+    	  resumeThread();
        }
     }
     

@@ -1,7 +1,12 @@
 package logs;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public abstract class AbstractLogger {
-	
+	private static DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+	private static Date date = new Date();
 	protected static final String I = "I";
 	protected static final String D = "D";
 	protected static final String E = "E";
@@ -9,11 +14,16 @@ public abstract class AbstractLogger {
 	
 	protected static AbstractLogger mInstance;
 	
+	
 	public static AbstractLogger getInstance() throws Exception{
 		if(mInstance == null){
 			throw new Exception("Logger has not initizlized yet");
 		}
 		return mInstance;
+	}
+	
+	private String getCurrentTime(){
+		return dateFormat.format(date);
 	}
 	
 	
@@ -24,7 +34,7 @@ public abstract class AbstractLogger {
 	 * @return - Log format
 	 */
 	public String getLogFormat(String logType, String tag,String method,String msg){
-		return String.format("%s/%s - %s():[%s]",logType,tag,method,msg);
+		return String.format("[%s]%s/%s - %s():[%s]",getCurrentTime(),logType,tag,method,msg);
 	}
 	
 	/**
