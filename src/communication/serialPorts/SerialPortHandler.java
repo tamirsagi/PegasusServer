@@ -23,7 +23,6 @@ import logs.logger.PegasusLogger;
 import util.MessagesMethods;
 import vehicle.common.constants.VehicleParams;
 import vehicle.interfaces.onSensorDataRecieved;
-import vehicle.sensors.AbstractSensor;
 
 import control.Controller;
 import control.interfaces.OnSerialPortEventsListener;
@@ -50,8 +49,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	private int mTimeout;
 	private SerialPort mSerialPort;
 	private InputStream mInputStream;
-	private OutputStream mOutput;
-	private PrintWriter mOutputStream;
+	private OutputStream mOutputStream;
 	private Queue<String> mMessagesToArduino;
 	private boolean mIsWaiting;
 	private HashMap<Integer,onSensorDataRecieved> mSensors;
@@ -123,8 +121,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 					
 					
 					mInputStream = mSerialPort.getInputStream();
-					mOutput = mSerialPort.getOutputStream();
-					mOutputStream = new PrintWriter(mSerialPort.getOutputStream(),true);
+					mOutputStream = mSerialPort.getOutputStream();
 
 					mSerialPort.addEventListener(this);
 					mSerialPort.notifyOnDataAvailable(true);
@@ -193,8 +190,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 			resumeThread();
 			writeToSerial();
 		} catch (InterruptedException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			PegasusLogger.getInstance().e(getName(), "addMessageToQueue", e.getMessage());
 		}
 	}
 	
@@ -202,9 +198,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 		while(!mMessagesToArduino.isEmpty()){
 				String msg = mMessagesToArduino.poll();
 				PegasusLogger.getInstance().d(Thread.currentThread().getName(), "writeMessage", "before sending to arduino: " + msg);
-				//mOutputStream.println(msg);
-				mOutput.write(msg.getBytes());
-				mOutput.flush();
+				mOutputStream.write(msg.getBytes());
+				mOutputStream.flush();
 				sleep(20);
 		}
 		suspendThread();
@@ -351,6 +346,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				mSerialPort.close();	//close serial port
 				stopThread();
 			}
+			PegasusLogger.getInstance().i(getName(),"run", "Serial port thread is stopped...");
 		} catch (IOException e) {
 			fireSerialPortErrors("disconnect() Exception " + e.getMessage());
 		}

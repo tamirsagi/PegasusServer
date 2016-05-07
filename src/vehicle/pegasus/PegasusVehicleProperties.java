@@ -8,6 +8,9 @@ import java.io.PrintWriter;
 import java.util.Enumeration;
 import java.util.Properties;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import logs.logger.PegasusLogger;
 
 /**
@@ -15,15 +18,15 @@ import logs.logger.PegasusLogger;
  * @author Tamir
  *
  */
-public class PegausVehicleProperties extends Properties {
+public class PegasusVehicleProperties extends Properties {
 	private static final String TAG = "PegausVehicleProperties";
 	
 	private static final long serialVersionUID = 1L;
-	public static String DEFAULT_VALUE_ZERO = "-1";
+	public static final int DEFAULT_VALUE = -1;
 	public static String DEFAULT_SENSOR_DISTANCE_VALUE = "60";
 	
 	
-	private static PegausVehicleProperties mInstance;
+	private static PegasusVehicleProperties mInstance;
 	private static final String FILE_NAME = "PegasusVehicleConfig.properties";
 	private static final String RESOURCE_LINUX_FORMAT = "/Resources/";
 	private static final String RESOURCE_WIN_FORMAT = "\\Resources\\";
@@ -36,14 +39,14 @@ public class PegausVehicleProperties extends Properties {
 	private PrintWriter mWriter;
 	private boolean mIsLoaded;
 	
-	public static PegausVehicleProperties getInstance(){
+	public static PegasusVehicleProperties getInstance(){
 		if(mInstance == null){
-			mInstance = new PegausVehicleProperties();
+			mInstance = new PegasusVehicleProperties();
 		}
 		return mInstance;
 	}
 	
-	private PegausVehicleProperties(){
+	private PegasusVehicleProperties(){
 		mRunningOs = System.getProperty("os.name");
 		try {
 			if(mRunningOs.contains("Windows")){
@@ -81,6 +84,22 @@ public class PegausVehicleProperties extends Properties {
 	 */
 	public String getValue(String key,String defaultValue){
 			return getProperty(key,defaultValue);
+	}
+	
+	/**
+	 * method create JSON object from this class instance
+	 * @return
+	 * @throws JSONException
+	 */
+	public JSONObject toJsonObject() throws JSONException{
+		JSONObject properties = new JSONObject();
+		Enumeration<?> e = propertyNames();
+		while(e.hasMoreElements()){
+			String key = (String)e.nextElement();
+			String value = getProperty(key);
+			properties.put(key, value);
+		}
+		return properties;
 	}
 	
 	/**

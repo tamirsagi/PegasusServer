@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import vehicle.common.constants.VehicleAutonomousMode;
 import vehicle.common.constants.VehicleParams;
 import vehicle.pegasus.PegasusVehicle;
-import vehicle.pegasus.PegausVehicleProperties;
+import vehicle.pegasus.PegasusVehicleProperties;
 
 import communication.bluetooth.Constants.BluetoothServerStatus;
 import communication.bluetooth.Server.BluetoothServer;
@@ -74,6 +74,7 @@ public class Controller implements OnServerEventsListener,
 			break;
 		case ApplicationStates.SERIAL_PORT_READY:
 			SerialPortHandler.getInstance().suspendThread();
+			mApplicationState = ApplicationStates.WAITING_FOR_HARDWARE;
 			break;
 		case ApplicationStates.WAITING_FOR_HARDWARE:
 			break;
@@ -251,7 +252,7 @@ public class Controller implements OnServerEventsListener,
 			PegasusLogger.getInstance().d(TAG,"onSerialPortReady", "changed state to :"	+ ApplicationStates.WAITING_FOR_HARDWARE);
 			mIsSerialPortReady = true;
 			PegasusVehicle.getInstance().registerAllSensorToDataProvider();
-			setState(ApplicationStates.WAITING_FOR_HARDWARE);
+			setState(ApplicationStates.SERIAL_PORT_READY);
 		}else{
 			//TODO -> Failure
 		}
@@ -337,7 +338,7 @@ public class Controller implements OnServerEventsListener,
 	 * @param parkingType
 	 */
 	public void findParkingSpot(int aParkingType) {
-		if(PegausVehicleProperties.getInstance().isDataLoaded()){
+		if(PegasusVehicleProperties.getInstance().isDataLoaded()){
 			PegasusLogger.getInstance().i(TAG, "findParkingSpot", "started looking for parking");
 			if(DrivingManager.getInstance().isThreadSuspended()){
 				DrivingManager.getInstance().resumeThread();

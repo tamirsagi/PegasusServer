@@ -10,6 +10,7 @@ public interface onInputReceived {
 	/**
 	 * incoming data from sensor
 	 * @param value - numeric value
+	 * @throws Exception 
 	 */
 	public void onReceived(int sensorID,double value);
 	

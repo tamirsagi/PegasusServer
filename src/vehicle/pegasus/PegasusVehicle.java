@@ -51,51 +51,31 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived ,
 	}
 	
 	private PegasusVehicle() {
-		setVehicleData();
-		setUltraSonicSensors();
-		setupTachometerSensor();
+		try {
+			setVehicleData();
+			setUltraSonicSensors();
+			setupTachometerSensor();
+		} catch (Exception e) {
+			PegasusLogger.getInstance().e(TAG, e.getMessage());
+		}
+		
 	}
 	
 	
 	
 	@Override
 	public void setVehicleData() {
-		String id = PegausVehicleProperties.getInstance().getValue(VehicleConfigKeys.KEY_ID,PEGASUS_DEFAULT_ID);
-		double length = Double.parseDouble(PegausVehicleProperties.getInstance().
-					getValue(VehicleConfigKeys.KEY_LENGTH,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
+		JSONObject pegasusData;
+		try {
+			pegasusData = PegasusVehicleProperties.getInstance().toJsonObject();
+			String id = pegasusData.optString(VehicleConfigKeys.KEY_ID,PEGASUS_DEFAULT_ID);
+			setID(id);
+			PegasusVehicleData.createInstance(pegasusData);
+			PegasusLogger.getInstance().d(TAG,"setVehicleData", PegasusVehicleData.getInstance().toString());
+		} catch (JSONException e) {
+			PegasusLogger.getInstance().e(TAG,e.getMessage());
+		}
 		
-		double width = Double.parseDouble(PegausVehicleProperties.getInstance().
-				getValue(VehicleConfigKeys.KEY_WIDTH,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
-		
-		double steeringAngle = Double.parseDouble(PegausVehicleProperties.getInstance().
-				getValue(VehicleConfigKeys.KEY_MAX_STEERING_ANGLE_FACTOR,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
-		
-		double wheelDiameter = Double.parseDouble(PegausVehicleProperties.getInstance().
-				getValue(VehicleConfigKeys.KEY_WHEEL_DIAMETER,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
-		
-		int numberOfUltraSonicSensors = Integer.parseInt(PegausVehicleProperties.getInstance().
-				getValue(VehicleConfigKeys.KEY_NUMBER_OF_ULTRA_SONIC_SENSORS,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
-		
-		double wheelBase = Double.parseDouble(PegausVehicleProperties.getInstance().
-				getValue(VehicleConfigKeys.KEY_WHEEL_BASE,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
-		
-		double centreFrontWheelToFrontCar = Double.parseDouble(PegausVehicleProperties.getInstance().
-				getValue(VehicleConfigKeys.KEY_FRONT_WHEEL_FRONT_CAR,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
-		
-		double wheelDistance = Double.parseDouble(PegausVehicleProperties.getInstance().
-				getValue(VehicleConfigKeys.KEY_FRONT_WHEEL_DISTANCE,PegausVehicleProperties.DEFAULT_VALUE_ZERO));
-		
-		setID(id);
-		PegasusVehicleData.getInstance().setLength(length);
-		PegasusVehicleData.getInstance().setWidth(width);
-		PegasusVehicleData.getInstance().setWheelDiameter(wheelDiameter);
-		PegasusVehicleData.getInstance().setWheelBase(wheelBase);
-		PegasusVehicleData.getInstance().setSteeringAngle(steeringAngle);
-		PegasusVehicleData.getInstance().setNumberOfUltraSonicSensors(numberOfUltraSonicSensors);
-		PegasusVehicleData.getInstance().setDistanceCenterFrontWheelToFrontCar(centreFrontWheelToFrontCar);
-		PegasusVehicleData.getInstance().setMinimumRequiredSpaceToPark();
-		PegasusVehicleData.getInstance().setFrontWheelDistance(wheelDistance);
-		PegasusLogger.getInstance().d(TAG,"setVehicleData", PegasusVehicleData.getInstance().toString());
 		
 	}
 	
@@ -108,8 +88,10 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived ,
 	/**
 	 * set Ultra sonic sensors
 	 * save in map by its location on the car
+	 * @throws Exception 
+	 * @throws NumberFormatException 
 	 */
-	private void setUltraSonicSensors() {
+	private void setUltraSonicSensors() throws NumberFormatException, Exception {
 		mUltraSonicSensors = new HashMap<String, UltraSonic>();
 		for (int i = 1; i <= PegasusVehicleData.getInstance().getNumberOfUltraSonicSensors(); i++) {
 			String pos = SensorPositions.getSensorPosition(i);
@@ -138,8 +120,8 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived ,
 					relevantDistanceKey = VehicleConfigKeys.KEY_FRONT_RIGHT_SENSOR_MAX_DISTANCE;
 					break;
 				}
-				int maxDetectionDistance = Integer.parseInt(PegausVehicleProperties.getInstance().
-						getValue(relevantDistanceKey,PegausVehicleProperties.DEFAULT_SENSOR_DISTANCE_VALUE));
+				int maxDetectionDistance = Integer.parseInt(PegasusVehicleProperties.getInstance().
+						getValue(relevantDistanceKey,PegasusVehicleProperties.DEFAULT_SENSOR_DISTANCE_VALUE));
 				UltraSonic us = new UltraSonic(i,maxDetectionDistance);
 				us.registerListener(this);
 				
@@ -214,7 +196,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived ,
 			}
 		}
 		if (SerialPortHandler.getInstance().isBoundToSerialPort()){
-			int defaultMaxDistance = Integer.parseInt(PegausVehicleProperties.DEFAULT_SENSOR_DISTANCE_VALUE);
+			int defaultMaxDistance = Integer.parseInt(PegasusVehicleProperties.DEFAULT_SENSOR_DISTANCE_VALUE);
 			SerialPortHandler.getInstance().configSensors(sensorData, defaultMaxDistance);
 		}
 	}
@@ -290,17 +272,12 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived ,
 		if(value >= 0){
 			PegasusLogger.getInstance().i(TAG, "onReceived", "Sensor id:" + sensorId +" value:" + value);
 			if(sensorId == SensorPositions.INFRA_RED_TACHOMETER_ID){
-				double travelledDsitanceInSec = value * PegasusVehicleData.getInstance().getWheelPerimeter();
-				setCurrentspeed(travelledDsitanceInSec);
-				setTravelledDistance(getTravelledDistance() + travelledDsitanceInSec);
-				DrivingManager.getInstance().handleTachometerData(travelledDsitanceInSec);
-				mListener.onSendVehicleRealTimeData(travelledDsitanceInSec, getTravelledDistance());
+				DrivingManager.getInstance().handleTachometerData(value);
 			}else{
 				DrivingManager.getInstance().updateInput(sensorId,value);
 			}
 		}
 	}
-	
 
 	
 	/**
