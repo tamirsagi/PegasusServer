@@ -1,5 +1,6 @@
 package managers.driving_manager;
 
+import util.CameraManager;
 import vehicle.common.ActionTimer;
 import vehicle.common.VehicleData;
 import vehicle.common.constants.ParkingStates;
@@ -99,6 +100,9 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	public void suspendThread() {
 		if(!mIsSuspended){
 			PegasusLogger.getInstance().i(getName(),"suspended...");
+			if(CameraManager.getInstance().isCameraEnabled()){
+				CameraManager.getInstance().turnCameraOff();
+			}
 			super.suspendThread();
 		}
 	}
@@ -117,7 +121,9 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	private synchronized void handleCurrentState(){
 		if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING ||
 				mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING){
-			
+			if(!CameraManager.getInstance().isCameraEnabled()){
+				CameraManager.getInstance().turnCameraOn();
+			}
 			double frontSensorValue = mManagedVehicle.getValueFromDistanceSensor(SensorPositions.FRONT_ULTRA_SONIC_SENSOR);
 			
 			handleFrontSensorData(frontSensorValue);
@@ -137,6 +143,7 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 			follow();
 			}
 		}else if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_INTO_PARKING){
+			CameraManager.getInstance().turnCameraOff();
 			enterParallelParking();
 		}
 	}
@@ -210,6 +217,7 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 			break;
 		}
 		if(minSpaceToPark > 0){
+			mCurrentWheelSensorIntterupts = 0;
 			mMaxWheelSensorInterrupts = (vehicleData.getNumberOfWheelSlots() * minSpaceToPark) / vehicleData.getWheelPerimeter();
 			mParkingType = parkingType;
 			mFound = false;
@@ -260,26 +268,7 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	}
 
 	/**
-	 * in case the vehicle is next to another car we would like to place the back wheels same line with the parked car
-	 */
-	private void checkVehiclePositionBeforeParkingParallel(){
-		double BackSideSensorValue = -1;
-		switch(mParkingType){
-		case ParkingType.PARALLEL_RIGHT:
-			BackSideSensorValue = mManagedVehicle.getValueFromDistanceSensor(SensorPositions.BACK_RIGHT_ULTRA_SONIC_SENSOR);
-			break;
-		case ParkingType.PARALLEL_LEFT:
-			BackSideSensorValue = mManagedVehicle.getValueFromDistanceSensor(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR);
-			break;
-		}
-		PegasusLogger.getInstance().i(getName(),"checkVehiclePositionBeforeParking", "placing the veicle: " + BackSideSensorValue);
-		if(BackSideSensorValue > 0){
-			mManagedVehicle.stop();
-		}
-	}
-	
-	/**
-	 * calculate relvant arch prior executing parking 
+	 * calculate relevant arch prior executing parking 
 	 */
 	private void enterParallelParking(){
 		mManagedVehicle.driveBackward();
