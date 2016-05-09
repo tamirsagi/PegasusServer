@@ -31,4 +31,8 @@ public interface OnManagedVechile {
 	
 	public double getValueFromDistanceSensor(String pos);
 	
+	public int getMaxServoRightAngle();
+	
+	public int getMaxServoLeftAngle();
+	
 }

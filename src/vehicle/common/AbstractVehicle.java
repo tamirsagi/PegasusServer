@@ -147,11 +147,8 @@ public abstract class AbstractVehicle {
 					+ VehicleAutonomousMode.getVehicleStateName(mAutonomousMode)
 					+ " and changed to:" + VehicleAutonomousMode.getVehicleStateName(aState));
 			mAutonomousMode = aState;
-			changeUltraSonicSensorState();
 		}
 	}
-	
-	public abstract void changeUltraSonicSensorState();
 	
 	/**
 	 * send sensor configuration file to Hardware unit

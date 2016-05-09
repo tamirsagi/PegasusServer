@@ -18,9 +18,9 @@ public abstract class AbstractSensor implements onSensorDataRecieved{
 	private int mId;
 	private String mPosition;
 	private boolean mEnabled;
-	private double mLastValue;
+	protected double mLastValue;
 	private Vector<onInputReceived> mListeners;
-	private Lock mLock = new ReentrantLock();
+	protected Lock mLock = new ReentrantLock();
 	
 
 	public AbstractSensor(int id) {
@@ -52,7 +52,6 @@ public abstract class AbstractSensor implements onSensorDataRecieved{
 			mLock.unlock();
 		}
 	}
-
 	
 	public String getPosition() {
 		return mPosition;

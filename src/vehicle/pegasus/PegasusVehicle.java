@@ -14,7 +14,7 @@ import vehicle.common.constants.VehicleParams;
 import vehicle.common.constants.VehicleAutonomousMode;
 import vehicle.interfaces.OnManagedVechile;
 import vehicle.pegasus.constants.SensorPositions;
-import vehicle.sensors.InfraRed;
+import vehicle.sensors.Tachometer;
 import vehicle.sensors.SensorConstants;
 import vehicle.sensors.UltraSonic;
 
@@ -30,12 +30,12 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 	public static final int MIN_DIGITAL_SPEED = 70;
 	public static final int MAX_DIGITAL_SPEED = 255;
 	private static final int STRAIGHT_STEER_ANGLE = 90;
-	private static final int MIN_STEER_ANGLE = 50;
-	private static final int MAX_STEER_ANGLE = 140;
+	private static final int MIN_SERVO_ANGLE = 50;
+	private static final int MAX_SERVO_ANGLE = 130;
 	
 	private int mDigitalSpeed;
 	private HashMap<String,UltraSonic> mUltraSonicSensors;
-	private InfraRed mTachometer;
+	private Tachometer mTachometer;
 	
 	/**
 	 * Get class instance
@@ -83,6 +83,13 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 		return PegasusVehicleData.getInstance();
 	}
 	
+	
+	@Override
+	public void setCurrentState(int aState) {
+		super.setCurrentState(aState);
+		changeUltraSonicSensorState();
+		mTachometer.resetTachometer();
+	}
 	
 	/**
 	 * set Ultra sonic sensors
@@ -132,10 +139,10 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 	 * Setup Tachometer Sensor
 	 */
 	private void setupTachometerSensor(){
-		mTachometer = new InfraRed(SensorPositions.INFRA_RED_TACHOMETER_ID);
+		mTachometer = new Tachometer(SensorPositions.INFRA_RED_TACHOMETER_ID);
 	}
 	
-	public InfraRed getTachometer(){
+	public Tachometer getTachometer(){
 		return mTachometer;
 	}
 	
@@ -275,31 +282,33 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 //		}
 //	}
 
-	
 	/**
-	 * handle findParkingState
-	 * @param parkyingType
+	 * change ultra sonic state when vehicle state is changed
 	 */
-	@Override
 	public void changeUltraSonicSensorState(){
-		//TODO - when placing the car when parking found dont disable relevant sensor
-			changeUpperRightSensorsState(false);
-			changeUpperLeftSensorsState(false);
-			changeRearSensorState(false);
 			switch(getCurrentState()){
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
+				changeFrontSensorState(true);
+				changeUpperRightSensorsState(false);
+				changeUpperLeftSensorsState(false);
+				changeRearSensorState(false);
 				break;
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
+				changeFrontSensorState(true);
+				changeRearSensorState(false);
 				switch(DrivingManager.getInstance().getParkingType()){
 				case ParkingType.PARALLEL_RIGHT:
 					changeUpperRightSensorsState(true);
+					changeUpperLeftSensorsState(false);
 					break;
 				case ParkingType.PARALLEL_LEFT:
 					changeUpperLeftSensorsState(true);
+					changeUpperRightSensorsState(false);
 						break;
 				}
 				break;
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_INTO_PARKING:
+				changeFrontSensorState(false);
 				changeRearSensorState(true);
 				break;
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_OUT_OF_PARKING:
@@ -376,6 +385,16 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 	@Override
 	public double getValueFromDistanceSensor(String pos) {
 		return mUltraSonicSensors.get(pos).getLastValue();
+	}
+	
+	@Override
+	public int getMaxServoRightAngle(){
+		return MIN_SERVO_ANGLE;
+	}
+	
+	@Override
+	public int getMaxServoLeftAngle(){
+		return MAX_SERVO_ANGLE;
 	}
 
 }
