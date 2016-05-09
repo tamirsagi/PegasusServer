@@ -1,6 +1,8 @@
 package vehicle.sensors;
 
 import java.util.Vector;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import vehicle.interfaces.onInputReceived;
 import vehicle.interfaces.onSensorDataRecieved;
@@ -16,14 +18,13 @@ public abstract class AbstractSensor implements onSensorDataRecieved{
 	private int mId;
 	private String mPosition;
 	private boolean mEnabled;
-	private double mIncomingData;
-	private Vector<Double> mLastValues;
+	private double mLastValue;
 	private Vector<onInputReceived> mListeners;
+	private Lock mLock = new ReentrantLock();
 	
 
 	public AbstractSensor(int id) {
 		mId = id;
-		mLastValues = new Vector<Double>();
 	}
 
 	public int getId() {
@@ -34,24 +35,24 @@ public abstract class AbstractSensor implements onSensorDataRecieved{
 		this.mId = mId;
 	}
 
-	public double getValue() {
-		return mIncomingData;
+	public double getLastValue() {
+		mLock.lock();
+		try{
+			return mLastValue;
+		}finally{
+			mLock.unlock();
+		}
 	}
 
 	public void setValue(double mValue) {
-		setLastValue(mValue);
-		this.mIncomingData = mValue;
-	}
-
-	public Vector<Double> getLastValues() {
-		return mLastValues;
-	}
-
-	public void setLastValue(double aLastValue) {
-		if(mLastValues.size() > 0 && mLastValues.get(mLastValues.size() - 1).doubleValue() != aLastValue){
-			mLastValues.add(aLastValue);
+		mLock.lock();
+		try{
+			mLastValue = mValue;
+		}finally{
+			mLock.unlock();
 		}
 	}
+
 	
 	public String getPosition() {
 		return mPosition;
@@ -91,7 +92,7 @@ public abstract class AbstractSensor implements onSensorDataRecieved{
 	public void receivedData(double value){
 		setValue(value);
 		for(onInputReceived listener : mListeners){
-			listener.onReceived(getId(), getValue());
+			listener.onReceived(getId(), getLastValue());
 		}
 	}
 	

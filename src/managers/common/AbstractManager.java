@@ -15,10 +15,6 @@ public abstract class AbstractManager extends Thread {
 		setTag(aTag);
 	}
 	
-	public abstract void updateInput(int sensorId, double value);
-	
-	
-	
 	private void setTag(String aTag){
 		mTag = aTag;
 	}

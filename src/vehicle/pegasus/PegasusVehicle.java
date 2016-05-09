@@ -13,7 +13,6 @@ import vehicle.common.constants.VehicleConfigKeys;
 import vehicle.common.constants.VehicleParams;
 import vehicle.common.constants.VehicleAutonomousMode;
 import vehicle.interfaces.OnManagedVechile;
-import vehicle.interfaces.onInputReceived;
 import vehicle.pegasus.constants.SensorPositions;
 import vehicle.sensors.InfraRed;
 import vehicle.sensors.SensorConstants;
@@ -22,7 +21,7 @@ import vehicle.sensors.UltraSonic;
 import communication.messages.MessageVaribles;
 import communication.serialPorts.SerialPortHandler;
 
-public class PegasusVehicle extends AbstractVehicle implements onInputReceived , OnManagedVechile{
+public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 	
 	private static PegasusVehicle mInstance;
 	private static final String TAG = PegasusVehicle.class.getSimpleName();
@@ -123,8 +122,6 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived ,
 				int maxDetectionDistance = Integer.parseInt(PegasusVehicleProperties.getInstance().
 						getValue(relevantDistanceKey,PegasusVehicleProperties.DEFAULT_SENSOR_DISTANCE_VALUE));
 				UltraSonic us = new UltraSonic(i,maxDetectionDistance);
-				us.registerListener(this);
-				
 				us.setPosition(pos);
 				mUltraSonicSensors.put(pos, us);
 			}
@@ -136,7 +133,6 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived ,
 	 */
 	private void setupTachometerSensor(){
 		mTachometer = new InfraRed(SensorPositions.INFRA_RED_TACHOMETER_ID);
-		mTachometer.registerListener(this);
 	}
 	
 	public InfraRed getTachometer(){
@@ -267,17 +263,17 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived ,
 	}
 
 	
-	@Override
-	public void onReceived(int sensorId,double value){
-		if(value >= 0){
-			PegasusLogger.getInstance().i(TAG, "onReceived", "Sensor id:" + sensorId +" value:" + value);
-			if(sensorId == SensorPositions.INFRA_RED_TACHOMETER_ID){
-				DrivingManager.getInstance().handleTachometerData(value);
-			}else{
-				DrivingManager.getInstance().updateInput(sensorId,value);
-			}
-		}
-	}
+//	@Override
+//	public void onReceived(int sensorId,double value){
+//		if(value >= 0){
+//			PegasusLogger.getInstance().i(TAG, "onReceived", "Sensor id:" + sensorId +" value:" + value);
+//			if(sensorId == SensorPositions.INFRA_RED_TACHOMETER_ID){
+//				DrivingManager.getInstance().handleTachometerData(value);
+//			}else{
+//				DrivingManager.getInstance().updateInput(sensorId,value);
+//			}
+//		}
+//	}
 
 	
 	/**
@@ -286,6 +282,7 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived ,
 	 */
 	@Override
 	public void changeUltraSonicSensorState(){
+		//TODO - when placing the car when parking found dont disable relevant sensor
 			changeUpperRightSensorsState(false);
 			changeUpperLeftSensorsState(false);
 			changeRearSensorState(false);
@@ -302,8 +299,11 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived ,
 						break;
 				}
 				break;
-			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKING:
+			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_INTO_PARKING:
 				changeRearSensorState(true);
+				break;
+			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_OUT_OF_PARKING:
+				
 				break;
 			}
 	}
@@ -366,6 +366,16 @@ public class PegasusVehicle extends AbstractVehicle implements onInputReceived ,
 	private void changeUpperLeftSensorsState(boolean aIsEnabled){
 		changeSensorState(SensorPositions.FRONT_LEFT_ULTRA_SONIC_SENSOR,aIsEnabled);
 		changeSensorState(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR,aIsEnabled);
+	}
+
+	@Override
+	public double getInterruptsCounterOfWheelSensor() {
+		return mTachometer.getLastValue();
+	}
+
+	@Override
+	public double getValueFromDistanceSensor(String pos) {
+		return mUltraSonicSensors.get(pos).getLastValue();
 	}
 
 }

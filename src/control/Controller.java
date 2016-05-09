@@ -327,9 +327,6 @@ public class Controller implements OnServerEventsListener,
 	 */
 	public void freeDrive(){
 		PegasusLogger.getInstance().i(TAG, "freeDrive", "free driving...");
-		if(DrivingManager.getInstance().isThreadSuspended()){
-			DrivingManager.getInstance().resumeThread();
-		}
 		DrivingManager.getInstance().freeDrive();
 	}
 	
@@ -340,9 +337,6 @@ public class Controller implements OnServerEventsListener,
 	public void findParkingSpot(int aParkingType) {
 		if(PegasusVehicleProperties.getInstance().isDataLoaded()){
 			PegasusLogger.getInstance().i(TAG, "findParkingSpot", "started looking for parking");
-			if(DrivingManager.getInstance().isThreadSuspended()){
-				DrivingManager.getInstance().resumeThread();
-			}
 			DrivingManager.getInstance().findParkingSpot(aParkingType);
 		}else{
 			//TODO - send callback parking cannot be performed

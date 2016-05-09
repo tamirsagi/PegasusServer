@@ -27,4 +27,8 @@ public interface OnManagedVechile {
 	
 	public int getSpeed(); 
 	
+	public double getInterruptsCounterOfWheelSensor();
+	
+	public double getValueFromDistanceSensor(String pos);
+	
 }

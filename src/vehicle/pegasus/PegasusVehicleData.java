@@ -50,9 +50,9 @@ public class PegasusVehicleData extends VehicleData {
 
 
 	@Override
-	public void setMinimumRequiredSpaceToPark() {
+	public void setMinExtraSpaceOnParallelParking() {
 		double diff_turning_radius_wheel_base = getFrontWheelTurningRadious() * getFrontWheelTurningRadious() - getWheelBase() * getWheelBase();
-		mMinimumRequiredSpace = Math.sqrt(diff_turning_radius_wheel_base +
+		mMinExtraSpaceOnParallelParking = Math.sqrt(diff_turning_radius_wheel_base +
 				 Math.pow(getWheelBase() + getDistanceCentreFrontWheelToFrontCar(), 2) -
 				 Math.pow( (Math.sqrt(diff_turning_radius_wheel_base) - getWidth()), 2) ) - 
 				 getWheelBase() - getDistanceCentreFrontWheelToFrontCar();

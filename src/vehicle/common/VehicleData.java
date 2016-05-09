@@ -19,8 +19,9 @@ public abstract class VehicleData {
 	private double mSteeringAngle;
 	private double mWheelBase;
 	private double mFrontWheelDistance;
-	protected double mMinimumRequiredSpace;
+	protected double mMinExtraSpaceOnParallelParking;
 	private double mDistCentreFrontWheelToFrontCar;
+	private int mWheelSlots;
 	
 	
 	protected VehicleData(JSONObject aProperties){
@@ -31,6 +32,7 @@ public abstract class VehicleData {
 		double wheelBase = aProperties.optDouble(VehicleConfigKeys.KEY_WHEEL_BASE,PegasusVehicleProperties.DEFAULT_VALUE);
 		double centreFrontWheelToFrontCar = aProperties.optDouble(VehicleConfigKeys.KEY_FRONT_WHEEL_FRONT_CAR,PegasusVehicleProperties.DEFAULT_VALUE);
 		double wheelDistance = aProperties.optDouble(VehicleConfigKeys.KEY_FRONT_WHEEL_DISTANCE,PegasusVehicleProperties.DEFAULT_VALUE);
+		int wheelSlots = aProperties.optInt(VehicleConfigKeys.KEY_WHEEL_SLOTS,PegasusVehicleProperties.DEFAULT_VALUE);
 		
 		setLength(length);
 		setWidth(width);
@@ -38,8 +40,9 @@ public abstract class VehicleData {
 		setWheelBase(wheelBase);
 		setSteeringAngle(steeringAngle);
 		setDistanceCenterFrontWheelToFrontCar(centreFrontWheelToFrontCar);
-		setMinimumRequiredSpaceToPark();
+		setMinExtraSpaceOnParallelParking();
 		setFrontWheelDistance(wheelDistance);
+		setNumberOfWheelSlots(wheelSlots);
 	}
 	
 	public double getLength() {
@@ -107,8 +110,8 @@ public abstract class VehicleData {
 		return mWheelPerimeter;
 	}
 	
-	public double getMinimumRequiredSpaceToPark(){
-		return mMinimumRequiredSpace;
+	public double getMinExtraSpaceOnParallelParking(){
+		return mMinExtraSpaceOnParallelParking;
 	}
 	
 	public double getFrontWheelDistance(){return mFrontWheelDistance;}
@@ -121,8 +124,16 @@ public abstract class VehicleData {
 	 * calculate the minimum distance shall be added to vehicle length in order to park in parallel
 	 * 
 	 */
-	public abstract void setMinimumRequiredSpaceToPark();
+	public abstract void setMinExtraSpaceOnParallelParking();
 
+	public int getNumberOfWheelSlots(){
+		return mWheelSlots;
+	}
+	
+	private void setNumberOfWheelSlots(int aNumberOfWheelSlots){
+		mWheelSlots = aNumberOfWheelSlots;
+	}
+	
 	@Override
 	public String toString() {
 		return String.format("[Length:%s\nWidth:%s\nWheel Base:%s\nWheel Diameter:%s\n" +
@@ -130,7 +141,7 @@ public abstract class VehicleData {
 				"Steering Angle:%s,Front Wheel Turning Radius:%s\nBack Wheel Turning Radius:%s\n" +
 				"Minimum Space Required To Parallel:%s]",getLength(),getWidth(),getWheelBase(),getWheelDiameter(),
 				getWheelPerimeter(),getFrontWheelDistance(),getDistanceCentreFrontWheelToFrontCar(),
-				getSteeringAngle(),getFrontWheelTurningRadious(),getBackWheelTurningRadius(),getMinimumRequiredSpaceToPark());
+				getSteeringAngle(),getFrontWheelTurningRadious(),getBackWheelTurningRadius(),getMinExtraSpaceOnParallelParking());
 	}
 	
 	
