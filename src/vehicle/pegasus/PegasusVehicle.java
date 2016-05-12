@@ -6,8 +6,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import logs.logger.PegasusLogger;
+import managers.constant.ParkingType;
 import managers.driving_manager.DrivingManager;
-import managers.finder.constants.ParkingType;
 import vehicle.common.AbstractVehicle;
 import vehicle.common.constants.VehicleConfigKeys;
 import vehicle.common.constants.VehicleParams;

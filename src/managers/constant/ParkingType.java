@@ -1,4 +1,4 @@
-package managers.finder.constants;
+package managers.constant;
 
 public class ParkingType {
 

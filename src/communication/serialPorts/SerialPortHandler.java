@@ -44,6 +44,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	private static final String PortName = "/dev/ttyACM0"; 		//the mounted ttyPort for Arduino
 	private static final int PORT_BAUD = 115200;
 	
+	private static final int DEFAULT_VALUE = -1;
+	
 	private static SerialPortHandler mSerialPortHandler;
 	private boolean mIsBoundedToUsbPort;
 	private int mTimeout;
@@ -257,7 +259,7 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 					.convertSerialPortMessageToMap(msg);
 			if (received.length() > 0) {
 				int messageType = received
-						.getInt(MessageVaribles.KEY_MESSAGE_TYPE);
+						.optInt(MessageVaribles.KEY_MESSAGE_TYPE,DEFAULT_VALUE);
 				switch (messageType) {
 				case MessageVaribles.MESSAGE_TYPE_ACTION:
 					break;
@@ -286,8 +288,8 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 	private void handleInfoMessageFromHardwareUnit(JSONObject receivedMsg) {
 		PegasusLogger.getInstance().d(getName(), "handleInfoMessageFromHardwareUnit", receivedMsg.toString());
 		try {
-			String info_type = (String) receivedMsg
-					.get(MessageVaribles.KEY_INFO_TYPE);
+			String info_type = receivedMsg
+					.optString(MessageVaribles.KEY_INFO_TYPE,"");
 			switch (MessageVaribles.InfoType.valueOf(info_type)) {
 			case STATUS:
 				int status_code = receivedMsg
@@ -296,22 +298,20 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				break;
 			case SENSOR_DATA:
 				String sensorIdKey = "";
+				double sensorData;
 				for(int i = 1; i <= Controller.getInstance().getNumberOfUltraSonicSensor(); i++){
-					sensorIdKey = MessageVaribles.KEY_SENSOR_ID + i;
-					if(receivedMsg.has(sensorIdKey)){
-						double sensorData = receivedMsg.getDouble(sensorIdKey);
+					if(receivedMsg.optInt(sensorIdKey) == i &&
+							(sensorData = receivedMsg.optDouble(MessageVaribles.KEY_SENSOR_DATA,DEFAULT_VALUE)) > 0){
 						notifySensorForIncomingData(i,sensorData);
 					}
-					int tachometerId = Controller.getInstance().getTachometerId();
-					sensorIdKey = MessageVaribles.KEY_SENSOR_ID + tachometerId;
-					if(receivedMsg.has(sensorIdKey)){
-						double sensorData = receivedMsg.getDouble(sensorIdKey);
-						notifySensorForIncomingData(tachometerId,sensorData);
-					}
+				}
+				int tachometerId = Controller.getInstance().getTachometerId();
+				if(receivedMsg.optInt(MessageVaribles.KEY_SENSOR_ID,DEFAULT_VALUE) == tachometerId &&
+						(sensorData = receivedMsg.optDouble(MessageVaribles.KEY_SENSOR_DATA,DEFAULT_VALUE)) > 0){
+					notifySensorForIncomingData(tachometerId,sensorData);
 				}
 			default:
 				break;
-
 			}
 
 		} catch (JSONException e) {

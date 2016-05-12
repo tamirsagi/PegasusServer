@@ -1,5 +1,6 @@
 package vehicle.sensors;
 
+import logs.logger.PegasusLogger;
 import communication.serialPorts.SerialPortHandler;
 
 /**

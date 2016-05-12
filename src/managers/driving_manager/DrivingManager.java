@@ -12,7 +12,7 @@ import vehicle.interfaces.OnTimerListener;
 import vehicle.pegasus.constants.SensorPositions;
 import logs.logger.PegasusLogger;
 import managers.common.AbstractManager;
-import managers.finder.constants.ParkingType;
+import managers.constant.ParkingType;
 
 /**
  * class is responsible for obstacles avoidance and lane following
@@ -24,6 +24,7 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	private static DrivingManager mInstance;
 	private static final int MAX_DISTANCE_TO_STOP = 6; // 6 cm is the max distance to stop when detecting an obstacles
 	private static final int DISTANCE_FROM_PARKED_CAR = 3;
+	private static final int SAFE_DISTANCE_WHEN_PARKING = 5;
 	
 	private int mCurrentSpeed;
 	private VehicleParams.DrivingDirection mCurrentDirection;
@@ -286,15 +287,17 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 			mManagedVehicle.turnRight(mManagedVehicle.getMaxServoRightAngle());
 			while(totalWay > mManagedVehicle.getInterruptsCounterOfWheelSensor());
 			mManagedVehicle.turnLeft(mManagedVehicle.getMaxServoLeftAngle());
-			while(mArchLength > mManagedVehicle.getInterruptsCounterOfWheelSensor());
+			while(mArchLength - SAFE_DISTANCE_WHEN_PARKING > mManagedVehicle.getInterruptsCounterOfWheelSensor());
 		}else{
 			mManagedVehicle.turnLeft(mManagedVehicle.getMaxServoLeftAngle());
 			while(totalWay > mManagedVehicle.getInterruptsCounterOfWheelSensor());
 			mManagedVehicle.turnRight(mManagedVehicle.getMaxServoRightAngle());	
-			while(mArchLength > mManagedVehicle.getInterruptsCounterOfWheelSensor());
+			while(mArchLength - SAFE_DISTANCE_WHEN_PARKING > mManagedVehicle.getInterruptsCounterOfWheelSensor());
 		}
-		
-		
+		double back_right_sensor = mManagedVehicle.getValueFromDistanceSensor(SensorPositions.BACK_RIGHT_ULTRA_SONIC_SENSOR);
+		double back_left_sensor = mManagedVehicle.getValueFromDistanceSensor(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR);
+		PegasusLogger.getInstance().d(getName(),"Back sensors right: " +back_right_sensor +" left: " + back_left_sensor);
+		//TODO - read sensor data and stop the car
 	}
 	
 	/**
