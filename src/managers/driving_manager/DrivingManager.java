@@ -355,24 +355,29 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 			while(diff > mManagedVehicle.getInterruptsCounterOfWheelSensor());
 		}
 		double totalWay = mArchLength + diff;
-		
+		mManagedVehicle.stop();
 		if(mParkingType == ParkingType.PARALLEL_RIGHT){
 			mManagedVehicle.turnRight(mManagedVehicle.getMaxServoRightAngle());
-			mManagedVehicle.resetInterruptsCounter();
+			mManagedVehicle.startNormalDriving();
 			while(totalWay > mManagedVehicle.getInterruptsCounterOfWheelSensor());
+			mManagedVehicle.stop();
 			mManagedVehicle.turnLeft(mManagedVehicle.getMaxServoLeftAngle());
-			mManagedVehicle.resetInterruptsCounter();
+			mManagedVehicle.startNormalDriving();
 			while(mArchLength - SAFE_DISTANCE_WHEN_PARKING > mManagedVehicle.getInterruptsCounterOfWheelSensor());
+			mManagedVehicle.stop();
 		}else{
 			mManagedVehicle.turnLeft(mManagedVehicle.getMaxServoLeftAngle());
-			mManagedVehicle.resetInterruptsCounter();
+			mManagedVehicle.startNormalDriving();
 			while(totalWay > mManagedVehicle.getInterruptsCounterOfWheelSensor());
+			mManagedVehicle.stop();
 			mManagedVehicle.turnRight(mManagedVehicle.getMaxServoRightAngle());	
-			mManagedVehicle.resetInterruptsCounter();
+			mManagedVehicle.startNormalDriving();
 			while(mArchLength - SAFE_DISTANCE_WHEN_PARKING > mManagedVehicle.getInterruptsCounterOfWheelSensor());
+			mManagedVehicle.stop();
 		}
 		double back_right_sensor = Integer.MAX_VALUE;
 		double back_left_sensor = Integer.MAX_VALUE;
+		mManagedVehicle.startNormalDriving();
 		while(back_right_sensor > DISTANCE_TO_STOP_BACK_OBSTACLE && back_left_sensor > DISTANCE_TO_STOP_BACK_OBSTACLE){
 			back_right_sensor = mManagedVehicle.getValueFromDistanceSensor(SensorPositions.BACK_RIGHT_ULTRA_SONIC_SENSOR);
 			back_left_sensor = mManagedVehicle.getValueFromDistanceSensor(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR);
