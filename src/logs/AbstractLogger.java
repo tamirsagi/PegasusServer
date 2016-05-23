@@ -23,7 +23,7 @@ public abstract class AbstractLogger {
 	}
 	
 	private String getCurrentTime(){
-		return dateFormat.format(date);
+		return String.format("%s","" +  System.currentTimeMillis());//dateFormat.format(date);
 	}
 	
 	

@@ -3,6 +3,10 @@ package vehicle.common.constants;
 
 public class VehicleParams {
 	
+	public static final int FORWARD = 1;
+	public static final int BACKWARD = 2;
+	
+	
 	public static final int VEHICLE_MODE_NONE = -1;
 	public static final int VEHICLE_MODE_AUTONOMOUS = 0;
 	public static final int VEHICLE_MODE_MANUAL = 1;

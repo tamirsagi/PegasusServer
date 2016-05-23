@@ -1,12 +1,12 @@
 package control;
 
 import logs.logger.PegasusLogger;
+import managers.constant.ParkingType;
 import managers.driving_manager.DrivingManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import vehicle.common.constants.VehicleAutonomousMode;
 import vehicle.common.constants.VehicleParams;
 import vehicle.pegasus.PegasusVehicle;
 import vehicle.pegasus.PegasusVehicleProperties;
@@ -95,7 +95,6 @@ public class Controller implements OnServerEventsListener,
 		case ApplicationStates.READY:
 			SerialPortHandler.getInstance().updateSystemReady();
 		}
-
 	}
 	
 	// ///////////////////////////////////// SERVER EVENTS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -171,10 +170,10 @@ public class Controller implements OnServerEventsListener,
 				switch (VehicleParams.DrivingDirection
 						.valueOf(drivingDirection)) {
 				case FORWARD:
-					PegasusVehicle.getInstance().driveForward();
+					PegasusVehicle.getInstance().changeDrivingDirection(VehicleParams.FORWARD);
 					break;
 				case BACKWARD:
-					PegasusVehicle.getInstance().driveBackward();
+					PegasusVehicle.getInstance().changeDrivingDirection(VehicleParams.BACKWARD);
 					break;
 				}
 				break;

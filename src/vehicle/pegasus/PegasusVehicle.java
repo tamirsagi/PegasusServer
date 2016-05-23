@@ -27,9 +27,9 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 	private static final String TAG = PegasusVehicle.class.getSimpleName();
 	private static final String PEGASUS_DEFAULT_ID = "302774773";
 
-	public static final int MIN_DIGITAL_SPEED = 70;
+	public static final int MIN_DIGITAL_SPEED = 30;
 	public static final int MAX_DIGITAL_SPEED = 255;
-	private static final int STRAIGHT_STEER_ANGLE = 90;
+	private static final int STRAIGHT_SERVO_ANGLE = 90;
 	private static final int MIN_SERVO_ANGLE = 50;
 	private static final int MAX_SERVO_ANGLE = 130;
 	
@@ -57,10 +57,7 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 		} catch (Exception e) {
 			PegasusLogger.getInstance().e(TAG, e.getMessage());
 		}
-		
 	}
-	
-	
 	
 	@Override
 	public void setVehicleData() {
@@ -75,7 +72,6 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 			PegasusLogger.getInstance().e(TAG,e.getMessage());
 		}
 		
-		
 	}
 	
 	@Override
@@ -88,7 +84,7 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 	public void setCurrentState(int aState) {
 		super.setCurrentState(aState);
 		changeUltraSonicSensorState();
-		mTachometer.resetTachometer();
+		resetInterruptsCounter();
 	}
 	
 	/**
@@ -154,7 +150,6 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 		}
 		switch (aVehicleMode) {
 		case VehicleParams.VEHICLE_MODE_AUTONOMOUS:
-			changeFrontSensorState(true);
 			break;
 		case VehicleParams.VEHICLE_MODE_MANUAL:
 			disableAllSensors();
@@ -206,7 +201,7 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 	
 	@Override
 	public void startNormalDriving(){
-		driveForward();
+		changeDrivingDirection(mCurrentDrivingDirection);
 		changeSpeed(MIN_DIGITAL_SPEED);
 	}
 	
@@ -220,7 +215,7 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 
 	@Override
 	public void turnRight(double rotationAngle) {
-		mSteeringAngle = STRAIGHT_STEER_ANGLE - rotationAngle; // from 0-40 to 50 - 90
+		mSteeringAngle = STRAIGHT_SERVO_ANGLE - rotationAngle; // from 0-40 to 50 - 90
 		if (SerialPortHandler.getInstance().isBoundToSerialPort()){
 			SerialPortHandler.getInstance().changeSteerMotor(
 					MessageVaribles.VALUE_STEERING_RIGHT, rotationAngle);
@@ -230,30 +225,35 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 
 	@Override
 	public void turnLeft(double rotationAngle) {
-		mSteeringAngle = STRAIGHT_STEER_ANGLE + rotationAngle; // from 0-40 to 90 - 130
+		mSteeringAngle = STRAIGHT_SERVO_ANGLE + rotationAngle; // from 0-40 to 90 - 130
 		if (SerialPortHandler.getInstance().isBoundToSerialPort())
 			SerialPortHandler.getInstance().changeSteerMotor(
 					MessageVaribles.VALUE_STEERING_LEFT, rotationAngle);
 	}
-
-	@Override
-	public void driveForward() {
-		mCurrentDrivingDirection = VehicleParams.DrivingDirection.FORWARD;
-		if (SerialPortHandler.getInstance().isBoundToSerialPort())
-			SerialPortHandler.getInstance().changeDrivingDirection(
-					MessageVaribles.VALUE_DRIVING_FORWARD);
-
-	}
-
-	@Override
-	public void driveBackward() {
-		mCurrentDrivingDirection = VehicleParams.DrivingDirection.BACKWARD;
-		if (SerialPortHandler.getInstance().isBoundToSerialPort())
-			SerialPortHandler.getInstance().changeDrivingDirection(
-					MessageVaribles.VALUE_DRIVING_REVERSE);
-
-	}
 	
+	@Override
+	public void changeDrivingDirection(int aDrivingDirection){
+		PegasusLogger.getInstance().d(TAG,"changeDrivingDirection","current Direction " + mCurrentDrivingDirection
+				+ " new : " + aDrivingDirection);
+		if(mCurrentDrivingDirection != aDrivingDirection){
+			setDrivingDirection(aDrivingDirection);
+			stop();
+			resetInterruptsCounter();
+			String direction = ""; 
+			switch (mCurrentDrivingDirection) {
+				case VehicleParams.FORWARD:
+					direction = MessageVaribles.VALUE_DRIVING_FORWARD;
+					break;
+				case VehicleParams.BACKWARD:
+					direction = MessageVaribles.VALUE_DRIVING_BACKWARD;
+			}
+			if(!direction.isEmpty() && SerialPortHandler.getInstance().isBoundToSerialPort()){
+				PegasusLogger.getInstance().d(TAG,"Direction = " + direction);
+				SerialPortHandler.getInstance().changeDrivingDirection(direction);
+			}
+		}
+	}
+
 	@Override
 	public void stop() {
 		changeSpeed(0);
@@ -270,49 +270,32 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 	}
 
 	
-//	@Override
-//	public void onReceived(int sensorId,double value){
-//		if(value >= 0){
-//			PegasusLogger.getInstance().i(TAG, "onReceived", "Sensor id:" + sensorId +" value:" + value);
-//			if(sensorId == SensorPositions.INFRA_RED_TACHOMETER_ID){
-//				DrivingManager.getInstance().handleTachometerData(value);
-//			}else{
-//				DrivingManager.getInstance().updateInput(sensorId,value);
-//			}
-//		}
-//	}
-
 	/**
 	 * change ultra sonic state when vehicle state is changed
 	 */
 	public void changeUltraSonicSensorState(){
+			disableAllSensors();
 			switch(getCurrentState()){
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
 				changeFrontSensorState(true);
-				changeUpperRightSensorsState(false);
-				changeUpperLeftSensorsState(false);
-				changeRearSensorState(false);
 				break;
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
 				changeFrontSensorState(true);
-				changeRearSensorState(false);
 				switch(DrivingManager.getInstance().getParkingType()){
 				case ParkingType.PARALLEL_RIGHT:
 					changeUpperRightSensorsState(true);
-					changeUpperLeftSensorsState(false);
 					break;
 				case ParkingType.PARALLEL_LEFT:
 					changeUpperLeftSensorsState(true);
-					changeUpperRightSensorsState(false);
 						break;
 				}
 				break;
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_INTO_PARKING:
-				changeFrontSensorState(false);
 				changeRearSensorState(true);
 				break;
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_OUT_OF_PARKING:
-				
+				changeFrontSensorState(true);
+				changeRearSensorState(false);
 				break;
 			}
 	}
@@ -365,7 +348,7 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 	 * change state for 2 right sensors
 	 */
 	private void changeUpperRightSensorsState(boolean aIsEnabled){
-		changeSensorState(SensorPositions.FRONT_RIGHT_ULTRA_SONIC_SENSOR,aIsEnabled);
+		//changeSensorState(SensorPositions.FRONT_RIGHT_ULTRA_SONIC_SENSOR,aIsEnabled);
 		changeSensorState(SensorPositions.BACK_RIGHT_ULTRA_SONIC_SENSOR,aIsEnabled);
 	}
 	
@@ -395,6 +378,17 @@ public class PegasusVehicle extends AbstractVehicle implements OnManagedVechile{
 	@Override
 	public int getMaxServoLeftAngle(){
 		return MAX_SERVO_ANGLE;
+	}
+	
+	@Override
+	public int getStraightServoAngle(){
+		return STRAIGHT_SERVO_ANGLE;
+	}
+	
+	@Override
+	public void resetInterruptsCounter(){
+		PegasusLogger.getInstance().d(TAG,"Reseting tachometer");
+		mTachometer.resetTachometer();
 	}
 
 }

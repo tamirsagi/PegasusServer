@@ -22,7 +22,8 @@ import managers.constant.ParkingType;
 public class DrivingManager extends AbstractManager  implements OnTimerListener{
 
 	private static DrivingManager mInstance;
-	private static final int MAX_DISTANCE_TO_STOP = 6; // 6 cm is the max distance to stop when detecting an obstacles
+	private static final int DISTANCE_TO_STOP_FRONT_OBSTACLE = 6; // 6 cm is the max distance to stop when detecting an obstacles
+	private static final int DISTANCE_TO_STOP_BACK_OBSTACLE = 4;
 	private static final int DISTANCE_FROM_PARKED_CAR = 3;
 	private static final int SAFE_DISTANCE_WHEN_PARKING = 5;
 	
@@ -31,16 +32,19 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	private int mCurrentMode = VehicleAutonomousMode.VEHICLE_NONE;
 	private OnManagedVechile mManagedVehicle;
 	
+	private double[] mLastSensorData = {-1,-1,-1,-1,-1,-1,-1,-1}; //debug
 	//	Parking Search Params \\
 	
-	private static final long FINDING_PARKING_SPOT_TIMEOUT = 60 * 1000 * 2; // 2 minutes for searching
-	
+	private static final long FINDING_PARKING_SPOT_TIMEOUT = 1000 * 60; // 1 min for searching
+	private static final int DEFAULT_DISTANCE_FROM_PARKED_CAR = 4;
 	private int mParkingType;
 	private int mParkingState;
 	private boolean mFound;
 	private double mMaxWheelSensorInterrupts;
+	private double mDistanceFromParkedCar = DEFAULT_DISTANCE_FROM_PARKED_CAR;
+	private VehicleData mVehicleData;
 	
-	// Parking Manouevering \\
+	// Parking Manoeuvering \\
 	private double mArchLength;
 	
 	
@@ -65,6 +69,7 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	 */
 	public void registerListener(OnManagedVechile aManagedVehicle){
 			mManagedVehicle = aManagedVehicle;
+			mVehicleData = mManagedVehicle.getVehicleData();
 	}
 
 	@Override
@@ -112,6 +117,12 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	public synchronized void resumeThread() {
 		if(mIsSuspended){
 			PegasusLogger.getInstance().i(getName(),"resumed...");
+			if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING ||
+					mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING){
+				if(!CameraManager.getInstance().isCameraEnabled()){
+					//CameraManager.getInstance().turnCameraOn();
+				}
+			}
 			super.resumeThread();
 		}
 	}
@@ -122,11 +133,7 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	private synchronized void handleCurrentState(){
 		if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING ||
 				mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING){
-			if(!CameraManager.getInstance().isCameraEnabled()){
-				CameraManager.getInstance().turnCameraOn();
-			}
 			double frontSensorValue = mManagedVehicle.getValueFromDistanceSensor(SensorPositions.FRONT_ULTRA_SONIC_SENSOR);
-			
 			handleFrontSensorData(frontSensorValue);
 			if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING){
 				if(isParallelParking()){
@@ -134,6 +141,7 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 					if(mFound){
 						mManagedVehicle.stop();
 						double newValue;
+						// keep counting wheel turns until car is stopped
 						while((newValue = mManagedVehicle.
 								getInterruptsCounterOfWheelSensor()) != mCurrentWheelSensorIntterupts){
 							mCurrentWheelSensorIntterupts = newValue;
@@ -144,8 +152,9 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 			follow();
 			}
 		}else if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_INTO_PARKING){
-			CameraManager.getInstance().turnCameraOff();
 			enterParallelParking();
+		}else if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_OUT_OF_PARKING){
+			exitParallelParking();
 		}
 	}
 
@@ -155,17 +164,18 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	 */
 	public synchronized void handleFrontSensorData(double aValue){
 		if(aValue >= 0){
-			PegasusLogger.getInstance().i(getName(),"Front Sensor Data : " + aValue);
-				if(0 < aValue && aValue <= MAX_DISTANCE_TO_STOP){
-					if(mManagedVehicle.getSpeed() != 0){
-						mManagedVehicle.stop();
-					}
-				}else{
-					if(mManagedVehicle.getSpeed() == 0){
-						mManagedVehicle.startNormalDriving();
-				}
-				}
+			if(mLastSensorData[1] != aValue){
+				mLastSensorData[1] = aValue;
+				PegasusLogger.getInstance().i(getName(),"Front Sensor Data : " + mLastSensorData[1]);
 			}
+			if(0 < aValue && aValue <= DISTANCE_TO_STOP_FRONT_OBSTACLE){
+				if(mManagedVehicle.getSpeed() != 0){
+					mManagedVehicle.stop();
+				}
+			}else if(mManagedVehicle.getSpeed() == 0){
+						mManagedVehicle.startNormalDriving();
+			}
+		}
 	}
 	
 	
@@ -180,11 +190,20 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 			switch(mCurrentMode){
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING:
 			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING:
+				if(!CameraManager.getInstance().isCameraEnabled()){
+					//CameraManager.getInstance().turnCameraOn();
+				}
 				if(mManagedVehicle.getSpeed() == 0 ){
 					mManagedVehicle.startNormalDriving();
 				}
 				break;
-			
+			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_INTO_PARKING:
+				CameraManager.getInstance().turnCameraOff();
+				break;
+			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKED:
+				break;
+			case VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_OUT_OF_PARKING:
+				break;
 			default:
 				suspendThread();
 			}
@@ -195,8 +214,13 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	 * handle free driving
 	 */
 	public void freeDrive(){
-		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
-		DrivingManager.getInstance().setMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+		if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKED){
+			mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_OUT_OF_PARKING);
+			DrivingManager.getInstance().setMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_OUT_OF_PARKING);
+		}else{
+			mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+			DrivingManager.getInstance().setMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+		}
 		resumeThread();
 	}
 	
@@ -206,35 +230,36 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	 * @param aMinSpace
 	 */
 	public void findParkingSpot(int parkingType){
-		mParkingState = ParkingStates.PARKING_DEFAULT;
-		VehicleData vehicleData = mManagedVehicle.getVehicleData();
-		double minSpaceToPark = 0;
-		switch(parkingType){
-		case ParkingType.PARALLEL_RIGHT:
-		case ParkingType.PARALLEL_LEFT:
-			PegasusLogger.getInstance().d(getName(), "findParkingSpot","parking type : " +  ParkingType.getParkingTypeName(parkingType));
-			minSpaceToPark = vehicleData.getLength() + 
-						VehicleData.MIN_REQUIRED_DISTANCE_SAFE_FACTOR * vehicleData.getMinExtraSpaceOnParallelParking();
-			break;
-		}
-		if(minSpaceToPark > 0){
-			mCurrentWheelSensorIntterupts = 0;
-			mMaxWheelSensorInterrupts = (vehicleData.getNumberOfWheelSlots() * minSpaceToPark) / vehicleData.getWheelPerimeter();
-			mParkingType = parkingType;
-			mFound = false;
-			if(mTimer != null){
-				mTimer.killThread();
+		if(mCurrentMode == VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING || 
+				mCurrentMode == VehicleAutonomousMode.VEHICLE_NONE){
+			mParkingState = ParkingStates.PARKING_DEFAULT;
+			double minSpaceToPark = 0;
+			switch(parkingType){
+			case ParkingType.PARALLEL_RIGHT:
+			case ParkingType.PARALLEL_LEFT:
+				PegasusLogger.getInstance().d(getName(), "findParkingSpot","parking type : " +  ParkingType.getParkingTypeName(parkingType));
+				minSpaceToPark = calculateMinSpaceToPark(mDistanceFromParkedCar);
+				break;
 			}
-			mTimer = new ActionTimer(FINDING_PARKING_SPOT_TIMEOUT, this);
-			mTimer.startTimer();
-			mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING);
-			setMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING);
-			PegasusLogger.getInstance().i(getName(), "findParking", "started looking for parking with min space of: " + minSpaceToPark 
-					+ "Max Number of slots : " + mMaxWheelSensorInterrupts);
-		}else{
-			PegasusLogger.getInstance().i(getName(),"findParkingSpot", "Could not start looking min space is 0");
-			setMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
-			mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+			if(minSpaceToPark > 0){
+				mCurrentWheelSensorIntterupts = 0;
+				mMaxWheelSensorInterrupts = calculateMaxWheelInterrupts(minSpaceToPark);
+				mParkingType = parkingType;
+				mFound = false;
+				if(mTimer != null){
+					mTimer.killThread();
+				}
+				mTimer = new ActionTimer(FINDING_PARKING_SPOT_TIMEOUT, this);
+				mTimer.startTimer();
+				mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING);
+				setMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_LOOKING_FOR_PARKING);
+				PegasusLogger.getInstance().i(getName(), "findParking", "started looking for parking with min space of: " + minSpaceToPark 
+						+ "Max Number of slots : " + mMaxWheelSensorInterrupts);
+			}else{
+				PegasusLogger.getInstance().i(getName(),"findParkingSpot", "Could not start looking min space is 0");
+				mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+				setMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+			}
 		}
 		resumeThread();
 	}
@@ -253,26 +278,73 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 				relevantSensorValue = mManagedVehicle
 						.getValueFromDistanceSensor(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR);
 			}
-			if (relevantSensorValue != 0 && !mFound) {
-				mCurrentWheelSensorIntterupts = 0;
-			}else{
-				mCurrentWheelSensorIntterupts =  mManagedVehicle.getInterruptsCounterOfWheelSensor();
-			}
-			PegasusLogger.getInstance().d(getName(),"Current intterupts:" + mCurrentWheelSensorIntterupts);
 			if (mCurrentWheelSensorIntterupts >= mMaxWheelSensorInterrupts && !mFound) {
+				PegasusLogger.getInstance().d(getName(),"found parking:" + mCurrentWheelSensorIntterupts);
 				mFound = true;
 				if (mTimer != null) {
 					mTimer.killThread();
 				}
 			}
+			if (!mFound) {
+				if (relevantSensorValue != 0) {
+					PegasusLogger.getInstance().d(getName(),
+							"searchParallelParking",
+							"back sensor data: " + relevantSensorValue);
+					mManagedVehicle.resetInterruptsCounter();
+					mCurrentWheelSensorIntterupts = 0;
+					if (relevantSensorValue < mDistanceFromParkedCar) {
+						mDistanceFromParkedCar = relevantSensorValue;
+						double spaceToPark = calculateMinSpaceToPark(mDistanceFromParkedCar);
+						mMaxWheelSensorInterrupts = calculateMaxWheelInterrupts(spaceToPark);
+						PegasusLogger.getInstance().i(
+								getName(),
+								"searchParallelParking",
+								"update parking with min space of: "
+										+ spaceToPark
+										+ "Max interrupts : "
+										+ mMaxWheelSensorInterrupts);
+					}
+				} else {
+					mCurrentWheelSensorIntterupts = mManagedVehicle
+							.getInterruptsCounterOfWheelSensor();
+				}
+			}
+			if(mCurrentWheelSensorIntterupts != mLastSensorData[0]){
+				mLastSensorData[0] = mCurrentWheelSensorIntterupts;
+				PegasusLogger.getInstance().d(getName(),"Current intterupts:" + mLastSensorData[0]);
+			}
 		}
+	}
+	
+	/**
+	 * determine the minimum space required to park the car
+	 * @param aTurningRadius - back wheel turning radius (the small one)
+	 * @param aDistanceFromParkedCar distance from parked car
+	 * @param aPArkedCarWidth parked car width
+	 * @return
+	 */
+	public double calculateMinSpaceToPark(double aDistanceFromParkedCar){
+		double CenterToCenter = 2 * mVehicleData.getBackWheelTurningRadius();
+		double side = CenterToCenter - aDistanceFromParkedCar - mVehicleData.getWidth();
+		return Math.sqrt(Math.pow(CenterToCenter, 2) - Math.pow(side, 2));
+	}
+	
+	/**
+	 * determine how many hits we need the Tachometer to detect for the given minimum space
+	 * @param aMinSpaceToPark
+	 * @param aWheelSlots number of neats which are detected by the IR sensor
+	 * @param aWheelPerimeter
+	 * @return
+	 */
+	public double calculateMaxWheelInterrupts(double aMinSpaceToPark){
+		return (mVehicleData.getNumberOfWheelSlots() * aMinSpaceToPark) / mVehicleData.getWheelPerimeter();
 	}
 
 	/**
-	 * calculate relevant arch prior executing parking 
+	 * enter parallel parking spot, first we check if the car needs to re-positioned
 	 */
 	private void enterParallelParking(){
-		mManagedVehicle.driveBackward();
+		mManagedVehicle.changeDrivingDirection(VehicleParams.BACKWARD);
 		prepareParallelParkingData();
 		//check if car had moved forward after parking found
 		double diff = mCurrentWheelSensorIntterupts - mMaxWheelSensorInterrupts;
@@ -283,21 +355,61 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 			while(diff > mManagedVehicle.getInterruptsCounterOfWheelSensor());
 		}
 		double totalWay = mArchLength + diff;
+		
 		if(mParkingType == ParkingType.PARALLEL_RIGHT){
 			mManagedVehicle.turnRight(mManagedVehicle.getMaxServoRightAngle());
+			mManagedVehicle.resetInterruptsCounter();
 			while(totalWay > mManagedVehicle.getInterruptsCounterOfWheelSensor());
 			mManagedVehicle.turnLeft(mManagedVehicle.getMaxServoLeftAngle());
+			mManagedVehicle.resetInterruptsCounter();
 			while(mArchLength - SAFE_DISTANCE_WHEN_PARKING > mManagedVehicle.getInterruptsCounterOfWheelSensor());
 		}else{
 			mManagedVehicle.turnLeft(mManagedVehicle.getMaxServoLeftAngle());
+			mManagedVehicle.resetInterruptsCounter();
 			while(totalWay > mManagedVehicle.getInterruptsCounterOfWheelSensor());
 			mManagedVehicle.turnRight(mManagedVehicle.getMaxServoRightAngle());	
+			mManagedVehicle.resetInterruptsCounter();
 			while(mArchLength - SAFE_DISTANCE_WHEN_PARKING > mManagedVehicle.getInterruptsCounterOfWheelSensor());
 		}
-		double back_right_sensor = mManagedVehicle.getValueFromDistanceSensor(SensorPositions.BACK_RIGHT_ULTRA_SONIC_SENSOR);
-		double back_left_sensor = mManagedVehicle.getValueFromDistanceSensor(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR);
-		PegasusLogger.getInstance().d(getName(),"Back sensors right: " +back_right_sensor +" left: " + back_left_sensor);
-		//TODO - read sensor data and stop the car
+		double back_right_sensor = Integer.MAX_VALUE;
+		double back_left_sensor = Integer.MAX_VALUE;
+		while(back_right_sensor > DISTANCE_TO_STOP_BACK_OBSTACLE && back_left_sensor > DISTANCE_TO_STOP_BACK_OBSTACLE){
+			back_right_sensor = mManagedVehicle.getValueFromDistanceSensor(SensorPositions.BACK_RIGHT_ULTRA_SONIC_SENSOR);
+			back_left_sensor = mManagedVehicle.getValueFromDistanceSensor(SensorPositions.BACK_LEFT_ULTRA_SONIC_SENSOR);
+			PegasusLogger.getInstance().d(getName(),"Back sensors right: " + back_right_sensor +" left: " + back_left_sensor);
+		}
+		mManagedVehicle.stop();
+		if(mParkingType == ParkingType.PARALLEL_RIGHT){
+			mManagedVehicle.turnRight(mManagedVehicle.getStraightServoAngle());
+		}else{
+			mManagedVehicle.turnLeft(mManagedVehicle.getStraightServoAngle());
+		}
+		setMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKED);
+		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_PARKED);
+	}
+	
+	/**
+	 * Manoeuvring out of parallel parking
+	 */
+	private void exitParallelParking(){
+		mManagedVehicle.changeDrivingDirection(VehicleParams.FORWARD);
+		if(mParkingType == ParkingType.PARALLEL_RIGHT){
+			mManagedVehicle.turnLeft(mManagedVehicle.getMaxServoLeftAngle());
+			mManagedVehicle.startNormalDriving();
+			while(mArchLength > mManagedVehicle.getInterruptsCounterOfWheelSensor());
+			mManagedVehicle.turnRight(mManagedVehicle.getMaxServoRightAngle());
+			while(mArchLength > mManagedVehicle.getInterruptsCounterOfWheelSensor());
+		}else{
+			mManagedVehicle.turnRight(mManagedVehicle.getMaxServoRightAngle());
+			mManagedVehicle.startNormalDriving();
+			while(mArchLength > mManagedVehicle.getInterruptsCounterOfWheelSensor());
+			mManagedVehicle.turnLeft(mManagedVehicle.getMaxServoLeftAngle());
+			while(mArchLength > mManagedVehicle.getInterruptsCounterOfWheelSensor());
+		}
+		
+		setMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
+		
 	}
 	
 	/**
@@ -348,6 +460,7 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	private void onParkingFound() {
 		mParkingState = ParkingStates.PARKING_FOUND;
 		PegasusLogger.getInstance().i(getName(), "Parking found stopping car with num of interrupts: " + mCurrentWheelSensorIntterupts);
+		mManagedVehicle.stop();
 		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_INTO_PARKING);
 		setMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_MANUEVERING_INTO_PARKING);
 	}
@@ -365,6 +478,7 @@ public class DrivingManager extends AbstractManager  implements OnTimerListener{
 	public void onTimerIsOver() {
 		mFound = false;
 		mParkingState = ParkingStates.PARKING_NOT_FOUND;
+		mManagedVehicle.stop();
 		setMode(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
 		mManagedVehicle.setCurrentState(VehicleAutonomousMode.VEHICLE_AUTONOMOUS_FREE_DRIVING);
 	}

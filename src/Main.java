@@ -1,11 +1,3 @@
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-
-import javax.imageio.ImageIO;
-
-import communication.bluetooth.Server.BluetoothServer;
 
 import util.CameraManager;
 import util.LinuxCommands;
@@ -17,7 +9,7 @@ public class Main {
 
 	public static final String TAG = "MAIN";
 	
-	public static void main(String[] args) throws InterruptedException, IOException {
+	public static void main(String[] args) {
 
 //		//CameraManager.getInstance().turnCameraOn();
 //		//CameraManager.getInstance().takeSnapshot();

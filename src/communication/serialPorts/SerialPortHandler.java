@@ -3,7 +3,6 @@ package communication.serialPorts;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -297,23 +296,17 @@ public class SerialPortHandler extends Thread implements SerialPortEventListener
 				mListener.updateHardwareStatus(status_code);
 				break;
 			case SENSOR_DATA:
-				String sensorIdKey = "";
-				double sensorData;
-				for(int i = 1; i <= Controller.getInstance().getNumberOfUltraSonicSensor(); i++){
-					if(receivedMsg.optInt(sensorIdKey) == i &&
-							(sensorData = receivedMsg.optDouble(MessageVaribles.KEY_SENSOR_DATA,DEFAULT_VALUE)) > 0){
-						notifySensorForIncomingData(i,sensorData);
-					}
+				double sensorData = receivedMsg.optDouble(MessageVaribles.KEY_SENSOR_DATA,DEFAULT_VALUE);
+				int sensorId = receivedMsg.optInt(MessageVaribles.KEY_SENSOR_ID,DEFAULT_VALUE);
+				boolean validId = (1 <= sensorId && sensorId <= Controller.getInstance().getNumberOfUltraSonicSensor() || 
+						sensorId == Controller.getInstance().getTachometerId());
+				if(validId && sensorData >= 0){
+						notifySensorForIncomingData(sensorId,sensorData);
 				}
-				int tachometerId = Controller.getInstance().getTachometerId();
-				if(receivedMsg.optInt(MessageVaribles.KEY_SENSOR_ID,DEFAULT_VALUE) == tachometerId &&
-						(sensorData = receivedMsg.optDouble(MessageVaribles.KEY_SENSOR_DATA,DEFAULT_VALUE)) > 0){
-					notifySensorForIncomingData(tachometerId,sensorData);
-				}
+				break;
 			default:
 				break;
 			}
-
 		} catch (JSONException e) {
 			PegasusLogger.getInstance().e(getName(), "handleInfoMessageFromSerialPort", e.getMessage());
 		}

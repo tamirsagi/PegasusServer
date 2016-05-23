@@ -19,12 +19,12 @@ public abstract class AbstractSensor implements onSensorDataRecieved{
 	private String mPosition;
 	private boolean mEnabled;
 	protected double mLastValue;
-	private Vector<onInputReceived> mListeners;
-	protected Lock mLock = new ReentrantLock();
+	protected Lock mLock;
 	
 
 	public AbstractSensor(int id) {
 		mId = id;
+		mLock = new ReentrantLock(true);
 	}
 
 	public int getId() {
@@ -77,27 +77,10 @@ public abstract class AbstractSensor implements onSensorDataRecieved{
 		this.mType = mType;
 	}
 	
-	public void registerListener(onInputReceived aListner){
-		if(mListeners == null){
-			mListeners = new Vector<>();
-		}
-		mListeners.add(aListner);
-	}
-	
-	/**
-	 * update listeners when data is received
-	 * @param value - data from sensor
-	 */
-	public void receivedData(double value){
-		setValue(value);
-		for(onInputReceived listener : mListeners){
-			listener.onReceived(getId(), getLastValue());
-		}
-	}
 	
 	@Override
 	public void onRecievedSensorData(double value) {
-		receivedData(value);
+		setValue(value);
 	}
 	
 	/**

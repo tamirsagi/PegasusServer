@@ -1,8 +1,5 @@
 package communication.messages;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-
 
 public class MessageVaribles {
 	
@@ -43,7 +40,7 @@ public class MessageVaribles {
 	public static final String VALUE_STEERING_LEFT 			= 		"L";
 	public static final String VALUE_STEERING_NONE 			= 		"N";
 	public static final String VALUE_DRIVING_FORWARD		= 		"F";				//Forward
-	public static final String VALUE_DRIVING_REVERSE		= 		"B";				//Backward
+	public static final String VALUE_DRIVING_BACKWARD		= 		"B";				//Backward
 	
 	
 	public static final String KEY_SERIAL_PORT		 		= 		"SP";				//SP = Serial Port

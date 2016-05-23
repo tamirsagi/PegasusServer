@@ -17,9 +17,7 @@ import control.interfaces.OnServerEventsListener;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
-import java.util.Vector;
 
 import logs.logger.PegasusLogger;
 
@@ -215,8 +213,8 @@ public class BluetoothServer extends Thread {
      try { 
         while(client.isConnected()){
 	           readFromSerial(client);
-	           sendMessageToClients();
-	           sleep(1500);
+	          // sendMessageToClients();
+	           sleep(1000);
         }//while
       }catch (IOException e){
     	  client.setConnected(false);

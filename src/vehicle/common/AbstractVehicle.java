@@ -14,7 +14,7 @@ public abstract class AbstractVehicle {
 	protected String mName;
 	protected String mID;
 	protected double mSteeringAngle;
-	protected DrivingDirection mCurrentDrivingDirection;
+	protected int mCurrentDrivingDirection = VehicleParams.FORWARD;
 	protected int mVehicleMode = VehicleParams.VEHICLE_MODE_NONE;
 	protected double mCurrentSpeed;
 	protected double mDistance;
@@ -109,15 +109,13 @@ public abstract class AbstractVehicle {
 	 */
 	public abstract void turnLeft(double rotationAngle);
 	
-	/**
-	 * set driving direction Forward
-	 */
-	public abstract void driveForward();
 	
 	/**
-	 * set driving direction backward
+	 * change driving direction
+	 * @param aDrivingDirection 1:Forward, 2: Backward
 	 */
-	public abstract void driveBackward();
+	public abstract void changeDrivingDirection(int aDrivingDirection);
+	
 	
 	/**
 	 * stop the vehicle
@@ -165,6 +163,12 @@ public abstract class AbstractVehicle {
 	 */
 	public void setTravelledDistance(double aDist){
 			mDistance = aDist;
+	}
+	
+	public void setDrivingDirection(int aDrivingDirection){
+		if(aDrivingDirection == VehicleParams.FORWARD || aDrivingDirection == VehicleParams.BACKWARD){
+			mCurrentDrivingDirection = aDrivingDirection;
+		}
 	}
 	
 	public String getTag(){return TAG;}

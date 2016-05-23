@@ -16,11 +16,13 @@ public interface OnManagedVechile {
 	public void turnRight(double rotationAngle);
 
 	public void turnLeft(double rotationAngle);
-
-	public void driveForward();
-
-	public void driveBackward();
 	
+	/**
+	 * 
+	 * @param aDrivingDirection  1 - FORWARD, 2 - BACKWARD
+	 */
+	public void changeDrivingDirection(int aDrivingDirection);
+
 	public int getCurrentState();
 	
 	public void setCurrentState(int aState);
@@ -34,5 +36,9 @@ public interface OnManagedVechile {
 	public int getMaxServoRightAngle();
 	
 	public int getMaxServoLeftAngle();
+	
+	public int getStraightServoAngle();
+	
+	public void resetInterruptsCounter();
 	
 }
